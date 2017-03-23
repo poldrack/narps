@@ -1,0 +1,100 @@
+---
+title: "NARPS Design Simulations"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+This notebook contains simulations to examine different options for modeling the design of the NARPS study.
+
+The goal of the study is to present subjects with one of two different gamble distributions:
+
+* indifference distribution (Tom et al., 2007): The range of gains ($10-$40 by 2) is twice the range of losses ($5-$20), such that the median gamble falls roughly at the average subject's point of indifference (given an average loss aversion coefficient of ~2)
+* equal distribution (de Martino et al., 2010): The range of gains is exactly the range of losses, such that the majority of gambles will fall below the subject's point of indifference and thus be rejected.
+
+The statistical model for the first level responses (after Tom et al.) will be:
+
+$$y = \beta_0*intercept + \beta_1*gain + \beta_2*loss$$
+where the intercept can be interpreted as the overall tendency towards gambling.
+
+The goal of these simulations is to determine how to arrange the gambles and the model such that a subject with equal utility and risk preference would exhibit equal model parameters across the two gamble distributions.  
+
+First we set up the gamble structures.  For this example we assume expected value computed via prospect theory with a loss aversion lambda of 2 and linear value functions for gains and losses.  We start using identical gain distributions across conditions.
+
+```{r}
+msize=16
+pt_lambda=2
+gains_indiff=seq(from=10,length.out=16,by=2)
+loss_indiff=seq(from=5,length.out=16,by=1)
+
+gains_equal=gains_indiff
+loss_equal=gains_equal
+
+df=data.frame(gain_indiff=kronecker(array(1,dim=16),gains_indiff),
+                  loss_indiff=kronecker(loss_indiff,array(1,dim=16)),
+              gain_equal=kronecker(array(1,dim=16),gains_equal),
+                  loss_equal=kronecker(loss_equal,array(1,dim=16))
+              )
+
+
+
+
+```
+
+Now let's simulate the subject's responses to these gambles.  For now we just use deterministic responding based on prospect theory EV.
+
+```{r}
+
+softmax = function(v,temperature){
+  p=1/(1+exp((-1*v)/temperature))
+  return(p)
+}
+
+
+
+```
+
+
+Fit logistic regression model to each dataset to assess parameter recovery.  First generate a function to do this.
+
+```{r}
+
+domodel <- function(df,temp=1.5,pt_lambda=2) {
+  df$ev_indiff=df$gain_indiff - df$loss_indiff*pt_lambda
+  df$ev_equal=df$gain_equal - df$loss_equal*pt_lambda
+  df$resp_indiff=as.integer(softmax(df$ev_indiff,temp)>runif(dim(df)[1]))
+  df$resp_equal=as.integer(softmax(df$ev_equal,temp)>runif(dim(df)[1]))
+  
+  glm.indiff=glm(resp_indiff~gain_indiff + loss_indiff, data=df,family=binomial)
+  glm.equal=glm(resp_equal~gain_equal + loss_equal, data=df,family=binomial)
+  la_equal=(-1*glm.equal$coefficients[3])/glm.equal$coefficients[2]
+  la_indiff=(-1*glm.indiff$coefficients[3])/glm.indiff$coefficients[2]
+  return(c(la_equal,la_indiff))
+}
+
+```
+
+Now let's loop through a range of plausible lambda values and see how well each model can recover the parameters.
+
+```{r,echo=FALSE, warning=FALSE}
+lamvals=seq(1,5,by=0.25)
+nruns=100
+temp=1.5
+simresults=c()
+for (lam in lamvals){
+  for (i in 1:nruns){
+    tmp=domodel(df,temp,lam)
+    simresults=cbind(simresults,c(lam,tmp))
+  }
+}
+
+sim.df=data.frame(t(simresults))
+names(sim.df)=c('lam',"loss_equal","loss_indiff")
+lam_ests=aggregate(loss_equal~lam, data=sim.df, FUN=function(x) c(mean=mean(x)))
+lam_ests$loss_indiff=aggregate(loss_indiff~lam, data=sim.df, FUN=function(x) c(mean=mean(x)))$loss_indiff
+par(mfrow=c(1,2))
+plot(sim.df$lam,sim.df$loss_indiff,pch=20,main='indifference',xlab='true lambda',ylab='estimated lambda')
+plot(sim.df$lam,sim.df$loss_equal,pch=20,main='equal',xlab='true lambda',ylab='estimated lambda')
+
+```
+
