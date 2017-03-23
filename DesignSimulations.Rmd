@@ -70,7 +70,7 @@ domodel <- function(df,noise_sd=1,pt_lambda=2,stdize=TRUE) {
 
 Now let's loop through a range of plausible lambda values and see how well each model can recover the parameters.  First do it using unstandardized regression parameters.
 
-```{r,echo=FALSE, warning=FALSE}
+```{r,warning=FALSE}
 lamvals=seq(1,5,by=0.25)
 nruns=100
 temp=1.5
@@ -109,6 +109,7 @@ loss_lm=lm(loss_equal~loss_indiff,data=sim.df)
 print(loss_lm)
 ```
 We see that the parameters match well when using unstandardized regression coefficients:
+
 * the estimated loss aversion coefficients and loss parameter closely align with the actual
 * there is no systematic variability in gain parameters
 * the slope of the loss estimates for the equal model matches that for the indifference model very closely
@@ -152,6 +153,7 @@ print(loss_lm)
 ```
 
 This shows us that the analysis performs incorrectly when using standardized regression parameters:
+
 * Loss responses are not consistent between the two gamble distributions
 * Gain responses now show systematic variability
 
