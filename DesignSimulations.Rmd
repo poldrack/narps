@@ -57,18 +57,20 @@ softmax = function(v,temperature){
 Fit logistic regression model to each dataset to assess parameter recovery.  First generate a function to do this.
 
 ```{r}
+library(QuantPsyc) # for lm.beta
 
 domodel <- function(df,temp=1.5,pt_lambda=2) {
   df$ev_indiff=df$gain_indiff - df$loss_indiff*pt_lambda
   df$ev_equal=df$gain_equal - df$loss_equal*pt_lambda
   df$resp_indiff=as.integer(softmax(df$ev_indiff,temp)>runif(dim(df)[1]))
   df$resp_equal=as.integer(softmax(df$ev_equal,temp)>runif(dim(df)[1]))
-  
   glm.indiff=glm(resp_indiff~gain_indiff + loss_indiff, data=df,family=binomial)
   glm.equal=glm(resp_equal~gain_equal + loss_equal, data=df,family=binomial)
   la_equal=(-1*glm.equal$coefficients[3])/glm.equal$coefficients[2]
   la_indiff=(-1*glm.indiff$coefficients[3])/glm.indiff$coefficients[2]
-  return(c(la_equal,la_indiff))
+  return(c(lm.beta(glm.equal),
+           lm.beta(glm.indiff),
+           la_equal,la_indiff))
 }
 
 ```
@@ -88,7 +90,12 @@ for (lam in lamvals){
 }
 
 sim.df=data.frame(t(simresults))
-names(sim.df)=c('lam',"loss_equal","loss_indiff")
+names(sim.df)=c('lam',"gain_equal","loss_equal","gain_indiff","loss_indiff",
+  "la_equal","la_indiff")
+print(sim.df)
+
+```
+```{r}
 lam_ests=aggregate(loss_equal~lam, data=sim.df, FUN=function(x) c(mean=mean(x)))
 lam_ests$loss_indiff=aggregate(loss_indiff~lam, data=sim.df, FUN=function(x) c(mean=mean(x)))$loss_indiff
 par(mfrow=c(1,2))
