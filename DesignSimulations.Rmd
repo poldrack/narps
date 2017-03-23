@@ -2,7 +2,6 @@
 title: "NARPS Design Simulations"
 output:
   html_document: default
-  html_notebook: default
 ---
 
 This notebook contains simulations to examine different options for modeling the design of the NARPS study.
@@ -96,5 +95,19 @@ par(mfrow=c(1,2))
 plot(sim.df$lam,sim.df$loss_indiff,pch=20,main='indifference',xlab='true lambda',ylab='estimated lambda')
 plot(sim.df$lam,sim.df$loss_equal,pch=20,main='equal',xlab='true lambda',ylab='estimated lambda')
 
+```
+
+Let's look at the regression between predicted and actual lambda, to find the range in which they track well (which appears to be up to ~lambda=3)
+```{r}
+modelslopes=c()
+for (maxlam in seq(2.5,5,0.25)) {
+  tmp=subset(sim.df,lam<=maxlam)
+  lm.indiff=lm(loss_indiff~lam,data=tmp)
+  lm.equal=lm(loss_equal~lam,data=tmp)
+  modelslopes=cbind(modelslopes,c(maxlam,lm.indiff$coefficients[2],lm.equal$coefficients[2]))
+}
+model.results=data.frame(t(modelslopes))
+names(model.results)=c('max lambda','indifference','equal')
+print(model.results)
 ```
 
