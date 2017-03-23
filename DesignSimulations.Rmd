@@ -40,42 +40,35 @@ df=data.frame(gain_indiff=kronecker(array(1,dim=16),gains_indiff),
 
 ```
 
-Now let's simulate the subject's responses to these gambles.  For now we just use deterministic responding based on prospect theory EV.
-
-```{r}
-
-softmax = function(v,temperature){
-  p=1/(1+exp((-1*v)/temperature))
-  return(p)
-}
-
-
-
-```
-
-
-Fit logistic regression model to each dataset to assess parameter recovery.  First generate a function to do this.
+Now let's simulate the subject's brain responses to these gambles.  For now we just assume that the brain response is a function of prospect theory EV, and we fit a linear regression model to each dataset to assess parameter recovery.  First generate a function to do this.
 
 ```{r}
 library(QuantPsyc) # for lm.beta
 
-domodel <- function(df,temp=1.5,pt_lambda=2) {
+domodel <- function(df,noise_sd=1,pt_lambda=2,stdize=TRUE) {
   df$ev_indiff=df$gain_indiff - df$loss_indiff*pt_lambda
   df$ev_equal=df$gain_equal - df$loss_equal*pt_lambda
-  df$resp_indiff=as.integer(softmax(df$ev_indiff,temp)>runif(dim(df)[1]))
-  df$resp_equal=as.integer(softmax(df$ev_equal,temp)>runif(dim(df)[1]))
-  glm.indiff=glm(resp_indiff~gain_indiff + loss_indiff, data=df,family=binomial)
-  glm.equal=glm(resp_equal~gain_equal + loss_equal, data=df,family=binomial)
-  la_equal=(-1*glm.equal$coefficients[3])/glm.equal$coefficients[2]
-  la_indiff=(-1*glm.indiff$coefficients[3])/glm.indiff$coefficients[2]
-  return(c(lm.beta(glm.equal),
-           lm.beta(glm.indiff),
+  df$resp_indiff=df$ev_indiff+rnorm(dim(df)[1])*noise_sd
+  df$resp_equal=df$ev_equal+rnorm(dim(df)[1])*noise_sd
+  lm.indiff=lm(resp_indiff~gain_indiff + loss_indiff, data=df)
+  lm.equal=lm(resp_equal~gain_equal + loss_equal, data=df)
+  la_equal=(-1*lm.equal$coefficients[3])/lm.equal$coefficients[2]
+  la_indiff=(-1*lm.indiff$coefficients[3])/lm.indiff$coefficients[2]
+  if (stdize){
+     return(c(lm.beta(lm.equal),
+           lm.beta(lm.indiff),
            la_equal,la_indiff))
+  } else {
+      return(c(lm.equal$coefficients[2],lm.equal$coefficients[3],
+           lm.indiff$coefficients[2],lm.indiff$coefficients[3],
+           la_equal,la_indiff))
+
+  }
 }
 
 ```
 
-Now let's loop through a range of plausible lambda values and see how well each model can recover the parameters.
+Now let's loop through a range of plausible lambda values and see how well each model can recover the parameters.  First do it using unstandardized regression parameters.
 
 ```{r,echo=FALSE, warning=FALSE}
 lamvals=seq(1,5,by=0.25)
@@ -84,7 +77,7 @@ temp=1.5
 simresults=c()
 for (lam in lamvals){
   for (i in 1:nruns){
-    tmp=domodel(df,temp,lam)
+    tmp=domodel(df,temp,lam,stdize=FALSE)
     simresults=cbind(simresults,c(lam,tmp))
   }
 }
@@ -92,29 +85,74 @@ for (lam in lamvals){
 sim.df=data.frame(t(simresults))
 names(sim.df)=c('lam',"gain_equal","loss_equal","gain_indiff","loss_indiff",
   "la_equal","la_indiff")
-print(sim.df)
+
+lam_ests=aggregate(la_equal~lam, data=sim.df, FUN=function(x) c(mean=mean(x)))
+lam_ests$la_indiff=aggregate(la_indiff~lam, data=sim.df, FUN=function(x) c(mean=mean(x)))$la_indiff
+par(mfrow=c(2,2))
+plot(sim.df$lam,sim.df$la_indiff,pch=20,main='lambda: indifference',xlab='true lambda',ylab='estimated lambda')
+lines(c(1,5),c(1,5))
+plot(sim.df$lam,sim.df$la_equal,pch=20,main='lambda: equal',xlab='true lambda',ylab='estimated lambda')
+lines(c(1,5),c(1,5))
+
+plot(sim.df$gain_equal,sim.df$gain_indiff,pch=20,main='gain responses',xlab='equal',ylab='indiff',xlim=c(0.9,1.1),ylim=c(0.9,1.1))
+#lines(c(0,1),c(0,1))
+
+plot(sim.df$loss_equal,sim.df$loss_indiff,pch=20,main='loss responses',xlab='equal',ylab='indiff',xlim=c(-5,-1),ylim=c(-5,-1))
+lines(c(-5,-1),c(-5,-1))
 
 ```
-```{r}
-lam_ests=aggregate(loss_equal~lam, data=sim.df, FUN=function(x) c(mean=mean(x)))
-lam_ests$loss_indiff=aggregate(loss_indiff~lam, data=sim.df, FUN=function(x) c(mean=mean(x)))$loss_indiff
-par(mfrow=c(1,2))
-plot(sim.df$lam,sim.df$loss_indiff,pch=20,main='indifference',xlab='true lambda',ylab='estimated lambda')
-plot(sim.df$lam,sim.df$loss_equal,pch=20,main='equal',xlab='true lambda',ylab='estimated lambda')
 
+Compare slopes of loss responses between models
+
+```{r}
+loss_lm=lm(loss_equal~loss_indiff,data=sim.df)
+print(loss_lm)
 ```
+We see that the parameters match well when using unstandardized regression coefficients:
+* the estimated loss aversion coefficients and loss parameter closely align with the actual
+* there is no systematic variability in gain parameters
+* the slope of the loss estimates for the equal model matches that for the indifference model very closely
 
-Let's look at the regression between predicted and actual lambda, to find the range in which they track well (which appears to be up to ~lambda=3)
+Now do the same using standardized regression parameters.
+
 ```{r}
-modelslopes=c()
-for (maxlam in seq(2.5,5,0.25)) {
-  tmp=subset(sim.df,lam<=maxlam)
-  lm.indiff=lm(loss_indiff~lam,data=tmp)
-  lm.equal=lm(loss_equal~lam,data=tmp)
-  modelslopes=cbind(modelslopes,c(maxlam,lm.indiff$coefficients[2],lm.equal$coefficients[2]))
+simresults=c()
+for (lam in lamvals){
+  for (i in 1:nruns){
+    tmp=domodel(df,temp,lam,stdize=TRUE)
+    simresults=cbind(simresults,c(lam,tmp))
+  }
 }
-model.results=data.frame(t(modelslopes))
-names(model.results)=c('max lambda','indifference','equal')
-print(model.results)
+
+sim.df.std=data.frame(t(simresults))
+names(sim.df.std)=c('lam',"gain_equal","loss_equal","gain_indiff","loss_indiff",
+  "la_equal","la_indiff")
+
+lam_ests=aggregate(la_equal~lam, data=sim.df.std, FUN=function(x) c(mean=mean(x)))
+lam_ests$la_indiff=aggregate(la_indiff~lam, data=sim.df.std, FUN=function(x) c(mean=mean(x)))$la_indiff
+par(mfrow=c(2,2))
+plot(sim.df.std$lam,sim.df.std$la_indiff,pch=20,main='lambda: indifference',xlab='true lambda',ylab='estimated lambda')
+lines(c(1,5),c(1,5))
+plot(sim.df.std$lam,sim.df.std$la_equal,pch=20,main='lambda: equal',xlab='true lambda',ylab='estimated lambda')
+lines(c(1,5),c(1,5))
+
+plot(sim.df.std$gain_equal,sim.df.std$gain_indiff,pch=20,main='gain responses',xlab='equal',ylab='indiff',xlim=c(0,1),ylim=c(0,1))
+lines(c(0,1),c(0,1))
+
+plot(sim.df.std$loss_equal,sim.df.std$loss_indiff,pch=20,main='loss responses',xlab='equal',ylab='indiff',xlim=c(-1,0),ylim=c(-1,0))
+lines(c(-1,0),c(-1,0))
+
 ```
 
+```{r}
+loss_lm=lm(loss_equal~loss_indiff,data=sim.df.std)
+print(loss_lm)
+
+
+```
+
+This shows us that the analysis performs incorrectly when using standardized regression parameters:
+* Loss responses are not consistent between the two gamble distributions
+* Gain responses now show systematic variability
+
+However, loss aversion coefficients are still properly estimated.
