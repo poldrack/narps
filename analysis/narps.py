@@ -159,19 +159,6 @@ class NarpsTeam(object):
                     if self.verbose:
                         print('using existing resampled image for',self.teamID)
 
-    # check for NA and zero values
-    def check_image_values(self):
-        # check for number of zero and na voxels in each map
-        img_metadata = pandas.DataFrame(colmns=[])
-        masker=nilearn.input_data.NiftiMasker(mask_img=self.dirs.MNI_mask)
-        for hyp in self.images[imgtype]['resampled']:
-            # make thresholded mask in orig space
-            threshfile = self.images[imgtype]['resampled'][hyp] 
-            threshdata = masker.fit_transform(threshfile)
-            self.
-            self.n_nan_inmask_values[hyp]=numpy.sum(numpy.isnan(threshdata))
-            self.n_zero_inmask_values[hyp]=numpy.sum(threshdata==0.0)
-    
             
 
 
@@ -208,6 +195,9 @@ class Narps(object):
 
         self.hypothesis_metadata = pandas.DataFrame(columns=['teamID','hyp','n_na','n_zero'])
 
+        self.all_maps = {'thresh':{'resampled':None},
+                         'unthresh':{'resampled':None}}
+        self.rectified_list = []
 
     def mk_full_mask_img(self,dirs):
         # make full image mask (all voxels)
@@ -240,6 +230,8 @@ class Narps(object):
             self.teams[teamID].get_orig_images()
             if self.teams[teamID].has_all_images:
                 self.complete_image_sets.append(teamID)
+        # sort the teams - this is the order that will be used
+        self.complete_image_sets.sort()
 
     def get_binarized_thresh_masks(self):
         print('getting binarized/thresholded orig maps')
@@ -254,10 +246,107 @@ class Narps(object):
             self.teams[teamID].get_resampled_images()
 
     # get # of nonzero and NA voxels for each image
-    def check_image_values(self):
+    def check_image_values(self,overwrite = False):
+        image_metadata_file = os.path.join(self.dirs.dirs['output'],'image_metadata_df.csv')
+        if os.path.exists(image_metadata_file) and not overwrite:
+            print('using cached image metdata')
+            image_metadata_df = pandas.read_csv(image_metadata_file)
+            return(image_metadata_df)
+        # otherwise load from scractch
+        image_metadata = []
         print("checking image values...")
+        masker=nilearn.input_data.NiftiMasker(mask_img=self.dirs.MNI_mask)
         for teamID in self.complete_image_sets:
-            self.teams[teamID].check_image_values()
+            for hyp in self.teams[teamID].images['thresh']['resampled']:
+                threshfile = self.teams[teamID].images['thresh']['resampled'][hyp] 
+                threshdata = masker.fit_transform(threshfile)
+                image_metadata.append([teamID,hyp,numpy.sum(numpy.isnan(threshdata)),
+                                numpy.sum(threshdata==0.0)])
+    
+        image_metadata_df = pandas.DataFrame(image_metadata,columns=['teamID','hyp','n_na','n_nonzero'])
+        image_metadata_df.to_csv(image_metadata_file)
+        return(image_metadata_df)
+
+    # create images concatenated across teams
+    # ordered by self.complete_image_sets
+    def create_concat_images(self,datatype='resampled',imgtypes = ['thresh','unthresh'],
+                                overwrite=False):
+        for imgtype in imgtypes:
+            self.dirs.dirs['concat_%s'%imgtype]=os.path.join(self.dirs.dirs['output'],'%s_concat_%s'%(imgtype,datatype))
+            for hyp in range(1,10):
+                outfile = os.path.join(self.dirs.dirs['concat_%s'%imgtype],'hypo%d.nii.gz'%hyp)
+                if not os.path.exists(os.path.dirname(outfile)):
+                    os.mkdir(os.path.dirname(outfile))
+                if not os.path.exists(outfile) or overwrite:
+                    print('%s - hypo %d: creating concat file'%(imgtype,hyp))
+                    self.all_maps[imgtype][datatype] = [self.teams[teamID].images[imgtype][datatype][hyp] for teamID in self.complete_image_sets]
+                    masker = nilearn.input_data.NiftiMasker(mask_img=self.dirs.MNI_mask)
+                    concat_data = masker.fit_transform(self.all_maps[imgtype][datatype])
+                    concat_img = masker.inverse_transform(concat_data)
+                    concat_img.to_filename(outfile)
+                else:
+                    print('%s - hypo %d: using existing file'%(imgtype,hyp))
+
+    # create overlap maps for thresholded iamges
+    def create_thresh_overlap_images(self,datatype='resampled',overwrite=True,thresh=10e-6):
+        imgtype = 'thresh'
+        self.dirs.dirs['overlap_binarized_thresh']=os.path.join(self.dirs.dirs['output'],'overlap_binarized_thresh')
+        for hyp in range(1,10):
+            outfile = os.path.join(self.dirs.dirs['overlap_binarized_thresh'],'hypo%d.nii.gz'%hyp)
+            if not os.path.exists(os.path.dirname(outfile)):
+                os.mkdir(os.path.dirname(outfile))
+            if not os.path.exists(outfile) or overwrite:
+                print('%s - hypo %d: creating overlap file'%(imgtype,hyp))
+                concat_file = os.path.join(self.dirs.dirs['concat_thresh'],'hypo%d.nii.gz'%hyp)
+                concat_img=nibabel.load(concat_file)
+                concat_data = concat_img.get_data()
+                concat_data = (concat_data>thresh).astype('float')
+                concat_mean = numpy.mean(concat_data,3)
+                concat_mean_img = nibabel.Nifti1Image(concat_mean,affine=concat_img.header.get_best_affine())
+                concat_mean_img.to_filename(outfile)
+
+            else:
+                print('%s - hypo %d: using existing file'%(imgtype,hyp))
+
+    # create rectified images 
+    # - for any maps where the signal within the thresholded mask is completely negative, rectify the
+    # unthresholded map (multiply by -1)
+    def create_rectified_images(self,overwrite=True):
+        for teamID in self.complete_image_sets:
+            for hyp in range(1,10):
+                rectify=False
+                # load data from unthresh map within positive voxels of thresholded mask
+                thresh_file = self.teams[teamID].images['thresh']['thresh_mask_orig'][hyp]
+                masker=nilearn.input_data.NiftiMasker(mask_img=thresh_file)
+                unthresh_file = self.teams[teamID].images['unthresh']['orig'][hyp]
+                # need to catch ValueError that occurs is mask is completely empty -
+                # in that case just copy over the data
+                try:
+                    masked_data = masker.fit_transform(unthresh_file)
+                    if numpy.max(masked_data)<=0:
+                        rectify=True
+                except ValueError:
+                    pass
+
+                outfile = os.path.join(self.dirs.dirs['rectified'],
+                        self.teams[teamID].NV_collection_id,'hypo%d_unthresh.nii.gz'%hyp)
+                if not os.path.exists(os.path.dirname(outfile)):
+                    os.mkdir(os.path.dirname(outfile))
+                if not os.path.exists(outfile) or overwrite:
+                    if rectify:  # all values are negative
+                            print('rectifying',self.teams[teamID].NV_collection_id,hyp)
+                            img = nibabel.load(unthresh_file)
+                            img_rectified = nilearn.image.math_img('img*-1',img=img)
+                            img_rectified.to_filename(outfile)
+                            self.rectified_list.append((teamID,hyp))
+                    else:
+                        shutil.copy(unthresh_file,outfile)
+
+    # compute stats on rectified images - std deviation and range
+    def compute_image_stats(self,datatype='rectified'):
+        return None
+
+    
 
 
 class TestNarps(object):
@@ -274,7 +363,8 @@ if __name__ == "__main__":
     narps = Narps('/Users/poldrack/data_unsynced/NARPS')
     narps.get_binarized_thresh_masks()
     narps.get_resampled_images()
-    narps.check_image_values()
-
+    image_metadata_df = narps.check_image_values()
+    narps.create_concat_images()
+    narps.create_rectified_images()
 
 
