@@ -302,7 +302,7 @@ class Narps(object):
                 concat_data = concat_img.get_data()
                 concat_data = (concat_data>thresh).astype('float')
                 concat_mean = numpy.mean(concat_data,3)
-                concat_mean_img = nibabel.Nifti1Image(concat_mean,affine=concat_img.header.get_best_affine())
+                concat_mean_img = nibabel.Nifti1Image(concat_mean,affine=concat_img.affine)
                 concat_mean_img.to_filename(outfile)
 
             else:
@@ -311,14 +311,14 @@ class Narps(object):
     # create rectified images 
     # - for any maps where the signal within the thresholded mask is completely negative, rectify the
     # unthresholded map (multiply by -1)
-    def create_rectified_images(self,overwrite=True):
+    def create_rectified_images(self,overwrite=False):
         for teamID in self.complete_image_sets:
             for hyp in range(1,10):
                 rectify=False
                 # load data from unthresh map within positive voxels of thresholded mask
-                thresh_file = self.teams[teamID].images['thresh']['thresh_mask_orig'][hyp]
-                masker=nilearn.input_data.NiftiMasker(mask_img=thresh_file)
-                unthresh_file = self.teams[teamID].images['unthresh']['orig'][hyp]
+                thresh_file = self.teams[teamID].images['thresh']['resampled'][hyp]
+                masker=nilearn.input_data.NiftiMasker(mask_img=self.dirs.MNI_mask)
+                unthresh_file = self.teams[teamID].images['unthresh']['resampled'][hyp]
                 # need to catch ValueError that occurs is mask is completely empty -
                 # in that case just copy over the data
                 try:
@@ -328,23 +328,97 @@ class Narps(object):
                 except ValueError:
                     pass
 
-                outfile = os.path.join(self.dirs.dirs['rectified'],
+                self.teams[teamID].images['unthresh']['rectified'][hyp] = os.path.join(self.dirs.dirs['rectified'],
                         self.teams[teamID].NV_collection_id,'hypo%d_unthresh.nii.gz'%hyp)
-                if not os.path.exists(os.path.dirname(outfile)):
-                    os.mkdir(os.path.dirname(outfile))
-                if not os.path.exists(outfile) or overwrite:
+                
+                if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['rectified'][hyp])):
+                    os.mkdir(os.path.dirname(self.teams[teamID].images['unthresh']['rectified'][hyp]))
+                if not os.path.exists(self.teams[teamID].images['unthresh']['rectified'][hyp]) or overwrite:
                     if rectify:  # all values are negative
                             print('rectifying',self.teams[teamID].NV_collection_id,hyp)
                             img = nibabel.load(unthresh_file)
                             img_rectified = nilearn.image.math_img('img*-1',img=img)
-                            img_rectified.to_filename(outfile)
+                            img_rectified.to_filename(self.teams[teamID].images['unthresh']['rectified'][hyp])
                             self.rectified_list.append((teamID,hyp))
                     else:
-                        shutil.copy(unthresh_file,outfile)
-
-    # compute stats on rectified images - std deviation and range
+                        shutil.copy(unthresh_file,self.teams[teamID].images['unthresh']['rectified'][hyp])
+        # write list of rectified teams to disk
+        with open(os.path.join(self.dirs.dirs['output'],'rectified_images_list.txt'),'w') as f:
+            for l in self.rectified_list:
+                f.write('%s\t%s\n'%(l[0],l[1]))
+        
+    # compute std and range on rectified images
     def compute_image_stats(self,datatype='rectified'):
-        return None
+        for teamID in self.complete_image_sets:
+            for hyp in range(1,10):
+                unthresh_file = os.path.join(self.dirs.dirs['output'],'unthresh_concat_rectified/hypo%d.nii.gz'%hyp)
+                range_outfile=os.path.join(self.dirs.dirs['output'],'unthresh_range/hypo%d.nii.gz'%hyp)
+                var_outfile=os.path.join(self.dirs.dirs['output'],'unthresh_std/hypo%d.nii.gz'%hyp)
+                if not os.path.exists(range_outfile) or not os.path.exists(var_outfile):
+                    unthresh_img = nibabel.load(unthresh_file)
+                    unthresh_data = unthresh_img.get_data()
+                    concat_data=numpy.nan_to_num(unthresh_data)
+                    datarange = numpy.max(concat_data,axis=3) - numpy.min(concat_data,axis=3)
+                    range_img = nibabel.Nifti1Image(datarange,affine=unthresh_img.affine)
+                    range_img.to_filename(range_outfile)
+                    datastd = numpy.std(concat_data,axis=3)
+                    std_img = nibabel.Nifti1Image(datastd,affine=unthresh_img.affine)
+                    std_img.to_filename(var_outfile)
+
+
+    def convert_to_zscores(self,map_metadata_file=None):
+        if map_metadata_file is None:
+            map_metadata_file = os.path.join(self.dirs.dirs['base'],'narps_neurovault_images_details.csv')
+            assert os.path.exists(map_metadata_file)
+        map_info = pandas.read_csv(map_metadata_file)
+        unthresh_stat_type=map_info[['teamID (the four-characters string identifying your analysis team)',
+                                    'Our unthresholded images on neurovault represent (if other, please specify)']]
+        unthresh_stat_type.columns=['teamID','imgtype']
+        unthresh_stat_type.index = unthresh_stat_type.teamID
+        unthresh_stat_type = unthresh_stat_type.drop_duplicates(subset='teamID',keep='last')
+        unthresh_stat_type.loc[:,'imgtype']= [i.split('values')[0].strip() for i in unthresh_stat_type.imgtype]
+
+        # manual fixes
+        unthresh_stat_type.loc['E3B6','imgtype']='t'
+        # for those that don't fit, set to NA
+        unthresh_stat_type.loc[:,'imgtype']=[i if i in ['t','z'] else 'NA' for i in unthresh_stat_type.imgtype ]
+
+        metadata = get_metadata()
+        
+        n_participants=metadata[['n_participants','NV_collection_string']]
+
+        n_participants.index = metadata.teamID
+
+        unthresh_stat_type = unthresh_stat_type.merge(n_participants,left_index=True,right_index=True)
+            
+        for teamID in self.complete_image_sets:
+            if not teamID in unthresh_stat_type.index:
+                print('no map metadata for',teamID)
+                continue
+            n=unthresh_stat_type.loc[teamID,'n_participants']
+            collection = unthresh_stat_type.loc[teamID,'NV_collection_string']
+            for hyp in hypnums:
+                infile = self.teams[teamID].images['unthresh']['rectified'][hyp]
+                if not os.path.exists(infile):
+                    print('skipping',infile)
+                    continue
+                self.teams[teamID].images['unthresh']['zstat'][hyp] = os.path.join(self.dirs.dirs['zstat'],
+                                        self.teams[teamID].NV_collection_id, 'hypo%d_unthresh.nii.gz'%hyp)
+                if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp])):
+                    os.mkdir(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp]))
+                
+                if unthresh_stat_type.loc[teamID,'imgtype'] == 't':
+                    print("converting %s (hyp %d) to z - %d participants"%(teamID,hyp,n))
+                    TtoZ(infile,self.teams[teamID].images['unthresh']['zstat'][hyp],n-1)
+                elif unthresh_stat_type.loc[teamID,'imgtype'] == 'z':
+                    if not os.path.exists(self.teams[teamID].images['unthresh']['zstat'][hyp]):
+                        print('copying',teamID)
+                        shutil.copy(infile,
+                            os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp]))
+                else:
+                    print('skipping %s - other data type'%teamID)
+
+
 
     
 
@@ -364,7 +438,11 @@ if __name__ == "__main__":
     narps.get_binarized_thresh_masks()
     narps.get_resampled_images()
     image_metadata_df = narps.check_image_values()
-    narps.create_concat_images()
+    narps.create_concat_images(datatype='resampled')
     narps.create_rectified_images()
+    narps.create_concat_images(datatype='rectified',imgtypes = ['unthresh'])
+    #narps.compute_image_stats()
+    narps.convert_to_zscores()
+
 
 
