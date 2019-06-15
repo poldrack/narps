@@ -472,6 +472,8 @@ class TestNarps(object):
 
 if __name__ == "__main__":
     # set up directory structure
+    # team data (from neurovault) should be in <basedir>/maps/orig
+    # some data need to be renamed before using - see rename.sh in individual dirs
     narpsDirs = NarpsDirs("/Users/poldrack/data_unsynced/NARPS")
 
     # setup main class
