@@ -3,7 +3,7 @@
 import numpy,pandas
 import nibabel
 import json
-import os,glob
+import os,glob,datetime
 import nilearn.image
 import nilearn.input_data
 import nilearn.plotting
@@ -14,8 +14,10 @@ import sklearn
 import matplotlib.pyplot as plt
 import seaborn
 import pickle
-from utils import get_masked_data,get_metadata,get_teamID_to_collectionID_dict,TtoZ
 from nipype.interfaces.fsl.model import SmoothEstimate
+
+from utils import get_masked_data,get_metadata,get_teamID_to_collectionID_dict,TtoZ
+
 
 hypotheses= {1:'+gain: equal indiff',
             2:'+gain: equal range',
@@ -28,6 +30,7 @@ hypotheses= {1:'+gain: equal indiff',
             9:'+loss:ER>EI'}
 
 hypnums = [1,2,5,6,7,8,9]
+
 
 # separate class to store base directories, since we need them in multiple places
 class NarpsDirs(object):
@@ -72,7 +75,6 @@ class NarpsTeam(object):
         self.verbose = verbose
         self.image_json = None
         self.jsonfile = None
-        self.NV_collection_id = None
         self.has_all_images = None
         # create image directory structure
         output_dirs = {'thresh':['orig','resampled','thresh_mask_orig'],
@@ -164,12 +166,14 @@ class NarpsTeam(object):
 
 
 class Narps(object):
-    def __init__(self,basedir,metadata_file=None,verbose=False):
+    def __init__(self,basedir,metadata_file=None,verbose=False,overwrite=False):
         self.basedir = basedir
         assert os.path.exists(self.basedir)
         self.dirs = NarpsDirs(basedir)
         self.verbose = verbose
         self.teams = {}
+        self.overwrite=overwrite
+        self.started_at = datetime.datetime.now()
 
         # create the full mask image if it doesn't already exist
         if not os.path.exists(self.dirs.full_mask_img):
@@ -221,7 +225,6 @@ class Narps(object):
                 if not teamID in self.teams:
                     self.teams[teamID]=NarpsTeam(teamID,NV_collection_id,dirs,verbose = self.verbose)
                     self.teams[teamID].jsonfile = i
-                    self.teams[teamID].NV_collection_id = collection_id
                 with open(i) as f:
                     self.teams[teamID].image_json = json.load(f)
 
@@ -240,12 +243,16 @@ class Narps(object):
        
 
     # resample all images into FSL MNI space
-    def get_resampled_images(self,overwrite=False):
+    def get_resampled_images(self,overwrite=None):
+        if overwrite is None:
+            overwrite = self.overwrite
         for teamID in self.complete_image_sets:
             self.teams[teamID].get_resampled_images()
 
     # get # of nonzero and NA voxels for each image
-    def check_image_values(self,overwrite = False):
+    def check_image_values(self,overwrite = None):
+        if overwrite is None:
+            overwrite = self.overwrite
         image_metadata_file = os.path.join(self.dirs.dirs['output'],'image_metadata_df.csv')
         if os.path.exists(image_metadata_file) and not overwrite:
             print('using cached image metdata')
@@ -268,7 +275,9 @@ class Narps(object):
     # create images concatenated across teams
     # ordered by self.complete_image_sets
     def create_concat_images(self,datatype='resampled',imgtypes = ['thresh','unthresh'],
-                                overwrite=False):
+                                overwrite=None):
+        if overwrite is None:
+            overwrite = self.overwrite
         for imgtype in imgtypes:
             self.dirs.dirs['concat_%s'%imgtype]=os.path.join(self.dirs.dirs['output'],'%s_concat_%s'%(imgtype,datatype))
             for hyp in range(1,10):
@@ -288,8 +297,10 @@ class Narps(object):
                         print('%s - hypo %d: using existing file'%(imgtype,hyp))
 
     # create overlap maps for thresholded iamges
-    def create_thresh_overlap_images(self,datatype='resampled',overwrite=True,thresh=10e-6):
+    def create_thresh_overlap_images(self,datatype='resampled',overwrite=None,thresh=10e-6):
         imgtype = 'thresh'
+        if overwrite is None:
+            overwrite = self.overwrite
         self.dirs.dirs['overlap_binarized_thresh']=os.path.join(self.dirs.dirs['output'],'overlap_binarized_thresh')
         for hyp in range(1,10):
             outfile = os.path.join(self.dirs.dirs['overlap_binarized_thresh'],'hypo%d.nii.gz'%hyp)
@@ -313,7 +324,9 @@ class Narps(object):
     # create rectified images 
     # - for any maps where the signal within the thresholded mask is completely negative, rectify the
     # unthresholded map (multiply by -1)
-    def create_rectified_images(self,overwrite=False):
+    def create_rectified_images(self,overwrite=None):
+        if overwrite is None:
+            overwrite = self.overwrite
         for teamID in self.complete_image_sets:
             for hyp in range(1,10):
                 rectify=False
@@ -350,7 +363,9 @@ class Narps(object):
                 f.write('%s\t%s\n'%(l[0],l[1]))
         
     # compute std and range on rectified images
-    def compute_image_stats(self,datatype='rectified',overwrite=False):
+    def compute_image_stats(self,datatype='rectified',overwrite=None):
+        if overwrite is None:
+            overwrite = self.overwrite
         for teamID in self.complete_image_sets:
             for hyp in range(1,10):
                 unthresh_file = os.path.join(self.dirs.dirs['output'],'unthresh_concat_rectified/hypo%d.nii.gz'%hyp)
@@ -368,7 +383,9 @@ class Narps(object):
                     std_img.to_filename(var_outfile)
 
 
-    def convert_to_zscores(self,map_metadata_file=None,overwrite=False):
+    def convert_to_zscores(self,map_metadata_file=None,overwrite=None):
+        if overwrite is None:
+            overwrite = self.overwrite
         if map_metadata_file is None:
             map_metadata_file = os.path.join(self.dirs.dirs['base'],'narps_neurovault_images_details.csv')
             assert os.path.exists(map_metadata_file)
@@ -405,7 +422,7 @@ class Narps(object):
                     print('skipping',infile)
                     continue
                 self.teams[teamID].images['unthresh']['zstat'][hyp] = os.path.join(self.dirs.dirs['zstat'],
-                                        self.teams[teamID].NV_collection_id, 'hypo%d_unthresh.nii.gz'%hyp)
+                                        self.teams[teamID].datadir_label, 'hypo%d_unthresh.nii.gz'%hyp)
                 if os.path.exists(self.teams[teamID].images['unthresh']['zstat'][hyp]) and not overwrite:
                     continue
                 if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp])):
@@ -423,7 +440,9 @@ class Narps(object):
                     print('skipping %s - other data type'%teamID)
 
     # estimate smoothness of Z maps using FSL's smoothness estimation
-    def estimate_smoothness(self,overwrite=False,verbose=True):
+    def estimate_smoothness(self,overwrite=None,verbose=True):
+        if overwrite is None:
+            overwrite = self.overwrite
         output_file = os.path.join(self.dirs.dirs['output'],'smoothness_est.csv') 
         if os.path.exists(output_file) and not overwrite:
             print('using existing smoothness file')
@@ -433,10 +452,10 @@ class Narps(object):
         est = SmoothEstimate()
         smoothness = []
         for teamID in self.complete_image_sets:
-            for hyp in hypnums:
+            for hyp in range(1,10):
                 if not hyp in self.teams[teamID].images['unthresh']['zstat']:
                     # fill missing data with nan
-                    print('no zstat present for',self.teams[teamID].images['unthresh']['zstat'])
+                    print('no zstat present for',teamID,hyp)
                     smoothness.append([teamID,hyp,numpy.nan,
                                                         numpy.nan,
                                                         numpy.nan])
@@ -445,20 +464,60 @@ class Narps(object):
                 if not os.path.exists(infile):
                     print('no image present:',infile)
                     continue
-                for hyp in hypnums:
+                else:
                     print('estimating smoothness for hyp',hyp)
                     est.inputs.zstat_file = infile
                     est.inputs.mask_file = self.dirs.MNI_mask
                     smoothest_output = est.run()
-                    smoothness.append([teamID,hyp,smoothest_output.outputs.dlh,
+                    smoothness.append([teamID,hyp,smoothest_output.outputs.dlh, 
                                                 smoothest_output.outputs.volume,
                                                 smoothest_output.outputs.resels])
 
                         
-        smoothness_df = pandas.DataFrame(smoothness,columns=['teamID','hyp','dlh','volume','resels'])
+        smoothness_df = pandas.DataFrame(smoothness,columns=['teamID','hyp','dhl','volume','resels'])
         smoothness_df.to_csv(output_file)
         return(smoothness_df)               
-                        
+
+    # serialize important info and save to file                 
+    def write_data(self,save_data = True,outfile=None):
+        info={}
+        info['started_at']=self.started_at
+        info['save_time']=datetime.datetime.now()
+        info['dirs'] = self.dirs
+        info['teamlist']=self.complete_image_sets
+        info['teams']={}
+
+        for teamID in self.complete_image_sets:
+            info['teams'][teamID]={'images':self.teams[teamID].images,
+                                'image_json':self.teams[teamID].image_json,
+                                'input_dir':self.teams[teamID].input_dir,
+                                'NV_collection_id':self.teams[teamID].NV_collection_id,
+                                'jsonfile':self.teams[teamID].jsonfile}
+        if save_data:
+            if not outfile:
+                outfile = os.path.join(self.dirs.dirs['output'],'narps_prepare_maps.pkl')
+            with open(outfile,'wb') as f:
+                pickle.dump(info,f)
+        return(info)
+
+    def load_data(self,infile=None):
+        if not infile:
+            infile = os.path.join(self.dirs.dirs['output'],'narps_prepare_maps.pkl')
+        assert os.path.exists(infile)
+
+        with open(infile,'rb') as f:
+            info = pickle.load(f)
+
+        self.dirs = info['dirs'] 
+        self.complete_image_sets = info['teamlist']
+        for teamID in self.complete_image_sets:
+            self.teams[teamID]=NarpsTeam(teamID,info['teams'][teamID]['NV_collection_id'],
+                                        info['dirs'] ,verbose = self.verbose)
+            self.teams[teamID].jsonfile = info['teams'][teamID]['jsonfile']
+
+            self.teams[teamID].images = info['teams'][teamID]['images']
+            self.teams[teamID].image_json = info['teams'][teamID]['image_json']
+            self.teams[teamID].input_dir = info['teams'][teamID]['input_dir']
 
 
 class TestNarps(object):
@@ -470,40 +529,47 @@ class TestNarps(object):
     def test_narps_main_class(self):
         narps = Narps("/Users/poldrack/data_unsynced/NARPS")
 
+    
 if __name__ == "__main__":
-    # set up directory structure
     # team data (from neurovault) should be in <basedir>/maps/orig
     # some data need to be renamed before using - see rename.sh in individual dirs
-    narpsDirs = NarpsDirs("/Users/poldrack/data_unsynced/NARPS")
+
+    run_all = True
 
     # setup main class
-    narps = Narps('/Users/poldrack/data_unsynced/NARPS')
+    narps = Narps('/Users/poldrack/data_unsynced/NARPS',overwrite=False)
 
-    print('getting binarized/thresholded orig maps')
-    narps.get_binarized_thresh_masks()
+    if run_all:
+        print('getting binarized/thresholded orig maps')
+        narps.get_binarized_thresh_masks()
 
-    print("getting resampled images...")
-    narps.get_resampled_images()
+        print("getting resampled images...")
+        narps.get_resampled_images()
 
-    print("checking image values...")
-    image_metadata_df = narps.check_image_values()
+        print("checking image values...")
+        image_metadata_df = narps.check_image_values()
 
-    print("creating concatenated images...")
-    narps.create_concat_images(datatype='resampled')
+        print("creating concatenated images...")
+        narps.create_concat_images(datatype='resampled')
 
-    print("creating rectified images...")
-    narps.create_rectified_images()
+        print("creating rectified images...")
+        narps.create_rectified_images()
 
-    print("creating concatenated rectified images...")
-    narps.create_concat_images(datatype='rectified',imgtypes = ['unthresh'])
+        print("creating concatenated rectified images...")
+        narps.create_concat_images(datatype='rectified',imgtypes = ['unthresh'])
 
-    print("computing image stats...")
-    narps.compute_image_stats()
+        print("computing image stats...")
+        narps.compute_image_stats()
 
-    print('converting to z-scores')
-    narps.convert_to_zscores()
+        print('converting to z-scores')
+        narps.convert_to_zscores()
 
-    print('estimating image smoothness')
-    smoothness_df = narps.estimate_smoothness()
+        print('estimating image smoothness')
+        smoothness_df = narps.estimate_smoothness()
 
+        # save directory structure
+        narps.write_data()
+
+    else:
+        narps.load_data()
 
