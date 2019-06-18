@@ -416,7 +416,7 @@ class Narps(object):
                 continue
             n=unthresh_stat_type.loc[teamID,'n_participants']
             collection = unthresh_stat_type.loc[teamID,'NV_collection_string']
-            for hyp in hypnums:
+            for hyp in range(1,10):
                 infile = self.teams[teamID].images['unthresh']['rectified'][hyp]
                 if not os.path.exists(infile):
                     print('skipping',infile)
