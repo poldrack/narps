@@ -1,16 +1,19 @@
 import os,glob
 import nilearn.input_data
 import numpy,pandas
+import nibabel 
+from scipy.stats import norm, t
 
 
-def get_masked_data(hyp,mask_img,output_dir,imgtype='unthresh',dataset='rectified'):
+
+def get_masked_data(hyp,mask_img,output_dir,imgtype='unthresh',dataset='zstat'):
     if imgtype == 'unthresh':
         hmaps = glob.glob(os.path.join(output_dir,'%s/*/hypo%d_unthresh.nii.gz'%(dataset,hyp)))
     elif imgtype == 'thresh':
         hmaps = glob.glob(os.path.join(output_dir,'%s/*/hypo%d_thresh.nii.gz'%(dataset,hyp)))
     else:
         raise Exception('bad imgtype argument')
-       
+    hmaps.sort()
     #combined_data = nilearn.image.concat_imgs(hmaps)
     masker = nilearn.input_data.NiftiMasker(mask_img=mask_img)
     maskdata=masker.fit_transform(hmaps) #combined_data)   
@@ -28,7 +31,10 @@ def get_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/analysis_p
     # fix issues with metadata
     metadata['used_fmriprep_data'] = [i.strip().split(',')[0] for i in metadata['used_fmriprep_data']]
     metadata['used_fmriprep_data'] = metadata['used_fmriprep_data'].replace({'Yas':'Yes'})
-
+    # manual fixes to textual responses
+    metadata.loc['E6R3','n_participants']=108
+    metadata.loc['J7F9','n_participants']=107
+    metadata['n_participants']  = [int(i.split('\n')[0]) if isinstance(i, str) else i for i in metadata['n_participants']]
     return(metadata)
 
 def get_decisions(decisions_file = '/Users/poldrack/data_unsynced/NARPS/narps_results.xlsx',
@@ -92,3 +98,44 @@ def matrix_jaccard(mtx):
     jacmtx = jacmtx + jacmtx.T
     jacmtx[numpy.diag_indices_from(jacmtx)]=1
     return(jacmtx)
+
+
+# adapted from https://github.com/vsoch/TtoZ/blob/master/TtoZ/scripts.py
+# takes a nibabel file object and converts from z to t using Hughett's transform
+
+def TtoZ(tmapfile,outfile,df):
+  
+  mr = nibabel.load(tmapfile)
+  data = mr.get_data()
+
+  # Select just the nonzero voxels
+  nonzero = data[data!=0]
+
+  # We will store our results here
+  Z = numpy.zeros(len(nonzero))
+
+  # Select values less than or == 0, and greater than zero
+  c  = numpy.zeros(len(nonzero))
+  k1 = (nonzero <= c)
+  k2 = (nonzero > c)
+
+  # Subset the data into two sets
+  t1 = nonzero[k1]
+  t2 = nonzero[k2]
+
+  # Calculate p values for <=0
+  p_values_t1 = t.cdf(t1, df = df)
+  z_values_t1 = norm.ppf(p_values_t1)
+
+  # Calculate p values for > 0
+  p_values_t2 = t.cdf(-t2, df = df)
+  z_values_t2 = -norm.ppf(p_values_t2)
+  Z[k1] = z_values_t1
+  Z[k2] = z_values_t2
+
+  # Write new image to file
+  empty_nii = numpy.zeros(mr.shape)
+  empty_nii[mr.get_data()!=0] = Z
+  Z_nii_fixed = nibabel.nifti1.Nifti1Image(empty_nii,affine=mr.get_affine(),header=mr.get_header())
+  nibabel.save(Z_nii_fixed,outfile)
+  
