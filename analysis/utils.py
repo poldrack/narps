@@ -3,7 +3,7 @@ import nilearn.input_data
 import numpy,pandas
 import nibabel 
 from scipy.stats import norm, t
-
+import scipy.stats
 
 
 def get_masked_data(hyp,mask_img,output_dir,imgtype='unthresh',dataset='zstat'):
@@ -139,3 +139,41 @@ def TtoZ(tmapfile,outfile,df):
   Z_nii_fixed = nibabel.nifti1.Nifti1Image(empty_nii,affine=mr.get_affine(),header=mr.get_header())
   nibabel.save(Z_nii_fixed,outfile)
   
+# perform 1 sample t-teat for correlated observations, based on emails from JM and TN
+def t_corr(y,Q=None):
+    """
+    perform a one-sample t-test on correlated data
+    y = data (n observations X n vars)
+    Q = "known" correlation across observations (use empirical correlation based on maps)
+    """
+    
+    # equations in comments from Tom's email
+    
+    npts = y.shape[0]
+    X = numpy.ones((npts,1))
+
+    if len(y.shape)==1:
+        y = y[:,numpy.newaxis]
+    assert y.shape[1]==1
+    
+    if Q is None:
+        #print('no Q specified, using identity (uncorrelated)')
+        Q = numpy.eye(npts)
+
+    y_hat = numpy.mean(y) # bar{Y_i} = X’ Y_i/N
+    
+    R = numpy.eye(npts) - X.dot(numpy.linalg.inv(X.T.dot(X))).dot(X.T)
+
+    s_hat_2 = y.T.dot(R).dot(y)/(numpy.trace(R.dot(Q)))
+    
+    var_y_hat = s_hat_2 * X.T.dot(Q).dot(X)/(npts**2) #sigma^2_i   X’ Q X / N^2
+    
+    T = y_hat/numpy.sqrt(var_y_hat) # T_i = bar(Y_i) / sqrt(Var(bar{Y_i}))
+    
+    # R = I{n} - X(X'X)^{-1}X'
+
+    # degrees of freedom = v = tr(RQ)^2/tr(RQRQ)
+    df = (numpy.trace(R.dot(Q))**2)/numpy.trace(R.dot(Q).dot(R).dot(Q))
+    p = 1 - scipy.stats.t.cdf(T,df=df)
+    return(T,df,p)
+
