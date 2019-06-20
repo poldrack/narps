@@ -23,9 +23,10 @@ def get_masked_data(hyp,mask_img,output_dir,imgtype='unthresh',dataset='zstat'):
     labels = [os.path.basename(os.path.dirname(i)).split('_')[1] for i in hmaps]
     return(maskdata,labels)
 
-def get_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/analysis_pipelines_SW.xlsx',
+def get_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/metadata/analysis_pipelines_SW.xlsx',
                         index_var = 'teamID'):
     metadata = pandas.read_excel(metadata_file,header=1)
+    metadata.teamID = [i.strip() for i in metadata.teamID]
     metadata.shape
     metadata.index = metadata[index_var]
     # fix issues with metadata
@@ -37,7 +38,10 @@ def get_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/analysis_p
     metadata['n_participants']  = [int(i.split('\n')[0]) if isinstance(i, str) else i for i in metadata['n_participants']]
     return(metadata)
 
-def get_decisions(decisions_file = '/Users/poldrack/data_unsynced/NARPS/narps_results.xlsx',
+def get_tidy_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/metadata/decision_data.csv'):
+    return(pandas.read_csv(metadata_file))
+
+def get_decisions(decisions_file = '/Users/poldrack/data_unsynced/NARPS/metadata/narps_results.xlsx',
                                 tidy=False):
     colnames=[]
     for hyp in range(1,10):
@@ -154,19 +158,21 @@ def t_corr(y,Q=None):
 
     if len(y.shape)==1:
         y = y[:,numpy.newaxis]
-    assert y.shape[1]==1
-    
+    assert len(y.shape)<3
+
     if Q is None:
         #print('no Q specified, using identity (uncorrelated)')
         Q = numpy.eye(npts)
 
-    y_hat = numpy.mean(y) # bar{Y_i} = X’ Y_i/N
+    y_hat = numpy.mean(y,axis=0) # bar{Y_i} = X’ Y_i/N
     
     R = numpy.eye(npts) - X.dot(numpy.linalg.inv(X.T.dot(X))).dot(X.T)
 
-    s_hat_2 = y.T.dot(R).dot(y)/(numpy.trace(R.dot(Q)))
+    # modified per Tom Nichols email
+    s_hat_2 = numpy.sum(y**2,axis=0)/(numpy.trace(R.dot(Q))) 
     
-    var_y_hat = s_hat_2 * X.T.dot(Q).dot(X)/(npts**2) #sigma^2_i   X’ Q X / N^2
+    # modified per Tom Nichols email
+    var_y_hat = X.T.dot(Q).dot(X)/(npts**2) #sigma^2_i   X’ Q X / N^2
     
     T = y_hat/numpy.sqrt(var_y_hat) # T_i = bar(Y_i) / sqrt(Var(bar{Y_i}))
     
