@@ -41,6 +41,8 @@ class NarpsDirs(object):
         assert os.path.exists(basedir)
 
         self.dirs['output'] = os.path.join(self.dirs['base'],'maps')
+        self.dirs['metadata'] = os.path.join(self.dirs['base'],'metadata')
+
         assert os.path.exists(self.dirs['output'])
  
         output_dirs = ['orig','resampled','rectified','zstat','thresh_mask_orig','templates']
@@ -53,7 +55,7 @@ class NarpsDirs(object):
                 if not os.path.exists(self.dirs[o]):
                     os.mkdir(self.dirs[o])
 
-       
+        
         self.MNI_mask = os.path.join(self.dirs['templates'],'MNI152_T1_2mm_brain_mask.nii.gz')
         assert os.path.exists(self.MNI_mask)
 
@@ -443,7 +445,7 @@ class Narps(object):
     def estimate_smoothness(self,overwrite=None,verbose=True):
         if overwrite is None:
             overwrite = self.overwrite
-        output_file = os.path.join(self.dirs.dirs['output'],'smoothness_est.csv') 
+        output_file = os.path.join(self.dirs.dirs['metadata'],'smoothness_est.csv') 
         if os.path.exists(output_file) and not overwrite:
             print('using existing smoothness file')
             smoothness_df = pandas.read_csv(output_file)
