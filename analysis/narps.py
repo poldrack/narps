@@ -255,7 +255,7 @@ class Narps(object):
     def check_image_values(self,overwrite = None):
         if overwrite is None:
             overwrite = self.overwrite
-        image_metadata_file = os.path.join(self.dirs.dirs['output'],'image_metadata_df.csv')
+        image_metadata_file = os.path.join(self.dirs.dirs['metadata'],'image_metadata_df.csv')
         if os.path.exists(image_metadata_file) and not overwrite:
             print('using cached image metdata')
             image_metadata_df = pandas.read_csv(image_metadata_file)
