@@ -348,7 +348,7 @@ class Narps(object):
                     pass
 
                 self.teams[teamID].images['unthresh']['rectified'][hyp] = os.path.join(self.dirs.dirs['rectified'],
-                        self.teams[teamID].NV_collection_id,'hypo%d_unthresh.nii.gz'%hyp)
+                        self.teams[teamID].datadir_label,'hypo%d_unthresh.nii.gz'%hyp)
                 
                 if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['rectified'][hyp])):
                     os.mkdir(os.path.dirname(self.teams[teamID].images['unthresh']['rectified'][hyp]))
@@ -421,7 +421,7 @@ class Narps(object):
                 if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp])):
                     os.mkdir(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp]))
                 
-                if unthresh_stat_type.loc[teamID,'unthresh_type'] == 't':
+                if unthresh_stat_type.loc[teamID,'unthresh_type'].lower() == 't':
                     print("converting %s (hyp %d) to z - %d participants"%(teamID,hyp,n))
                     TtoZ(infile,self.teams[teamID].images['unthresh']['zstat'][hyp],n-1)
                 elif unthresh_stat_type.loc[teamID,'unthresh_type'] == 'z':
@@ -433,12 +433,13 @@ class Narps(object):
                     print('skipping %s - other data type'%teamID)
 
     # estimate smoothness of Z maps using FSL's smoothness estimation
-    def estimate_smoothness(self,overwrite=None,verbose=True,imgtype='zstat'):
+    def estimate_smoothness(self,overwrite=None,imgtype='zstat'):
         if overwrite is None:
             overwrite = self.overwrite
         output_file = os.path.join(self.dirs.dirs['metadata'],'smoothness_est.csv') 
         if os.path.exists(output_file) and not overwrite:
-            print('using existing smoothness file')
+            if self.verbose:
+                print('using existing smoothness file')
             smoothness_df = pandas.read_csv(output_file)
             return(smoothness_df)
         
