@@ -41,6 +41,36 @@ def get_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/metadata/a
 def get_tidy_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/metadata/decision_data.csv'):
     return(pandas.read_csv(metadata_file))
 
+def get_map_metadata(map_metadata_file = '/Users/poldrack/data_unsynced/NARPS/metadata/narps_neurovault_images_details.csv'):
+    """
+    Timestamp	
+    teamID (the four-characters string identifying your analysis team)	
+    What software package did you use to compute the (unthresholded) statistical maps for your analysis ?	
+    Our unthresholded images on neurovault represent (if other, please specify)	
+    Our thresholded images on neurovault are with (if other, please specify)	
+    What brain template you registered your images to? Please provide the exact file name for the image used as a template (e.g. in FSL, MNI152lin_T1_1mm.nii.gz)	
+    For hypothesis 5 (negative parametric effect of loss in the vmPFC for the equal indifference group), does the direction of the values in your images match the direction of the contrast?	
+    For hypothesis 6 (negative parametric effect of loss in the vmPFC for the equal range group), does the direction of the values in your images match the direction of the contrast?	
+    For hypothesis 9 (greater positive response to losses in amygdala for equal range condition vs. equal indifference condition), does the direction of the values in your images match the direction of the contrast?	
+    Any comments / further explanations?
+    """
+    map_info = pandas.read_csv(map_metadata_file,names=['timestamp','teamID','software','unthresh_type',
+                                                        'thresh_type','MNItemplate','hyp5_direction',
+                                                        'hyp6_direction','hyp9_direction','comments'],
+                                                skiprows=1)
+    # manual fixes
+    map_info.teamID = [i.upper() for i in map_info.teamID]
+    del map_info['timestamp']
+    map_info.index = map_info.teamID
+    map_info = map_info.drop_duplicates(subset='teamID',keep='last')
+    map_info.loc[:,'unthresh_type']= [i.split('values')[0].strip() for i in map_info.unthresh_type]
+
+    map_info.loc['E3B6','unthresh_type']='t'
+    # for those that don't fit, set to NA
+    map_info.loc[:,'unthresh_type']=[i if i in ['t','z'] else 'NA' for i in map_info.unthresh_type ]
+
+    return(map_info)
+
 def get_decisions(decisions_file = '/Users/poldrack/data_unsynced/NARPS/metadata/narps_results.xlsx',
                                 tidy=False):
     colnames=[]
