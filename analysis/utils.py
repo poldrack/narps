@@ -66,6 +66,7 @@ def get_map_metadata(map_metadata_file = '/Users/poldrack/data_unsynced/NARPS/me
     map_info.loc[:,'unthresh_type']= [i.split('values')[0].strip() for i in map_info.unthresh_type]
 
     map_info.loc['E3B6','unthresh_type']='t'
+    map_info.loc['5G9K','unthresh_type']='t'
     # for those that don't fit, set to NA
     map_info.loc[:,'unthresh_type']=[i if i in ['t','z'] else 'NA' for i in map_info.unthresh_type ]
 
