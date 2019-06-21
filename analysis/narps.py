@@ -16,7 +16,7 @@ import seaborn
 import pickle
 from nipype.interfaces.fsl.model import SmoothEstimate
 
-from utils import get_masked_data,get_metadata,get_teamID_to_collectionID_dict,TtoZ
+from utils import get_masked_data,get_metadata,get_teamID_to_collectionID_dict,TtoZ,get_map_metadata
 
 
 hypotheses= {1:'+gain: equal indiff',
@@ -78,6 +78,8 @@ class NarpsTeam(object):
         self.image_json = None
         self.jsonfile = None
         self.has_all_images = None
+        self.logs = {}
+
         # create image directory structure
         output_dirs = {'thresh':['orig','resampled','thresh_mask_orig'],
                         'unthresh':['orig','resampled','rectified','zstat']}
@@ -194,7 +196,7 @@ class Narps(object):
 
         # set up metadata
         if metadata_file is None:
-            self.metadata_file = os.path.join(self.dirs.dirs['base'],'analysis_pipelines_SW.xlsx')
+            self.metadata_file = os.path.join(self.dirs.dirs['metadata'],'analysis_pipelines_SW.xlsx')
         else:
             self.metadata_file = metadata_file
 
@@ -360,9 +362,10 @@ class Narps(object):
                     else:
                         shutil.copy(unthresh_file,self.teams[teamID].images['unthresh']['rectified'][hyp])
         # write list of rectified teams to disk
-        with open(os.path.join(self.dirs.dirs['output'],'rectified_images_list.txt'),'w') as f:
-            for l in self.rectified_list:
-                f.write('%s\t%s\n'%(l[0],l[1]))
+        if len(self.rectified_list)>0:
+            with open(os.path.join(self.dirs.dirs['metadata'],'rectified_images_list.txt'),'w') as f:
+                for l in self.rectified_list:
+                    f.write('%s\t%s\n'%(l[0],l[1]))
         
     # compute std and range on rectified images
     def compute_image_stats(self,datatype='rectified',overwrite=None):
@@ -389,21 +392,9 @@ class Narps(object):
         if overwrite is None:
             overwrite = self.overwrite
         if map_metadata_file is None:
-            map_metadata_file = os.path.join(self.dirs.dirs['base'],'narps_neurovault_images_details.csv')
-            assert os.path.exists(map_metadata_file)
-        map_info = pandas.read_csv(map_metadata_file)
-        unthresh_stat_type=map_info[['teamID (the four-characters string identifying your analysis team)',
-                                    'Our unthresholded images on neurovault represent (if other, please specify)']]
-        unthresh_stat_type.columns=['teamID','imgtype']
-        unthresh_stat_type.index = unthresh_stat_type.teamID
-        unthresh_stat_type = unthresh_stat_type.drop_duplicates(subset='teamID',keep='last')
-        unthresh_stat_type.loc[:,'imgtype']= [i.split('values')[0].strip() for i in unthresh_stat_type.imgtype]
-
-        # manual fixes
-        unthresh_stat_type.loc['E3B6','imgtype']='t'
-        # for those that don't fit, set to NA
-        unthresh_stat_type.loc[:,'imgtype']=[i if i in ['t','z'] else 'NA' for i in unthresh_stat_type.imgtype ]
-
+            map_metadata_file = os.path.join(self.dirs.dirs['metadata'],
+                    '/Users/poldrack/data_unsynced/NARPS/metadata/narps_neurovault_images_details.csv')
+        unthresh_stat_type = get_map_metadata(map_metadata_file)
         metadata = get_metadata()
         
         n_participants=metadata[['n_participants','NV_collection_string']]
@@ -430,10 +421,10 @@ class Narps(object):
                 if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp])):
                     os.mkdir(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp]))
                 
-                if unthresh_stat_type.loc[teamID,'imgtype'] == 't':
+                if unthresh_stat_type.loc[teamID,'unthresh_type'] == 't':
                     print("converting %s (hyp %d) to z - %d participants"%(teamID,hyp,n))
                     TtoZ(infile,self.teams[teamID].images['unthresh']['zstat'][hyp],n-1)
-                elif unthresh_stat_type.loc[teamID,'imgtype'] == 'z':
+                elif unthresh_stat_type.loc[teamID,'unthresh_type'] == 'z':
                     if not os.path.exists(self.teams[teamID].images['unthresh']['zstat'][hyp]):
                         print('copying',teamID)
                         shutil.copy(infile,
@@ -442,7 +433,7 @@ class Narps(object):
                     print('skipping %s - other data type'%teamID)
 
     # estimate smoothness of Z maps using FSL's smoothness estimation
-    def estimate_smoothness(self,overwrite=None,verbose=True):
+    def estimate_smoothness(self,overwrite=None,verbose=True,imgtype='zstat'):
         if overwrite is None:
             overwrite = self.overwrite
         output_file = os.path.join(self.dirs.dirs['metadata'],'smoothness_est.csv') 
@@ -455,14 +446,14 @@ class Narps(object):
         smoothness = []
         for teamID in self.complete_image_sets:
             for hyp in range(1,10):
-                if not hyp in self.teams[teamID].images['unthresh']['zstat']:
+                if not hyp in self.teams[teamID].images['unthresh'][imgtype]:
                     # fill missing data with nan
                     print('no zstat present for',teamID,hyp)
                     smoothness.append([teamID,hyp,numpy.nan,
                                                         numpy.nan,
                                                         numpy.nan])
                     continue
-                infile = self.teams[teamID].images['unthresh']['zstat'][hyp]
+                infile = self.teams[teamID].images['unthresh'][imgtype][hyp]
                 if not os.path.exists(infile):
                     print('no image present:',infile)
                     continue
@@ -470,10 +461,12 @@ class Narps(object):
                     print('estimating smoothness for hyp',hyp)
                     est.inputs.zstat_file = infile
                     est.inputs.mask_file = self.dirs.MNI_mask
+                    est.terminal_output = 'file_split'
                     smoothest_output = est.run()
                     smoothness.append([teamID,hyp,smoothest_output.outputs.dlh, 
                                                 smoothest_output.outputs.volume,
                                                 smoothest_output.outputs.resels])
+                    self.teams[teamID].logs['smoothest']=est.runtime.stdout
 
                         
         smoothness_df = pandas.DataFrame(smoothness,columns=['teamID','hyp','dhl','volume','resels'])
