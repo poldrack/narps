@@ -466,7 +466,7 @@ class Narps(object):
                     smoothness.append([teamID,hyp,smoothest_output.outputs.dlh, 
                                                 smoothest_output.outputs.volume,
                                                 smoothest_output.outputs.resels])
-                    self.teams[teamID].logs['smoothest']=est.runtime.stdout
+                    self.teams[teamID].logs['smoothest']=smoothest_output.runtime.stdout
 
                         
         smoothness_df = pandas.DataFrame(smoothness,columns=['teamID','hyp','dhl','volume','resels'])
