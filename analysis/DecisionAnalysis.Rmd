@@ -1,0 +1,178 @@
+---
+title: "Decision analysis"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lmerTest)
+library(lme4)
+#library(brms) # for ordinal models
+#library(ordinal)
+```
+
+```{r}
+# load and clean up data
+df = read_csv('/Users/poldrack/data_unsynced/NARPS/decision_data.csv')
+
+df = df %>% 
+  mutate(package = recode_factor(TSc_SW,
+                      SPM12 = "SPM",
+                      SPM8 = "SPM",
+                      SPM5 = "SPM",
+                      nistats = "Other",
+                      PALM = "Other",
+                      randomise = "Other"),
+         testing = recode_factor(TSc_testing,
+                      Randomise = "Nonparam",
+                      SnPM = "Nonparam",
+                      TFCE = "Nonparam",
+                      ARI = "Other",
+                      BSR = "Other",
+                      ETAC = "Other",
+                      PALM = "Other",
+                      SnPM = "Other"),
+         Confidence = as.ordered(df$Confidence)) %>%
+  filter(TSc_SW != 'SVC') %>% filter(TSc_testing !='SVC')
+
+
+df$testing[is.na(df$testing)] <- "Other"
+
+```
+
+Logistic mixed model: decision vs. software package
+
+
+```{r}
+decisionSummary_package <- df %>%
+  drop_na(package) %>%
+  group_by(package,varnum) %>%
+  summarize(meanAccept = mean(Decision),
+            numTeams = n()) 
+
+ggplot(decisionSummary_package,aes(varnum,meanAccept,color=package)) +
+  geom_line(aes(size=numTeams)) 
+
+```
+
+```{r}
+df_filtPackage = df %>% filter(package != "Other")
+m_hyp_package <- glmer(Decision ~ package*varnum + (1 | teamID), 
+                       data = df_filtPackage, 
+                       family = binomial, 
+                       control = glmerControl(optimizer = "bobyqa"),
+    nAGQ = 10)
+
+m_hyp_package_noint <- glmer(Decision ~ package + varnum + (1 | teamID), 
+                       data = df_filtPackage, 
+                       family = binomial, 
+                       control = glmerControl(optimizer = "bobyqa"),
+    nAGQ = 10)
+
+summary(m_hyp_package)
+anova(m_hyp_package,m_hyp_package_noint)
+
+```
+
+
+Effect of fMRIprep
+
+```{r}
+decisionSummary_fmriprep <- df %>%
+  drop_na(used_fmriprep_data) %>%
+  group_by(used_fmriprep_data,varnum) %>%
+  summarize(meanAccept = mean(Decision),
+            numTeams = n()) 
+
+ggplot(decisionSummary_fmriprep,aes(varnum,meanAccept,color=used_fmriprep_data)) +
+  geom_line() 
+
+```
+
+```{r}
+
+m_fmriprep <- glmer(Decision ~ used_fmriprep_data*varnum + (1 | teamID), 
+           data = df, 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+    nAGQ = 10)
+
+
+
+summary(m_fmriprep)
+```
+
+Effects of testing approach
+
+
+```{r}
+decisionSummary_testing <- df %>%
+  drop_na(testing) %>%
+  group_by(testing,varnum) %>%
+  summarize(meanAccept = mean(Decision),
+            numTeams = n()) 
+
+ggplot(decisionSummary_testing,aes(varnum,meanAccept,color=testing)) +
+  geom_line(aes(size=numTeams)) 
+
+```
+
+
+```{r}
+m_testing <- glmer(Decision ~ testing*varnum + (1 | teamID), 
+           data = df, 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+    nAGQ = 10)
+
+m_testing_baseline = glmer(Decision ~ testing + varnum + (1 | teamID), 
+           data = df, 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+    nAGQ = 10)
+
+summary(m_testing)
+anova(m_testing,m_testing_baseline)
+
+```
+
+Effects of smoothing - using estimated smoothness
+
+```{r}
+m_smoothing <- glmer(Decision ~ fwhm*varnum + (1 | teamID), 
+           data = df, 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+    nAGQ = 10)
+
+
+summary(m_smoothing)
+
+
+
+```
+
+```{r}
+library(emmeans)
+
+# compute the differences between each of the means
+leastsquare <- emmeans(m_smoothing, 
+             
+                                pairwise ~ diet,
+                      adjust="tukey")
+ 
+# display the results by grouping using letters
+
+CLD(leastsquare$emmeans, 
+    alpha=.05,  
+    Letters=letters)
+
+```
+
+Check effect of smoothing for hyp 1 and 5
+
+```{r}
+m_smoothing_hyp1 <- glmer(Decision ~ fwhm  + (1 | teamID), 
+           data = df %>% filter(varnum==5), 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+    nAGQ = 10)
+
+summary(m_smoothing_hyp1)
+```
+
