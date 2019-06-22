@@ -3,19 +3,23 @@ title: "Decision analysis"
 output: html_notebook
 ---
 
-```{r}
+Analyze decisions using mixed effect logistic regression.
+
+```{r echo=FALSE,message=FALSE}
 library(tidyverse)
 library(lmerTest)
 library(lme4)
-#library(brms) # for ordinal models
-#library(ordinal)
 ```
+
+### Data setup 
+
+Load the data and clean up some variables.  Requires metadata that is created by PrepareMetadata.ipynb
 
 ```{r}
 # load and clean up data
-df = read_csv('/Users/poldrack/data_unsynced/NARPS/decision_data.csv')
+narps_df = read_csv('/Users/poldrack/data_unsynced/NARPS/metadata/all_metadata.csv')
 
-df = df %>% 
+narps_df <- narps_df %>% 
   mutate(package = recode_factor(TSc_SW,
                       SPM12 = "SPM",
                       SPM8 = "SPM",
@@ -32,31 +36,34 @@ df = df %>%
                       ETAC = "Other",
                       PALM = "Other",
                       SnPM = "Other"),
-         Confidence = as.ordered(df$Confidence)) %>%
-  filter(TSc_SW != 'SVC') %>% filter(TSc_testing !='SVC')
+         Confidence = as.ordered(narps_df$Confidence)) 
 
 
-df$testing[is.na(df$testing)] <- "Other"
+narps_df$testing[is.na(narps_df$testing)] <- "Other"
 
 ```
 
-Logistic mixed model: decision vs. software package
+### Models
 
+Run a set of models to assess the relationship between various factors and decision outcomes.  In general we are primarily interested in the main effect of the factor (i.e. does it affect overall hypothesis decision rate) and interation of factor with varnum (i.e. does it differently affect the hypotheses).  We model this using a mixed effects logistic regression model with a random intercept for each team.
+
+#### Logistic mixed model: decision vs. software package
 
 ```{r}
-decisionSummary_package <- df %>%
+decisionSummary_package <- narps_df %>%
   drop_na(package) %>%
   group_by(package,varnum) %>%
   summarize(meanAccept = mean(Decision),
             numTeams = n()) 
 
 ggplot(decisionSummary_package,aes(varnum,meanAccept,color=package)) +
-  geom_line(aes(size=numTeams)) 
+  geom_line(aes(size=numTeams)) +
+  scale_x_continuous(name='Hypotheses',breaks=seq(1,9,1))
 
 ```
 
 ```{r}
-df_filtPackage = df %>% filter(package != "Other")
+df_filtPackage = narps_df %>% filter(package != "Other")
 m_hyp_package <- glmer(Decision ~ package*varnum + (1 | teamID), 
                        data = df_filtPackage, 
                        family = binomial, 
@@ -74,57 +81,55 @@ anova(m_hyp_package,m_hyp_package_noint)
 
 ```
 
-
-Effect of fMRIprep
+#### Logistic mixed model: decision vs. use of fMRIprep
 
 ```{r}
-decisionSummary_fmriprep <- df %>%
+decisionSummary_fmriprep <- narps_df %>%
   drop_na(used_fmriprep_data) %>%
   group_by(used_fmriprep_data,varnum) %>%
   summarize(meanAccept = mean(Decision),
             numTeams = n()) 
 
 ggplot(decisionSummary_fmriprep,aes(varnum,meanAccept,color=used_fmriprep_data)) +
-  geom_line() 
+  geom_line() +
+  scale_x_continuous(name='Hypotheses',breaks=seq(1,9,1))
 
 ```
 
 ```{r}
-
 m_fmriprep <- glmer(Decision ~ used_fmriprep_data*varnum + (1 | teamID), 
-           data = df, 
+           data = narps_df, 
            family = binomial, control = glmerControl(optimizer = "bobyqa"),
     nAGQ = 10)
-
-
 
 summary(m_fmriprep)
 ```
 
-Effects of testing approach
+#### Logistic mixed model: decision vs. multiple testing approach
 
 
 ```{r}
-decisionSummary_testing <- df %>%
+decisionSummary_testing <- narps_df %>%
   drop_na(testing) %>%
   group_by(testing,varnum) %>%
   summarize(meanAccept = mean(Decision),
             numTeams = n()) 
 
 ggplot(decisionSummary_testing,aes(varnum,meanAccept,color=testing)) +
-  geom_line(aes(size=numTeams)) 
+  geom_line(aes(size=numTeams)) +
+  scale_x_continuous(name='Hypotheses',breaks=seq(1,9,1))
 
 ```
 
 
 ```{r}
 m_testing <- glmer(Decision ~ testing*varnum + (1 | teamID), 
-           data = df, 
+           data = narps_df, 
            family = binomial, control = glmerControl(optimizer = "bobyqa"),
     nAGQ = 10)
 
 m_testing_baseline = glmer(Decision ~ testing + varnum + (1 | teamID), 
-           data = df, 
+           data = narps_df, 
            family = binomial, control = glmerControl(optimizer = "bobyqa"),
     nAGQ = 10)
 
@@ -133,11 +138,29 @@ anova(m_testing,m_testing_baseline)
 
 ```
 
-Effects of smoothing - using estimated smoothness
+#### Logistic mixed model: decision vs. Effects of smoothing
+
+First we examine the effect of actual image smoothness, estimated using FSL.
+
+```{r}
+decisionSummary_smoothing <- narps_df %>%
+  drop_na(fwhm) %>%
+  mutate(Decision_factor = as.factor(Decision)) %>%
+  group_by(Decision_factor,varnum) %>%
+  summarize(meanFWHM = mean(fwhm),
+            numTeams = n()) 
+
+ggplot(decisionSummary_smoothing,aes(varnum,meanFWHM,color=Decision_factor)) +
+  geom_line() +
+  scale_x_continuous(name='Hypotheses',breaks=seq(1,9,1))
+  
+
+```
+
 
 ```{r}
 m_smoothing <- glmer(Decision ~ fwhm*varnum + (1 | teamID), 
-           data = df, 
+           data = narps_df, 
            family = binomial, control = glmerControl(optimizer = "bobyqa"),
     nAGQ = 10)
 
@@ -148,31 +171,36 @@ summary(m_smoothing)
 
 ```
 
+
+Next we examine the effect of the applied smoothing kernel.
+
 ```{r}
-library(emmeans)
+decisionSummary_smoothingkernel <- narps_df %>%
+  drop_na(fwhm) %>%
+  mutate(Decision_factor = as.factor(Decision)) %>%
+  group_by(Decision_factor,varnum) %>%
+  summarize(meanAppliedFWHM = mean(TSc_smoothing),
+            numTeams = n()) 
 
-# compute the differences between each of the means
-leastsquare <- emmeans(m_smoothing, 
-             
-                                pairwise ~ diet,
-                      adjust="tukey")
- 
-# display the results by grouping using letters
-
-CLD(leastsquare$emmeans, 
-    alpha=.05,  
-    Letters=letters)
+ggplot(decisionSummary_smoothingkernel,aes(varnum,meanAppliedFWHM,color=Decision_factor)) +
+  geom_line() +
+  scale_x_continuous(name='Hypotheses',breaks=seq(1,9,1))
+  
 
 ```
 
-Check effect of smoothing for hyp 1 and 5
 
 ```{r}
-m_smoothing_hyp1 <- glmer(Decision ~ fwhm  + (1 | teamID), 
-           data = df %>% filter(varnum==5), 
+m_smoothing <- glmer(Decision ~ TSc_smoothing*varnum + (1 | teamID), 
+           data = narps_df, 
            family = binomial, control = glmerControl(optimizer = "bobyqa"),
     nAGQ = 10)
 
-summary(m_smoothing_hyp1)
+
+summary(m_smoothing)
+
+
+
 ```
+
 
