@@ -327,35 +327,37 @@ class Narps(object):
                     print('%s - hypo %d: using existing file'%(imgtype,hyp))
 
     # create rectified images 
-    # - for any maps where the signal within the thresholded mask is completely negative, rectify the
+    # use metadata provided by teams
+    # - originally used data-driven method: 
+    # for any maps where the signal within the thresholded mask is completely negative, rectify the
     # unthresholded map (multiply by -1)
-    def create_rectified_images(self,overwrite=None):
+    def create_rectified_images(self,map_metadata_file = None,overwrite=None):
+        if map_metadata_file is None:
+            map_metadata_file = os.path.join(self.dirs.dirs['metadata'], 'narps_neurovault_images_details.csv')
+        map_metadata = get_map_metadata(map_metadata_file)
         if overwrite is None:
             overwrite = self.overwrite
         for teamID in self.complete_image_sets:
-            for hyp in range(1,10):
-                rectify=False
+            for hyp in [5,6,9]: # these are the hypotheses with negative contrasts
+                mdstring = map_metadata.query('teamID == "%s"'%teamID)['hyp%d_direction'%hyp].iloc[0]
+                rectify = mdstring.split()[0] == 'Negative'
                 # load data from unthresh map within positive voxels of thresholded mask
                 thresh_file = self.teams[teamID].images['thresh']['resampled'][hyp]
                 masker=nilearn.input_data.NiftiMasker(mask_img=self.dirs.MNI_mask)
                 unthresh_file = self.teams[teamID].images['unthresh']['resampled'][hyp]
                 # need to catch ValueError that occurs is mask is completely empty -
                 # in that case just copy over the data
-                try:
-                    masked_data = masker.fit_transform(unthresh_file)
-                    if numpy.max(masked_data)<=0:
-                        rectify=True
-                except ValueError:
-                    pass
-
+                
                 self.teams[teamID].images['unthresh']['rectified'][hyp] = os.path.join(self.dirs.dirs['rectified'],
                         self.teams[teamID].datadir_label,'hypo%d_unthresh.nii.gz'%hyp)
                 
                 if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['rectified'][hyp])):
                     os.mkdir(os.path.dirname(self.teams[teamID].images['unthresh']['rectified'][hyp]))
                 if not os.path.exists(self.teams[teamID].images['unthresh']['rectified'][hyp]) or overwrite:
-                    if rectify:  # all values are negative
-                            print('rectifying',self.teams[teamID].NV_collection_id,hyp)
+                    if rectify:  # values were flipped for negative contrasts
+                            print('rectifying hyp',hyp,'for',teamID)
+                            print(mdstring)
+                            print('')
                             img = nibabel.load(unthresh_file)
                             img_rectified = nilearn.image.math_img('img*-1',img=img)
                             img_rectified.to_filename(self.teams[teamID].images['unthresh']['rectified'][hyp])
@@ -369,7 +371,7 @@ class Narps(object):
                     f.write('%s\t%s\n'%(l[0],l[1]))
         
     # compute std and range on statistical images
-    def compute_image_stats(self,datatype='zstats',overwrite=None):
+    def compute_image_stats(self,datatype='zstat',overwrite=None):
         if overwrite is None:
             overwrite = self.overwrite
         for teamID in self.complete_image_sets:
@@ -385,7 +387,7 @@ class Narps(object):
                 if not os.path.exists(os.path.join(self.dirs.dirs['output'],'unthresh_std_%s'%datatype)):
                     os.mkdir(os.path.join(self.dirs.dirs['output'],'unthresh_std_%s'%datatype))
 
-                if not os.path.exists(range_outfile) or not os.path.exists(var_outfile) or overwrite:
+                if not os.path.exists(range_outfile) or not os.path.exists(std_outfile) or overwrite:
                     unthresh_img = nibabel.load(unthresh_file)
                     unthresh_data = unthresh_img.get_data()
                     concat_data=numpy.nan_to_num(unthresh_data)
@@ -402,8 +404,7 @@ class Narps(object):
         if overwrite is None:
             overwrite = self.overwrite
         if map_metadata_file is None:
-            map_metadata_file = os.path.join(self.dirs.dirs['metadata'],
-                    '/Users/poldrack/data_unsynced/NARPS/metadata/narps_neurovault_images_details.csv')
+            map_metadata_file = os.path.join(self.dirs.dirs['metadata'],'narps_neurovault_images_details.csv')
         unthresh_stat_type = get_map_metadata(map_metadata_file)
         metadata = get_metadata()
         
