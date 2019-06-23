@@ -427,13 +427,15 @@ class Narps(object):
                                         self.teams[teamID].datadir_label, 'hypo%d_unthresh.nii.gz'%hyp)
                 if os.path.exists(self.teams[teamID].images['unthresh']['zstat'][hyp]) and not overwrite:
                     continue
-                if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp])):
-                    os.mkdir(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp]))
                 
                 if unthresh_stat_type.loc[teamID,'unthresh_type'].lower() == 't':
+                    if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp])):
+                        os.mkdir(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp]))
                     print("converting %s (hyp %d) to z - %d participants"%(teamID,hyp,n))
                     TtoZ(infile,self.teams[teamID].images['unthresh']['zstat'][hyp],n-1)
                 elif unthresh_stat_type.loc[teamID,'unthresh_type'] == 'z':
+                    if not os.path.exists(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp])):
+                        os.mkdir(os.path.dirname(self.teams[teamID].images['unthresh']['zstat'][hyp]))
                     if not os.path.exists(self.teams[teamID].images['unthresh']['zstat'][hyp]):
                         print('copying',teamID)
                         shutil.copy(infile,
