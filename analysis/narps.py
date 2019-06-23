@@ -338,9 +338,17 @@ class Narps(object):
         if overwrite is None:
             overwrite = self.overwrite
         for teamID in self.complete_image_sets:
-            for hyp in [5,6,9]: # these are the hypotheses with negative contrasts
-                mdstring = map_metadata.query('teamID == "%s"'%teamID)['hyp%d_direction'%hyp].iloc[0]
-                rectify = mdstring.split()[0] == 'Negative'
+            for hyp in range(1,10): 
+                if hyp in [5,6]:
+                    mdstring = map_metadata.query('teamID == "%s"'%teamID)['hyp%d_direction'%hyp].iloc[0]
+                    rectify = mdstring.split()[0] == 'Negative'
+                elif hyp == 9:
+                    # manual fix
+                    if teamID in ['R7D1']:
+                        rectify=True
+                else:  # just copy the other hypotheses directly
+                    rectify = False
+
                 # load data from unthresh map within positive voxels of thresholded mask
                 thresh_file = self.teams[teamID].images['thresh']['resampled'][hyp]
                 masker=nilearn.input_data.NiftiMasker(mask_img=self.dirs.MNI_mask)
