@@ -367,15 +367,23 @@ class Narps(object):
                 for l in self.rectified_list:
                     f.write('%s\t%s\n'%(l[0],l[1]))
         
-    # compute std and range on rectified images
-    def compute_image_stats(self,datatype='rectified',overwrite=None):
+    # compute std and range on statistical images
+    def compute_image_stats(self,datatype='zstats',overwrite=None):
         if overwrite is None:
             overwrite = self.overwrite
         for teamID in self.complete_image_sets:
             for hyp in range(1,10):
-                unthresh_file = os.path.join(self.dirs.dirs['output'],'unthresh_concat_rectified/hypo%d.nii.gz'%hyp)
-                range_outfile=os.path.join(self.dirs.dirs['output'],'unthresh_range/hypo%d.nii.gz'%hyp)
-                var_outfile=os.path.join(self.dirs.dirs['output'],'unthresh_std/hypo%d.nii.gz'%hyp)
+
+                unthresh_file = os.path.join(self.dirs.dirs['output'],'unthresh_concat_%s/hypo%d.nii.gz'%(datatype,hyp))
+
+                range_outfile=os.path.join(self.dirs.dirs['output'],'unthresh_range_%s/hypo%d.nii.gz'%(datatype,hyp))
+                if not os.path.exists(os.path.join(self.dirs.dirs['output'],'unthresh_range_%s'%datatype)):
+                    os.mkdir(self.dirs.dirs['output'],'unthresh_range_%s'%datatype)
+
+                std_outfile=os.path.join(self.dirs.dirs['output'],'unthresh_std_%s/hypo%d.nii.gz'%(datatype,hyp))
+                if not os.path.exists(os.path.join(self.dirs.dirs['output'],'unthresh_std_%s'%datatype)):
+                    os.mkdir(self.dirs.dirs['output'],'unthresh_std_%s'%datatype)
+
                 if not os.path.exists(range_outfile) or not os.path.exists(var_outfile) or overwrite:
                     unthresh_img = nibabel.load(unthresh_file)
                     unthresh_data = unthresh_img.get_data()
@@ -385,9 +393,10 @@ class Narps(object):
                     range_img.to_filename(range_outfile)
                     datastd = numpy.std(concat_data,axis=3)
                     std_img = nibabel.Nifti1Image(datastd,affine=unthresh_img.affine)
-                    std_img.to_filename(var_outfile)
+                    std_img.to_filename(std_outfile)
 
-
+    # convert rectified images to z scores - if they are already z then just copy
+    # use metadata supplied by teams to determine image type
     def convert_to_zscores(self,map_metadata_file=None,overwrite=None):
         if overwrite is None:
             overwrite = self.overwrite
@@ -459,7 +468,8 @@ class Narps(object):
                     print('no image present:',infile)
                     continue
                 else:
-                    print('estimating smoothness for hyp',hyp)
+                    if self.verbose:
+                        print('estimating smoothness for hyp',hyp)
                     est.inputs.zstat_file = infile
                     est.inputs.mask_file = self.dirs.MNI_mask
                     est.terminal_output = 'file_split'
@@ -555,11 +565,11 @@ if __name__ == "__main__":
         print("creating concatenated rectified images...")
         narps.create_concat_images(datatype='rectified',imgtypes = ['unthresh'])
 
-        print("computing image stats...")
-        narps.compute_image_stats()
-
         print('converting to z-scores')
         narps.convert_to_zscores()
+
+        print("computing image stats...")
+        narps.compute_image_stats()
 
         print('estimating image smoothness')
         smoothness_df = narps.estimate_smoothness()
