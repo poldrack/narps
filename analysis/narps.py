@@ -291,7 +291,8 @@ class Narps(object):
                 if not os.path.exists(outfile) or overwrite:
                     if self.verbose:
                         print('%s - hypo %d: creating concat file'%(imgtype,hyp))
-                    self.all_maps[imgtype][datatype] = [self.teams[teamID].images[imgtype][datatype][hyp] for teamID in self.complete_image_sets]
+                    concat_teams = [teamID for teamID in self.complete_image_sets if os.path.exists(self.teams[teamID].images[imgtype][datatype][hyp])]
+                    self.all_maps[imgtype][datatype] = [self.teams[teamID].images[imgtype][datatype][hyp] for teamID in concat_teams]
                     masker = nilearn.input_data.NiftiMasker(mask_img=self.dirs.MNI_mask)
                     concat_data = masker.fit_transform(self.all_maps[imgtype][datatype])
                     concat_img = masker.inverse_transform(concat_data)
@@ -299,7 +300,7 @@ class Narps(object):
                 else:
                     if self.verbose:
                         print('%s - hypo %d: using existing file'%(imgtype,hyp))
-
+        return(self.all_maps)
     # create overlap maps for thresholded iamges
     def create_thresh_overlap_images(self,datatype='resampled',overwrite=None,thresh=10e-6):
         imgtype = 'thresh'
@@ -378,11 +379,11 @@ class Narps(object):
 
                 range_outfile=os.path.join(self.dirs.dirs['output'],'unthresh_range_%s/hypo%d.nii.gz'%(datatype,hyp))
                 if not os.path.exists(os.path.join(self.dirs.dirs['output'],'unthresh_range_%s'%datatype)):
-                    os.mkdir(self.dirs.dirs['output'],'unthresh_range_%s'%datatype)
+                    os.mkdir(os.path.join(self.dirs.dirs['output'],'unthresh_range_%s'%datatype))
 
                 std_outfile=os.path.join(self.dirs.dirs['output'],'unthresh_std_%s/hypo%d.nii.gz'%(datatype,hyp))
                 if not os.path.exists(os.path.join(self.dirs.dirs['output'],'unthresh_std_%s'%datatype)):
-                    os.mkdir(self.dirs.dirs['output'],'unthresh_std_%s'%datatype)
+                    os.mkdir(os.path.join(self.dirs.dirs['output'],'unthresh_std_%s'%datatype))
 
                 if not os.path.exists(range_outfile) or not os.path.exists(var_outfile) or overwrite:
                     unthresh_img = nibabel.load(unthresh_file)
