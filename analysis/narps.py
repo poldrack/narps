@@ -343,8 +343,9 @@ class Narps(object):
                     mdstring = map_metadata.query('teamID == "%s"'%teamID)['hyp%d_direction'%hyp].iloc[0]
                     rectify = mdstring.split()[0] == 'Negative'
                 elif hyp == 9:
-                    # manual fix
+                    # manual fix for one team with reversed maps
                     if teamID in ['R7D1']:
+                        mdstring = map_metadata.query('teamID == "%s"'%teamID)['hyp%d_direction'%hyp].iloc[0]
                         rectify=True
                 else:  # just copy the other hypotheses directly
                     rectify = False
