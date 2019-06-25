@@ -5,7 +5,7 @@ output: html_notebook
 
 Analyze decisions across teams.
 
-```{r echo=FALSE,message=FALSE}
+```{r setup, echo=FALSE,message=FALSE}
 library(plyr)
 library(tidyverse)
 library(lmerTest)
@@ -21,7 +21,7 @@ library(MuMIn)
 
 Load the data and clean up some variables.  Requires metadata that is created by PrepareMetadata.ipynb
 
-```{r}
+```{r loadData}
 # load and clean up data
 narps_df = read_csv('/Users/poldrack/data_unsynced/NARPS/metadata/all_metadata.csv')
 
@@ -50,13 +50,19 @@ narps_df$teamID = as.factor(narps_df$teamID)
 
 ```
 
+Estimate correlation between reported smoothing kernel and estimated image smoothness.
+
+```{r smoothCorr}
+cor(narps_df$fwhm,narps_df$TSc_smoothing,use='pairwise.complete',method='spearman')
+```
+
 
 ### Models
 
 
 First run mixed models across full dataset to assess overall effects on hypothesis acceptance.
 
-```{r}
+```{r fullModel}
 hyp_df = narps_df %>% drop_na(fwhm,used_fmriprep_data,
                                     package,
                                     testing)
@@ -66,22 +72,40 @@ m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + tes
 summary(m_hyp_full)
 r.squaredGLMM(m_hyp_full)
 
+```
+
+#### Model comparisons
+
+Model without smoothing
+
+```{r nosmoothModel}
 m_hyp_nosmooth = glmer(Decision ~ varnum + used_fmriprep_data + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer = "bobyqa"),nAGQ = 10)
 cat('\ntesting effect of smoothing\n')
 anova(m_hyp_full,m_hyp_nosmooth,test='Chisq')
 emtrends(m_hyp_full,specs='fwhm',var='fwhm')
+# compute delta r-squared between this model and full model
 r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nosmooth) 
 
+```
 
+Model without fmriprep
+
+```{r noprepModel}
 m_hyp_noprep = glmer(Decision ~ varnum + fwhm + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer = "bobyqa"),nAGQ = 10)
 cat('\ntesting effect of fmriprep\n')
 anova(m_hyp_full,m_hyp_noprep,test='Chisq')
 emmeans(m_hyp_full,'used_fmriprep_data')
+# compute delta r-squared between this model and full model
 r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_noprep) 
+
+
+```
+
+```{r nopackageModel}
 
 
 m_hyp_nopackage = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + testing + (1|teamID),
@@ -93,9 +117,12 @@ leastsquare = emmeans(m_hyp_full,'package')
 CLD(leastsquare, 
     alpha=.05,  
     Letters=letters)
+# compute delta r-squared between this model and full model
 r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nopackage)
 
+```
 
+```{r notestingModel}
   
 m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package + (1|teamID),
             data = hyp_df,family=binomial,
@@ -107,7 +134,18 @@ CLD(leastsquare,
     alpha=.05,  
     Letters=letters)
 
+# compute delta r-squared between this model and full model
 r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_notesting)
+
+```
+
+Full model using specified smoothing filter rather than estimated smoothness.
+
+```{r}
+m_hyp_full = glmer(Decision ~ varnum + TSc_smoothing + used_fmriprep_data + package + testing + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer = "bobyqa"),nAGQ = 10)
+summary(m_hyp_full)
 
 ```
 
@@ -216,7 +254,7 @@ ggplot(decisionSummary_smoothing,aes(varnum,meanFWHM,color=Decision_factor,group
 ```
 
 
-Next we examine the effect of the applied smoothing kernel.
+effect of the applied smoothing kernel.
 
 ```{r}
 decisionSummary_smoothingkernel <- narps_df %>%
