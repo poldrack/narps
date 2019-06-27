@@ -23,7 +23,7 @@ Load the data and clean up some variables.  Requires metadata that is created by
 
 ```{r loadData}
 # load and clean up data
-narps_df = read_csv('/Users/poldrack/data_unsynced/NARPS/metadata/all_metadata.csv')
+narps_df = read_csv('/Users/nichols/git/narps-poldrack/metadata/all_metadata.csv')
 
 narps_df <- narps_df %>% 
   mutate(package = recode_factor(TSc_SW,
@@ -253,6 +253,21 @@ ggplot(decisionSummary_smoothing,aes(varnum,meanFWHM,color=Decision_factor,group
 
 ```
 
+effect of low vs high smoothing
+```{r}
+narps_df$FWHMhi=narps_df$fwhm>=10
+decisionSummary_FWHMhilo <- narps_df %>%
+  drop_na(FWHMhi) %>%
+  group_by(FWHMhi,varnum) %>%
+  summarize(meanAccept = mean(Decision),
+            numTeams = n()) 
+
+ggplot(decisionSummary_FWHMhilo,aes(varnum,meanAccept,color=FWHMhi)) +
+  geom_line() +
+  scale_x_continuous(name='Hypotheses',breaks=seq(1,9,1))
+
+```
+
 
 effect of the applied smoothing kernel.
 
@@ -276,7 +291,7 @@ ggplot(decisionSummary_smoothingkernel,aes(varnum,meanAppliedFWHM,color=Decision
 
 ```{r}
 
-patterndist_df = read_csv('/Users/poldrack/data_unsynced/NARPS/metadata/mean_pattern_distance.csv',skip=0)
+patterndist_df = read_csv('/Users/nichols/git/narps-poldrack/mean_pattern_distance.csv',skip=0)
 names(patterndist_df)=c('teamID','mean_distance')
 
 merged_df = join(patterndist_df,narps_df %>% filter(varnum==1),by=c('teamID'))
