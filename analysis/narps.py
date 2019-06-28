@@ -415,7 +415,7 @@ class Narps(object):
         if map_metadata_file is None:
             map_metadata_file = os.path.join(self.dirs.dirs['metadata'],'narps_neurovault_images_details.csv')
         unthresh_stat_type = get_map_metadata(map_metadata_file)
-        metadata = get_metadata()
+        metadata = get_metadata(self.metadata_file)
         
         n_participants=metadata[['n_participants','NV_collection_string']]
 
@@ -554,10 +554,17 @@ if __name__ == "__main__":
     # team data (from neurovault) should be in <basedir>/maps/orig
     # some data need to be renamed before using - see rename.sh in individual dirs
 
+    # set an environment variable called NARPS_BASEDIR with location of base directory
+    if 'NARPS_BASEDIR' in os.environ:
+        basedir = os.environ['NARPS_BASEDIR']
+    else:
+        basedir = '/data'
+    assert os.path.exists(basedir)
+    
     run_all = True
 
     # setup main class
-    narps = Narps('/Users/poldrack/data_unsynced/NARPS',overwrite=False)
+    narps = Narps(basedir,overwrite=False)
 
     if run_all:
         print('getting binarized/thresholded orig maps')
@@ -575,11 +582,14 @@ if __name__ == "__main__":
         print("creating rectified images...")
         narps.create_rectified_images()
 
-        print("creating concatenated rectified images...")
-        narps.create_concat_images(datatype='rectified',imgtypes = ['unthresh'])
+        #print("creating concatenated rectified images...")
+        #narps.create_concat_images(datatype='rectified',imgtypes = ['unthresh'])
 
         print('converting to z-scores')
         narps.convert_to_zscores()
+
+        print("creating concatenated zstat images...")
+        narps.create_concat_images(datatype='zstat',imgtypes = ['unthresh'])
 
         print("computing image stats...")
         narps.compute_image_stats()
