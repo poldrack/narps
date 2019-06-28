@@ -31,6 +31,17 @@ RUN wget -O- http://neuro.debian.net/lists/stretch.us-nh.full |  tee /etc/apt/so
 RUN mkdir ~/.gnupg
 RUN echo "disable-ipv6" >> ~/.gnupg/dirmngr.confRUN apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9
 
-RUN apt-get update && apt-get install -y --allow-unauthenticated fsl-core
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-unauthenticated fsl-core
+
+# install R
+RUN apt-get update && apt-get install -y default-jre gfortran
+RUN wget https://cran.r-project.org/src/base/R-3/R-3.6.0.tar.gz
+RUN tar zxf R-3.6.0.tar.gz
+RUN cd R-3.6.0 && ./configure --enable-R-shlib=yes && make && make install
+RUN echo 'install.packages(c("tidyverse","lme4"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /workdir/R-3.6.0*
+RUN echo 'install.packages(c("lmerTest","emmeans","pscl","arms","MuMIn"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /R-3.6.0*
+
+ENV C_INCLUDE_PATH /usr/local/lib/R/include
+ENV LD_LIBRARY_PATH /usr/local/lib/R/lib
 
 CMD ["/bin/bash"]
