@@ -176,42 +176,40 @@ def TtoZ(tmapfile,outfile,df):
   nibabel.save(Z_nii_fixed,outfile)
   
 # perform 1 sample t-teat for correlated observations, based on emails from JM and TN
-def t_corr(y,Q=None):
+# updated version from TN retains mean/sd
+def t_corr(y,res_mean=None,res_var=None,Q=None):
     """
     perform a one-sample t-test on correlated data
     y = data (n observations X n vars)
     Q = "known" correlation across observations (use empirical correlation based on maps)
     """
     
-    # equations in comments from Tom's email
-    
-    npts = y.shape[0]
+    # Jeanette:
+    # This paper calculates the df for an F-test, so the chisquare bit we need is in there.  Your t-statistic will come from
+    # X = column of 1's (design matrix)
+
     X = numpy.ones((npts,1))
 
-    if len(y.shape)==1:
-        y = y[:,numpy.newaxis]
-    assert len(y.shape)<3
+    if res_mean is None:
+        res_mean = 0
 
+    if res_var is None:
+        res_var = 1
+  
     if Q is None:
-        #print('no Q specified, using identity (uncorrelated)')
         Q = numpy.eye(npts)
 
-    y_hat = numpy.mean(y,axis=0) # bar{Y_i} = X’ Y_i/N
-    
+    # R = I{n} - X(X'X)^{-1}X'
     R = numpy.eye(npts) - X.dot(numpy.linalg.inv(X.T.dot(X))).dot(X.T)
 
-    # modified per Tom Nichols email
-    s_hat_2 = numpy.sum(y**2,axis=0)/(numpy.trace(R.dot(Q))) 
     
-    # modified per Tom Nichols email
-    var_y_hat = X.T.dot(Q).dot(X)/(npts**2) #sigma^2_i   X’ Q X / N^2
-    
-    T = y_hat/numpy.sqrt(var_y_hat) # T_i = bar(Y_i) / sqrt(Var(bar{Y_i}))
-    
-    # R = I{n} - X(X'X)^{-1}X'
+    VarMean = res_var * X.T.dot(Q).dot(X) / npts**2
+
+    # T  =  mean(y,0)/s-hat-2
+    # use diag to get s_hat2 for each variable 
+    T = (numpy.mean(y,0)-res_mean)/numpy.sqrt(VarMean)*numpy.sqrt(res_var) + res_mean
 
     # degrees of freedom = v = tr(RQ)^2/tr(RQRQ)
     df = (numpy.trace(R.dot(Q))**2)/numpy.trace(R.dot(Q).dot(R).dot(Q))
-    p = 1 - scipy.stats.t.cdf(T,df=df)
+    p = scipy.stats.t.cdf(T,df=df)
     return(T,df,p)
-
