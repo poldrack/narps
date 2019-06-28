@@ -1,6 +1,8 @@
 ---
 title: "Decision analysis"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 Analyze decisions across teams.
@@ -141,7 +143,7 @@ r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_notesting)
 
 Full model using specified smoothing filter rather than estimated smoothness.
 
-```{r}
+```{r kernelModel}
 m_hyp_full = glmer(Decision ~ varnum + TSc_smoothing + used_fmriprep_data + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer = "bobyqa"),nAGQ = 10)
@@ -152,7 +154,7 @@ summary(m_hyp_full)
 
 For each hypothesis, we ask whether decisions are associated with fwhm and use of fmriprep.  None of these survive Bonferroni correction.
 
-```{r}
+```{r runModelsFunction}
 
 runModels = function(hyp){
   pvals = c()
@@ -193,7 +195,7 @@ runModels = function(hyp){
 
 
 
-```{r}
+```{r runAllModels}
 all_pvals = c()
 for (hyp in 1:9){
   pv = runModels(hyp)
@@ -206,7 +208,7 @@ for (hyp in 1:9){
 
 #### decision vs. software package
 
-```{r}
+```{r plotSoftware}
 decisionSummary_package <- narps_df %>%
   drop_na(package) %>%
   group_by(package,varnum) %>%
@@ -221,7 +223,7 @@ ggplot(decisionSummary_package,aes(varnum,meanAccept,color=package,group=package
 
 #### decision vs. use of fMRIprep
 
-```{r}
+```{r plotfMRIPrep}
 decisionSummary_fmriprep <- narps_df %>%
   drop_na(used_fmriprep_data) %>%
   group_by(used_fmriprep_data,varnum) %>%
@@ -239,7 +241,7 @@ ggplot(decisionSummary_fmriprep,aes(varnum,meanAccept,color=used_fmriprep_data))
 
 First we examine the effect of actual image smoothness, estimated using FSL.
 
-```{r}
+```{r plotEstimatedSmoothness}
 decisionSummary_smoothing <- narps_df %>%
   drop_na(fwhm) %>%
   mutate(Decision_factor = as.factor(Decision)) %>%
@@ -256,7 +258,7 @@ ggplot(decisionSummary_smoothing,aes(varnum,meanFWHM,color=Decision_factor,group
 
 effect of the applied smoothing kernel.
 
-```{r}
+```{r plotAppliedSmoothing}
 decisionSummary_smoothingkernel <- narps_df %>%
   drop_na(fwhm) %>%
   mutate(Decision_factor = as.factor(Decision)) %>%
@@ -274,7 +276,7 @@ ggplot(decisionSummary_smoothingkernel,aes(varnum,meanAppliedFWHM,color=Decision
 
 ### Examine effects of various factors on pattern distance
 
-```{r}
+```{r loadPatternDistance}
 
 patterndist_df = read_csv('/Users/poldrack/data_unsynced/NARPS/metadata/mean_pattern_distance.csv',skip=0)
 names(patterndist_df)=c('teamID','mean_distance')
@@ -284,15 +286,18 @@ merged_df = join(patterndist_df,narps_df %>% filter(varnum==1),by=c('teamID'))
 
 ### fit model
 
-
-
-```{r}
+```{r r2z}
 r2z = function(r){
     # fisher transform
     z=0.5*log((1.0+r)/(1.0-r))
     z[is.na(z)]=0
     return(z)
 }
+```
+
+
+```{r fitPatternDistanceModel}
+
 merged_df <- merged_df %>%
   mutate(z_mean_distance = r2z(mean_distance))
 
@@ -305,6 +310,9 @@ dist_hyp_full = lm(z_mean_distance ~ fwhm + used_fmriprep_data + package + testi
 s= summary(dist_hyp_full)
 print(s)
 
+```
+
+```{r fitnoSmoothDistanceModel}
 dist_hyp_nosmooth = lm(z_mean_distance ~ used_fmriprep_data + package + testing,
             data = merged_df)
 cat('\ntesting effect of smoothing\n')
@@ -312,6 +320,9 @@ anova(dist_hyp_full,dist_hyp_nosmooth,test='Chisq')
 emtrends(dist_hyp_full,specs='fwhm',var='fwhm')
 s$r.squared - summary(dist_hyp_nosmooth)$r.squared
 
+```
+
+```{r fitNoPrepDistanceModel}
 dist_hyp_noprep = lm(z_mean_distance ~ fwhm + package + testing,
             data = merged_df)
 cat('\ntesting effect of fmriprep\n')
@@ -319,7 +330,9 @@ anova(dist_hyp_full,dist_hyp_noprep,test='Chisq')
 emmeans(dist_hyp_full,'used_fmriprep_data')
 s$r.squared - summary(dist_hyp_noprep)$r.squared
 
+```
 
+```{r fitNoHypDistanceModel}
 dist_hyp_nopackage = lm(z_mean_distance ~ used_fmriprep_data + fwhm + testing,
             data = merged_df) 
 cat('\ntesting effect of package\n')
@@ -331,7 +344,9 @@ CLD(leastsquare,
     Letters=letters)
 
 
-  
+```
+
+```{r fitNoTestingDistanceModel}
 dist_hyp_notesting = lm(z_mean_distance ~ used_fmriprep_data + fwhm + package,
             data = merged_df)   
 cat('\ntesting effect of testing\n')
