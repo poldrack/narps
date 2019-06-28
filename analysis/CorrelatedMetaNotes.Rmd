@@ -1,0 +1,58 @@
+---
+title: "CorrelatedMetaNotes"
+author: "T Nichols"
+date: "28/06/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Correlated Meta Analysis: Homogeneous Case
+
+Let $Y_i$ be a $N$ vector or T (or Z) scores at voxel i, where $N$ is the number of results on a given hypothesis. For this set-up, we do _not_ consider voxel-specific mean or variance, but just the image-wide mean,
+
+$$E(Y_i) = \mu\mathbf{1}$$
+for scalar $\mu$ and length-$N$ ones vector $\mathbf{1}$, and  variance 
+$$V(Y_i) = \sigma^2 Q $$
+for scalar $\sigma$ and $N\times N$ inter-result correlation matrix $Q$.
+
+The average statistic is
+$$\bar{Y_i} = \mathbf{1}^\top Y_i / N$$
+and its variance is 
+$$V(\bar{Y_i}) =  \sigma^2   \mathbf{1}^\top Q \mathbf{1} / N^2$$
+Note the toy case of compound symmetric correlation, were each result has correlation $\rho$ with another result; for that case
+$$V(\bar{Y_i}) =  \sigma^2(1+(N-1)\rho)/N,$$
+which shows in the extreme of perfect correlation $\rho=1$ that the mean has the variance of one result, $\sigma^2$.
+
+The traditional meta-analytic combining would be to construct a test statistic, sample mean divided by square root of the  estimated variance
+$$T_i = \frac{\bar{Y_i}}{\sqrt{ \sigma^2   \mathbf{1}^\top Q \mathbf{1} / N^2}}$$
+but the question is: How do we estimate $\sigma$?  If we estimated it based on a between-result variance, then we'd have a 'random effects' analysis over results of the same data, ... 
+I'm not convinced this is the primary outcome of interest.  
+Alternately, to the extent that there _is_ independent information in the different studies (i.e. $\rho<1$), the usual combining will provide a _more_ precise estimate of the mean $\mu$ and thus give us larger $T$ values, reflecting the additional power.  This _too_ doesn't seem right to me.
+
+Rather, I think that we want an consensus analysis that _preserves_ the averave mean and variance of the different studies results.  To do this, we need to standardise $\bar{Y_i}$ and re-scale and shift it to have the mean and variance of the original results.  I'll call this $T_{C,i}$ for consensus T-score:
+$$T_{C,i} = \frac{\bar{Y}_i-\mu}{\sqrt{ \sigma^2   \mathbf{1}^\top Q \mathbf{1} / N^2}}\sigma+\mu= \frac{\bar{Y}_i}{\sqrt{\mathbf{1}^\top Q\mathbf{1} / N^2}}+\left(1-\frac{1}{\sqrt{\mathbf{1}^\top Q \mathbf{1} / N^2}}\right)\mu$$
+this statistic will have mean $\mu$ and standard deviation $\sigma$
+
+For reference, _if_ we were to estimate variance over submissions/teams, but if you were to do so you could do it at each voxel as:
+
+   $$ Y_i’ R Y_i / \mbox{tr}(RQ)$$
+where $R$ is the residual forming matrix created with $X$, and the effective DF for this variance estimate is
+$$\nu = \mbox{tr}(RQ)^2 / \mbox{tr}(RQRQ).$$
+The behavior under compound symmetry of $Q$ is interesting: While $\mbox{tr}(RQ)$ falls from nominal $N-1$ as $\rho$ grows from 0, $\nu=N-1$ for any $\rho$.
+
+## Correlated Meta Analysis: Heterogeneous Case
+
+Above we assumed that it is reasonable that all $N$ studies have a common mean $\mu$ and standard deviation $\sigma$ (over the map).  If this is really an untennable assumption, then we basically have to conduct a standardised analysis where we define
+$$\tilde{\mu} = \frac{1}{N}\sum_{k=1}^N \mu_k$$
+and
+$$\tilde{\sigma}^{2} = \frac{1}{N}\sum_{k=1}^N \sigma^2_k$$
+where $\mu_k$ and $\sigma^2_k$ are the mean and variance for study $k=1,...,N$, and then we create standardised data
+$$Z_{ik} = \frac{Y_{ik}-\mu_k}{\sigma_k}$$
+for voxel $i$  study $k$. The mean of these standardized values is
+$$\bar{Z}_i = \mathbf{1}^\top Z_{i}/N,$$
+for $N$-vector $Z_i=\{Z_{ik}\}_k$, and then we can make a normalised consensus statistic
+$$T_{C,i} = \frac{\bar{Z}_i}{\sqrt{\mathbf{1}^\top Q \mathbf{1} / N^2}}\tilde\sigma+\tilde\mu,$$
+where we have again rescaled and shifted the statistic so it has the mean and variance (average) of the $N$ results.
