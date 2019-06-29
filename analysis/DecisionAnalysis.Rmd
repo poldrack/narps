@@ -17,6 +17,12 @@ library(pscl)
 library(arm)
 library(MuMIn)
 
+basedir = Sys.getenv('NARPS_BASEDIR')
+if (basedir == ""){
+   # use default
+   basedir = "/data"
+}
+
 ```
 
 ### Data setup 
@@ -25,7 +31,7 @@ Load the data and clean up some variables.  Requires metadata that is created by
 
 ```{r loadData}
 # load and clean up data
-narps_df = read_csv('/Users/poldrack/data_unsynced/NARPS/metadata/all_metadata.csv')
+narps_df = read_csv(paste(basedir,'metadata/all_metadata.csv',sep='/'))
 
 narps_df <- narps_df %>% 
   mutate(package = recode_factor(TSc_SW,
@@ -278,7 +284,7 @@ ggplot(decisionSummary_smoothingkernel,aes(varnum,meanAppliedFWHM,color=Decision
 
 ```{r loadPatternDistance}
 
-patterndist_df = read_csv('/Users/poldrack/data_unsynced/NARPS/metadata/mean_pattern_distance.csv',skip=0)
+patterndist_df = read_csv(paste(basedir,'metadata/mean_pattern_distance.csv',sep='/'),skip=0)
 names(patterndist_df)=c('teamID','mean_distance')
 
 merged_df = join(patterndist_df,narps_df %>% filter(varnum==1),by=c('teamID'))
