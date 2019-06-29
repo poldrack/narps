@@ -560,7 +560,7 @@ if __name__ == "__main__":
     else:
         basedir = '/data'
     assert os.path.exists(basedir)
-    
+
     run_all = True
 
     # setup main class
@@ -576,11 +576,11 @@ if __name__ == "__main__":
         print("checking image values...")
         image_metadata_df = narps.check_image_values()
 
-        print("creating concatenated images...")
-        narps.create_concat_images(datatype='resampled')
-
         print("creating rectified images...")
         narps.create_rectified_images()
+
+        # Create overlap images for thresholded maps
+        narps.create_thresh_overlap_images()
 
         #print("creating concatenated rectified images...")
         #narps.create_concat_images(datatype='rectified',imgtypes = ['unthresh'])
