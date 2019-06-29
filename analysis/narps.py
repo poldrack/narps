@@ -72,7 +72,8 @@ class NarpsTeam(object):
         self.NV_collection_id = NV_collection_id
         self.datadir_label = '%s_%s'%(NV_collection_id,teamID)
         self.input_dir = os.path.join(self.dirs.dirs['orig'],'%s_%s'%(NV_collection_id,teamID))
-        assert os.path.exists(self.input_dir)
+        if not os.path.exists(self.input_dir):
+            print("Warning: Input dir (%s) does not exist"%self.input_dir)
 
         self.verbose = verbose
         self.image_json = None
