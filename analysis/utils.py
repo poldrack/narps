@@ -23,12 +23,12 @@ def get_masked_data(hyp,mask_img,output_dir,imgtype='unthresh',dataset='zstat'):
     labels = [os.path.basename(os.path.dirname(i)).split('_')[1] for i in hmaps]
     return(maskdata,labels)
 
-def get_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/metadata/analysis_pipelines_SW.xlsx',
+def get_metadata(metadata_file,
                         index_var = 'teamID'):
     metadata = pandas.read_excel(metadata_file,header=1)
     metadata.teamID = [i.strip() for i in metadata.teamID]
     metadata.shape
-    metadata.index = metadata[index_var]
+    metadata.index = metadata[index_var].values
     # fix issues with metadata
     metadata['used_fmriprep_data'] = [i.strip().split(',')[0] for i in metadata['used_fmriprep_data']]
     metadata['used_fmriprep_data'] = metadata['used_fmriprep_data'].replace({'Yas':'Yes'})
@@ -38,10 +38,10 @@ def get_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/metadata/a
     metadata['n_participants']  = [int(i.split('\n')[0]) if isinstance(i, str) else i for i in metadata['n_participants']]
     return(metadata)
 
-def get_tidy_metadata(metadata_file = '/Users/poldrack/data_unsynced/NARPS/metadata/decision_data.csv'):
+def get_tidy_metadata(metadata_file):
     return(pandas.read_csv(metadata_file))
 
-def get_map_metadata(map_metadata_file = '/Users/poldrack/data_unsynced/NARPS/metadata/narps_neurovault_images_details.csv'):
+def get_map_metadata(map_metadata_file):
     """
     Timestamp	
     teamID (the four-characters string identifying your analysis team)	
@@ -73,19 +73,20 @@ def get_map_metadata(map_metadata_file = '/Users/poldrack/data_unsynced/NARPS/me
 
     return(map_info)
 
-def get_decisions(decisions_file = '/Users/poldrack/data_unsynced/NARPS/metadata/narps_results.xlsx',
+def get_decisions(decisions_file,
                                 tidy=False):
-    colnames=[]
+    colnames=['teamID']
     for hyp in range(1,10):
         colnames += ['Decision%d'%hyp,'Confidence%d'%hyp,'Similar%d'%hyp]
     colnames += ['collection']
-    decisions = pandas.read_excel(decisions_file,header=1)
+    decisions = pandas.read_excel(decisions_file,skiprows=1,
+                                    encoding='utf-8')
     decisions.columns=colnames
-    decisions['teamID']=decisions.index
+    #decisions['teamID']=decisions.index
 
     # make a tidy version
     if tidy:
-        decisions_long = pandas.melt(decisions,id_vars=['teamID'],value_vars=decisions.columns.values[:27])
+        decisions_long = pandas.melt(decisions,id_vars=['teamID'],value_vars=decisions.columns.values[1:28])
         decisions_long['vartype']= [i[:-1] for i in decisions_long['variable']]
         decisions_long['varnum']= [i[-1] for i in decisions_long['variable']]
         del decisions_long['variable']
@@ -107,9 +108,9 @@ def get_decisions(decisions_file = '/Users/poldrack/data_unsynced/NARPS/metadata
     else:
         return(decisions)
 
-def get_merged_metadata_decisions():
-    metadata = get_metadata()
-    decision_df = get_decisions(tidy=True)
+def get_merged_metadata_decisions(metadata_file,decisions_file,):
+    metadata = get_metadata(metadata_file)
+    decision_df = get_decisions(decisions_file,tidy=True)
     alldata_df = decision_df.merge(metadata,on='teamID',how='left')
     return(alldata_df)
 
@@ -188,6 +189,7 @@ def t_corr(y,res_mean=None,res_var=None,Q=None):
     # This paper calculates the df for an F-test, so the chisquare bit we need is in there.  Your t-statistic will come from
     # X = column of 1's (design matrix)
 
+    npts = y.shape[0]
     X = numpy.ones((npts,1))
 
     if res_mean is None:
