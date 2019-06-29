@@ -39,7 +39,8 @@ RUN wget https://cran.r-project.org/src/base/R-3/R-3.6.0.tar.gz
 RUN tar zxf R-3.6.0.tar.gz
 RUN cd R-3.6.0 && ./configure --enable-R-shlib=yes && make && make install
 RUN echo 'install.packages(c("tidyverse","lme4"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /workdir/R-3.6.0*
-RUN echo 'install.packages(c("lmerTest","emmeans","pscl","arms","MuMIn"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /R-3.6.0*
+RUN echo 'install.packages(c("lmerTest","emmeans","pscl","arm","MuMIn"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /R-3.6.0*
+RUN apt-get install -y pandoc
 
 ENV C_INCLUDE_PATH /usr/local/lib/R/include
 ENV LD_LIBRARY_PATH /usr/local/lib/R/lib
