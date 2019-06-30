@@ -2,13 +2,14 @@
 
 #### Setup
 
-The original data should be downloaded from XXX and unzipped. The required data are:
-- orig directory containing thresholded and unthresholded images for each team/hypothesis (teams excluded from the main analysis are included in the ```rejected``` directory)
+The original data should be downloaded from https://www.dropbox.com/s/wu0zrrwn2gtqbph/narps_origdata.tgz?dl=0 and unzipped into a new directory, which will be come the base directory for the analysis data. The required data (all contained in the unzipped ```orig``` directory) are:
+- thresholded and unthresholded images for each team/hypothesis (teams excluded from the main analysis are included in the ```rejected``` directory)
 - metadata files:
     - ```analysis_pipelines_SW.xlsx``` (information about analysis pipelines)
     - ```narps_neurovault_images_details.csv``` (information about images)
     - ```narps_results.xlsx``` (information about team decisions)
-- template files (redistributed from the FSL distribution):
+
+In addition, there is a set of template files (redistributed from the FSL distribution) contained in the ```templates``` directory:
     - ```templates/MNI152_T1_2mm.nii.gz```
     - ```templates/MNI152_T1_2mm_brain_mask.nii.gz```
 
