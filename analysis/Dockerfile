@@ -44,5 +44,8 @@ RUN apt-get install -y pandoc
 
 ENV C_INCLUDE_PATH /usr/local/lib/R/include
 ENV LD_LIBRARY_PATH /usr/local/lib/R/lib
+RUN echo "source /etc/fsl/5.0/fsl.sh" >> /root/.bashrc
+
+RUN pip install statsmodels
 
 CMD ["/bin/bash"]
