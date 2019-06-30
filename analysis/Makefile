@@ -9,6 +9,8 @@ guard-%:
 
 # from https://stackoverflow.com/questions/18136918/how-to-get-current-relative-directory-of-your-makefile
 current_dir = $(shell pwd)
+# use NARPS docker image from poldrack dockerhub
+DOCKER_USERNAME = poldrack
 
 test:
 	pytest -q narps.py
