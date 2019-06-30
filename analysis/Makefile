@@ -13,6 +13,11 @@ current_dir = $(shell pwd)
 # set to your username if you wish to push custom version to a different dockerhub acct
 DOCKER_USERNAME = poldrack
 
+get-data: guard-NARPS_BASEDIR
+	wget https://www.dropbox.com/s/wu0zrrwn2gtqbph/narps_origdata.tgz?dl=1 -O $(NARPS_BASEDIR)/narps_origdata.tgz
+	tar zxvf $(NARPS_BASEDIR)/narps_origdata.tgz -C $(NARPS_BASEDIR)
+	rm $(NARPS_BASEDIR)/narps_origdata.tgz
+
 test:
 	pytest -q narps.py
 run:
