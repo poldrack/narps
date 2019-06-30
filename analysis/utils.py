@@ -177,11 +177,13 @@ def TtoZ(tmapfile,outfile,df):
   nibabel.save(Z_nii_fixed,outfile)
   
 # perform 1 sample t-teat for correlated observations, based on emails from JM and TN
-# updated version from TN retains mean/sd
+# updated version from TN retains mean/sd and fixes df
 def t_corr(y,res_mean=None,res_var=None,Q=None):
     """
     perform a one-sample t-test on correlated data
     y = data (n observations X n vars)
+    res_mean = Common mean over voxels and results
+    res_var  = Common variance over voxels and results
     Q = "known" correlation across observations (use empirical correlation based on maps)
     """
     
@@ -211,7 +213,13 @@ def t_corr(y,res_mean=None,res_var=None,Q=None):
     # use diag to get s_hat2 for each variable 
     T = (numpy.mean(y,0)-res_mean)/numpy.sqrt(VarMean)*numpy.sqrt(res_var) + res_mean
 
-    # degrees of freedom = v = tr(RQ)^2/tr(RQRQ)
-    df = (numpy.trace(R.dot(Q))**2)/numpy.trace(R.dot(Q).dot(R).dot(Q))
-    p = scipy.stats.t.cdf(T,df=df)
+    # # *If* variance were estimated voxelwise on correlated data, the DF would follow 
+    # # this expression = v = tr(RQ)^2/tr(RQRQ)
+    # df = (numpy.trace(R.dot(Q))**2)/numpy.trace(R.dot(Q).dot(R).dot(Q))
+    # p = 1 - scipy.stats.t.cdf(T,df=df)
+    
+    # Assuming variance is estimated on whole image
+    df = numpy.Inf
+    p  = 1 - scipy.stats.norm.cdf(T)
+    
     return(T,df,p)
