@@ -42,18 +42,21 @@ class NarpsDirs(object):
 
         self.dirs['output'] = os.path.join(self.dirs['base'],'maps')
         self.dirs['metadata'] = os.path.join(self.dirs['base'],'metadata')
+        self.dirs['cached'] = os.path.join(self.dirs['base'],'cached')
+        self.dirs['orig'] = os.path.join(self.dirs['base'],'orig')
+        self.dirs['templates'] = os.path.join(self.dirs['base'],'templates')
 
         assert os.path.exists(self.dirs['output'])
+        assert os.path.exists(self.dirs['templates'])
+        if not os.path.exists(self.dirs['cached']):
+            os.mkdir(self.dirs['cached'])
+
  
-        output_dirs = ['orig','resampled','rectified','zstat','thresh_mask_orig','templates']
-        required = ['orig'] # must exist in order to run
+        output_dirs = ['resampled','rectified','zstat','thresh_mask_orig','concat_thresh']
         for o in output_dirs:
             self.dirs[o] = os.path.join(self.dirs['output'],o)
-            if o in required:
-                assert os.path.exists(self.dirs[o])
-            else:
-                if not os.path.exists(self.dirs[o]):
-                    os.mkdir(self.dirs[o])
+            if not os.path.exists(self.dirs[o]):
+                os.mkdir(self.dirs[o])
 
         
         self.MNI_mask = os.path.join(self.dirs['templates'],'MNI152_T1_2mm_brain_mask.nii.gz')
@@ -114,7 +117,7 @@ class NarpsTeam(object):
          
          for hyp in self.images['thresh']['orig']:
             img = self.images['thresh']['orig'][hyp]
-            self.images['thresh']['thresh_mask_orig'][hyp] = img.replace("orig",'thresh_mask_orig')
+            self.images['thresh']['thresh_mask_orig'][hyp] = os.path.join(self.dirs.dirs['thresh_mask_orig'],os.path.basename(img))
             if not os.path.exists(os.path.dirname(self.images['thresh']['thresh_mask_orig'][hyp])):
                 os.mkdir(os.path.dirname(self.images['thresh']['thresh_mask_orig'][hyp]))
             if not os.path.exists(self.images['thresh']['thresh_mask_orig'][hyp]) or overwrite:
@@ -197,7 +200,7 @@ class Narps(object):
 
         # set up metadata
         if metadata_file is None:
-            self.metadata_file = os.path.join(self.dirs.dirs['metadata'],'analysis_pipelines_SW.xlsx')
+            self.metadata_file = os.path.join(self.dirs.dirs['orig'],'analysis_pipelines_SW.xlsx')
         else:
             self.metadata_file = metadata_file
 
@@ -334,7 +337,7 @@ class Narps(object):
     # unthresholded map (multiply by -1)
     def create_rectified_images(self,map_metadata_file = None,overwrite=None):
         if map_metadata_file is None:
-            map_metadata_file = os.path.join(self.dirs.dirs['metadata'], 'narps_neurovault_images_details.csv')
+            map_metadata_file = os.path.join(self.dirs.dirs['orig'], 'narps_neurovault_images_details.csv')
         map_metadata = get_map_metadata(map_metadata_file)
         if overwrite is None:
             overwrite = self.overwrite
@@ -414,7 +417,7 @@ class Narps(object):
         if overwrite is None:
             overwrite = self.overwrite
         if map_metadata_file is None:
-            map_metadata_file = os.path.join(self.dirs.dirs['metadata'],'narps_neurovault_images_details.csv')
+            map_metadata_file = os.path.join(self.dirs.dirs['orig'],'narps_neurovault_images_details.csv')
         unthresh_stat_type = get_map_metadata(map_metadata_file)
         metadata = get_metadata(self.metadata_file)
         
@@ -516,14 +519,14 @@ class Narps(object):
                                 'jsonfile':self.teams[teamID].jsonfile}
         if save_data:
             if not outfile:
-                outfile = os.path.join(self.dirs.dirs['output'],'narps_prepare_maps.pkl')
+                outfile = os.path.join(self.dirs.dirs['cached'],'narps_prepare_maps.pkl')
             with open(outfile,'wb') as f:
                 pickle.dump(info,f)
         return(info)
 
     def load_data(self,infile=None):
         if not infile:
-            infile = os.path.join(self.dirs.dirs['output'],'narps_prepare_maps.pkl')
+            infile = os.path.join(self.dirs.dirs['cached'],'narps_prepare_maps.pkl')
         assert os.path.exists(infile)
 
         with open(infile,'rb') as f:
@@ -574,13 +577,16 @@ if __name__ == "__main__":
         print("getting resampled images...")
         narps.get_resampled_images()
 
+        print("creating concatenated thresholded images...")
+        narps.create_concat_images(datatype='resampled',imgtypes = ['thresh'])
+
         print("checking image values...")
         image_metadata_df = narps.check_image_values()
 
         print("creating rectified images...")
         narps.create_rectified_images()
 
-        # Create overlap images for thresholded maps
+        print('Creating overlap images for thresholded maps...')
         narps.create_thresh_overlap_images()
 
         #print("creating concatenated rectified images...")
