@@ -44,7 +44,7 @@ class NarpsDirs(object):
         # set up directories and template files
         self.dirs = {}
         # check to make sure home of basedir exists
-        assert os.path.exists(os.path.basename(basedir))
+        assert os.path.exists(os.path.dirname(basedir))
         self.dirs['base'] = basedir
         if not os.path.exists(basedir):
             os.mkdir(basedir)
@@ -102,10 +102,10 @@ class NarpsDirs(object):
         os.remove(filename)
         # set permissions to read-only
         subprocess.call(
-            'find %s -type d -exec chmod 555 {} \;' % output_directory,
+            'find %s -type d -exec chmod 555 {} \\;' % output_directory,
             shell=True)
         subprocess.call(
-            'find %s -type f -exec chmod 444 {} \;' % output_directory,
+            'find %s -type f -exec chmod 444 {} \\;' % output_directory,
             shell=True)
         
 
