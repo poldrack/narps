@@ -14,6 +14,10 @@ import shutil
 import warnings
 import pickle
 from nipype.interfaces.fsl.model import SmoothEstimate
+import wget
+import tarfile
+import subprocess
+
 
 from utils import get_metadata, TtoZ, get_map_metadata
 
@@ -35,22 +39,38 @@ hypnums = [1, 2, 5, 6, 7, 8, 9]
 # since we need them in multiple places
 
 class NarpsDirs(object):
-    def __init__(self, basedir):
+    def __init__(self, basedir, data_url = None, 
+                 force_download = False):
         # set up directories and template files
         self.dirs = {}
+        # check to make sure home of basedir exists
+        assert os.path.exists(os.path.basename(basedir))
         self.dirs['base'] = basedir
-        assert os.path.exists(basedir)
+        if not os.path.exists(basedir):
+            os.mkdir(basedir)
+        self.force_download = force_download
+        if data_url is None:
+            self.data_url = 'https://www.dropbox.com/s/wu0zrrwn2gtqbph/narps_origdata.tgz?dl=1'
+ 
+        self.dirs['orig'] = os.path.join(self.dirs['base'], 'orig')
+
+        # if raw data don't exist, download them
+        if not os.path.exists(self.dirs['orig']) or self.force_download:
+            self.get_orig_data()
+        assert os.path.exists(self.dirs['orig'])
+
+        # templates should also be downloaded with orig data
+        self.dirs['templates'] = os.path.join(self.dirs['base'], 'templates')
+        assert os.path.exists(self.dirs['templates'])
 
         self.dirs['output'] = os.path.join(self.dirs['base'], 'maps')
         self.dirs['metadata'] = os.path.join(self.dirs['base'], 'metadata')
         self.dirs['cached'] = os.path.join(self.dirs['base'], 'cached')
-        self.dirs['orig'] = os.path.join(self.dirs['base'], 'orig')
-        self.dirs['templates'] = os.path.join(self.dirs['base'], 'templates')
 
-        assert os.path.exists(self.dirs['output'])
-        assert os.path.exists(self.dirs['templates'])
-        if not os.path.exists(self.dirs['cached']):
-            os.mkdir(self.dirs['cached'])
+        dirs_to_make = ['output', 'templates', 'cached']
+        for d in dirs_to_make:
+            if not os.path.exists(self.dirs[d]):
+                os.mkdir(self.dirs[d])
 
         output_dirs = ['resampled', 'rectified', 'zstat',
                        'thresh_mask_orig', 'concat_thresh']
@@ -70,6 +90,25 @@ class NarpsDirs(object):
 
         self.full_mask_img = os.path.join(self.dirs['templates'],
                                           'MNI152_all_voxels.nii.gz')
+    def get_orig_data(self):
+        """
+        download original data from repository
+        """
+        print('orig data do not exist, downloading...')
+        output_directory = self.dirs['base']
+        filename = wget.download(self.data_url, out=output_directory)
+        tarfile_obj = tarfile.open(filename)
+        tarfile_obj.extractall(path=self.dirs['base'])
+        os.remove(filename)
+        # set permissions to read-only
+        subprocess.call(
+            'find %s -type d -exec chmod 555 {} \;' % output_directory,
+            shell=True)
+        subprocess.call(
+            'find %s -type f -exec chmod 444 {} \;' % output_directory,
+            shell=True)
+        
+
 
 
 class NarpsTeam(object):
