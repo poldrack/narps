@@ -23,6 +23,9 @@ test:
 run:
 	python narps.py
 
+check-style:
+	flake8 --show-source narps.py >| stylecheck.out
+
 docker-deploy: docker-login docker-upload
 
 docker-login: guard-DOCKER_USERNAME guard-DOCKER_PASSWORD
@@ -63,3 +66,4 @@ run-ConsensusAnalysis: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 # requires AnalyzeMaps to have been run, for pattern distance metadata
 run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document")'
+
