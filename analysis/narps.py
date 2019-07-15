@@ -39,8 +39,8 @@ hypnums = [1, 2, 5, 6, 7, 8, 9]
 # since we need them in multiple places
 
 class NarpsDirs(object):
-    def __init__(self, basedir, data_url = None, 
-                 force_download = False):
+    def __init__(self, basedir, data_url=None,
+                 force_download=False):
         # set up directories and template files
         self.dirs = {}
         # check to make sure home of basedir exists
@@ -51,7 +51,7 @@ class NarpsDirs(object):
         self.force_download = force_download
         if data_url is None:
             self.data_url = 'https://www.dropbox.com/s/wu0zrrwn2gtqbph/narps_origdata.tgz?dl=1'
- 
+
         self.dirs['orig'] = os.path.join(self.dirs['base'], 'orig')
 
         # if raw data don't exist, download them
@@ -90,6 +90,7 @@ class NarpsDirs(object):
 
         self.full_mask_img = os.path.join(self.dirs['templates'],
                                           'MNI152_all_voxels.nii.gz')
+
     def get_orig_data(self):
         """
         download original data from repository
@@ -107,8 +108,6 @@ class NarpsDirs(object):
         subprocess.call(
             'find %s -type f -exec chmod 444 {} \\;' % output_directory,
             shell=True)
-        
-
 
 
 class NarpsTeam(object):
