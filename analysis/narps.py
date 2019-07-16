@@ -92,7 +92,7 @@ class NarpsDirs(object):
         self.dirs['cached'] = os.path.join(self.dirs['base'], 'cached')
         self.dirs['figures'] = os.path.join(self.dirs['base'], 'figures')
 
-        dirs_to_make = ['output', 'metadata', 'cached','figures']
+        dirs_to_make = ['output', 'metadata', 'cached', 'figures']
         for d in dirs_to_make:
             if not os.path.exists(self.dirs[d]):
                 os.mkdir(self.dirs[d])
@@ -199,6 +199,7 @@ class NarpsTeam(object):
             img = self.images['thresh']['orig'][hyp]
             self.images['thresh']['thresh_mask_orig'][hyp] = os.path.join(
                     self.dirs.dirs['thresh_mask_orig'],
+                    self.datadir_label,
                     os.path.basename(img))
             if not os.path.exists(os.path.dirname(
                     self.images['thresh']['thresh_mask_orig'][hyp])):
