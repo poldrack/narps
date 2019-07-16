@@ -11,4 +11,5 @@ jobs:
       - run:
            name: run narps tests
            command: |
+             pip install -U pytest
              cd analysis; pytest -q narps.py
