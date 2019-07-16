@@ -24,7 +24,7 @@ run:
 	python narps.py
 
 check-style:
-	flake8 --show-source narps.py >| stylecheck.out
+	flake8 --show-source  >| stylecheck.out
 
 docker-deploy: docker-login docker-upload
 
