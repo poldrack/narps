@@ -728,15 +728,15 @@ class Narps(object):
 class TestNarps(object):
     def test_narps_dirs(self):
         narpsDirs = NarpsDirs(
-            "/Users/poldrack/data_unsynced/NARPS")
+            "/tmp/narps")
 
     def test_narps_team(self):
         narpsDirs = NarpsDirs(
-            "/Users/poldrack/data_unsynced/NARPS")
+            "/tmp/narps")
         narpsTeam = NarpsTeam('C88N', 'ADFZYYLQ', narpsDirs)
 
     def test_narps_main_class(self):
-        narps = Narps("/Users/poldrack/data_unsynced/NARPS")
+        narps = Narps("/tmp/narps")
 
 
 if __name__ == "__main__":
