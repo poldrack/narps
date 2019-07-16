@@ -103,7 +103,7 @@ class NarpsDirs(object):
         os.remove(filename)
         # set permissions to read-only
         subprocess.call(
-            'find %s -type d -exec chmod 555 {} \\;' % output_directory,
+            'find %s/orig -type d -exec chmod 555 {} \\;' % output_directory,
             shell=True)
         subprocess.call(
             'find %s -type f -exec chmod 444 {} \\;' % output_directory,
@@ -238,7 +238,7 @@ class Narps(object):
     def __init__(self, basedir, metadata_file=None,
                  verbose=False, overwrite=False):
         self.basedir = basedir
-        assert os.path.exists(self.basedir)
+        #assert os.path.exists(self.basedir)
         self.dirs = NarpsDirs(basedir)
         self.verbose = verbose
         self.teams = {}
@@ -751,7 +751,7 @@ if __name__ == "__main__":
         basedir = os.environ['NARPS_BASEDIR']
     else:
         basedir = '/data'
-    assert os.path.exists(basedir)
+    #assert os.path.exists(basedir)
 
     run_all = True
 
