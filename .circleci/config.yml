@@ -11,5 +11,4 @@ jobs:
       - run:
            name: run narps tests
            command: |
-             cd analysis
-             make test
+             cd analysis; pytest -q narps.py
