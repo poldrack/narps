@@ -48,3 +48,45 @@ This will use the existing version of the docker image from Dockerhub.  If you w
 ### Details
 
 ```narps.py``` contains a class that stores much of the information about the dataset.  Most of the notebooks load the stored narps structure that is saved by PrepareMaps.ipynb.  
+
+
+### Notes on data
+
+Data and hypothesis decisions were obtained from 70 teams.  Of these, the maps for 16 teams were excluded from further analysis due to the following problems:
+
+##### Bad normalization/resampling:
+
+- SVXXBBHN_98BT: rejected due to very bad normalization
+- UGXECSGG_L1A8: resampled image much smaller than template brain
+- VDOVGCPL_4SZ2: resampled image offset from template brain
+- WBTVHMSS_4TQ6: resampled image  offset and too large compared to template
+
+
+##### Missing thresholded images:
+
+- WIYTWEEA_2T7P: missing thresholded images
+
+
+##### Used surface-based analysis (only provided data for cortical ribbon:
+
+- DRVQPPNO_1K0E
+- UMSEIVRB_X1Z4 
+
+
+##### Missing data:
+
+- YWGVKXBZ_6FH5: missing much of the central brain
+- ACMKXFTG_P5F3: rejected due to large amounts of missing data across brain
+- NNUNPWLT_0H5E: rejected due to large amount of missing brain in center
+- CMJIFMMR_L3V8: rejected due to large amount of missing brain in center
+
+
+##### Bad histograms:  
+visual examiniation of histograms of unthresholded images showed a number of them that were clearly not distribted as z/t
+
+- RIIVGRDK_E3B6: very long tail, with substantial inflation at a value just below zero
+- JAWCZRDS_V55J: very small values
+- EPBGXICO_I07H: bimodal, with second distribution centered around 2.5
+- UXJVRRRR_0C7Q: appears to be a p-value distribution, with slight excursions below and above zero
+- OXLAIRNK_Q58J: bimodal, zero-inflated with a second distribution centered around 5
+
