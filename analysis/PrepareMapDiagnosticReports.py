@@ -17,19 +17,6 @@ from utils import get_masked_data
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
 bins = numpy.linspace(-5, 5)
 
-# instantiate main Narps class, which loads data
-# to rerun everything, set overwrite to True
-if 'NARPS_BASEDIR' in os.environ:
-    basedir = os.environ['NARPS_BASEDIR']
-else:
-    basedir = '/data'
-
-narps = Narps(basedir)
-# narps.load_data()
-
-output_dir = narps.dirs.dirs['output']
-mask_img = narps.dirs.MNI_mask
-
 
 def create_map_overlays(narps, overwrite=True,
                         hypnums=[1, 2, 5, 6, 7, 8, 9]):
@@ -68,11 +55,11 @@ def create_map_overlays(narps, overwrite=True,
             for collection_id in collection_ids:
                 teamID = collection_id.split('_')[1]
                 unthresh_img = os.path.join(
-                    output_dir,
-                    'orig/%s/hypo%d_unthresh.nii.gz' % (collection_id, hyp))
+                    narps.dirs.dirs['orig'],
+                    '%s/hypo%d_unthresh.nii.gz' % (collection_id, hyp))
                 thresh_img = os.path.join(
-                    output_dir,
-                    'thresh_mask_orig/%s/hypo%d_thresh.nii.gz' % (
+                    narps.dirs.dirs['thresh_mask_orig'],
+                    '%s/hypo%d_thresh.nii.gz' % (
                         collection_id, hyp))
 
                 if not (os.path.exists(thresh_img) or
@@ -131,7 +118,7 @@ def create_unthresh_histograms(narps, overwrite=True,
         if not os.path.exists(outfile) or overwrite:
             print('making figure for hyp', hyp)
             unthresh_data, labels = get_masked_data(
-                hyp, mask_img, output_dir,
+                hyp, narps.dirs.MNI_mask, narps.dirs.dirs['output'],
                 imgtype='unthresh', dataset='rectified')
 
             fig, ax = plt.subplots(
@@ -151,3 +138,18 @@ def create_unthresh_histograms(narps, overwrite=True,
                     ctr_x += 1
             plt.tight_layout()
             plt.savefig(outfile)
+
+
+if __name__ == "__main__":
+
+    # instantiate main Narps class, which loads data
+    if 'NARPS_BASEDIR' in os.environ:
+        basedir = os.environ['NARPS_BASEDIR']
+    else:
+        basedir = '/data'
+
+    narps = Narps(basedir)
+
+    create_map_overlays(narps)
+
+    create_unthresh_histograms(narps)
