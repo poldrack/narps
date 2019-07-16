@@ -27,7 +27,8 @@ RUN pip install \
     scipy \
     seaborn \
     xlrd \
-    statsmodels
+    statsmodels \
+    wget
 
 # install fsl
 RUN wget -O- http://neuro.debian.net/lists/stretch.us-nh.full |  tee /etc/apt/sources.list.d/neurodebian.sources.list
