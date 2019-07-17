@@ -112,6 +112,7 @@ def mk_std_maps(narps):
             axes=ax[i])
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'], 'std_map.pdf'))
+    plt.close(fig)
 
 
 def plot_individual_maps(
@@ -205,14 +206,14 @@ def plot_individual_maps(
             ctr += 1
         plt.savefig(os.path.join(
             outdir, '%s.pdf' % teamID))
+        plt.close(fig)
 
 
 def mk_correlation_maps_unthresh(
         narps,
         corr_type='spearman',
         n_clusters=Nond,
-        dataset='zstat',
-        distance_metric='euclidean'):
+        dataset='zstat'):
     """
     Create orrelation maps for unthresholded images
     These correlation matrices are clustered using Ward clustering,
@@ -255,7 +256,6 @@ def mk_correlation_maps_unthresh(
         df = pandas.DataFrame(cc, index=labels, columns=labels)
 
         ward_linkage = scipy.cluster.hierarchy.ward(cc)
-        distances = scipy.spatial.distance.pdist(cc, distance_metric)
 
         clustlabels = [
             s[0] for s in
@@ -394,6 +394,7 @@ def analyze_clusters(
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_cluster_means.pdf' % hyp))
+        plt.close(fig)
 
     # create a data frame containing cluster metadata
     print('creating cluster metadata df')
