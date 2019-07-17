@@ -61,7 +61,7 @@ This will use the existing version of the docker image from Dockerhub.  If you w
 We have attempted to maximize the reproducibility of the analyses in this project as follows:
 
 -   All software versions for UNIX and Python packages are pinned in the Dockerfile
--   Software versions for R packages are pinned using [packrat](https://rstudio.github.io/packrat/)
+-   Software versions for R packages are pinned using [checkpoint](https://cran.r-project.org/web/packages/checkpoint/vignettes/checkpoint.html)
 
 ### Local execution
 
