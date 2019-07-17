@@ -30,7 +30,6 @@ In addition, there is a set of template files (redistributed from the FSL distri
     -   ```templates/MNI152_T1_2mm.nii.gz```
     -   ```templates/MNI152_T1_2mm_brain_mask.nii.gz```
 
-
 #### Dockerized analysis pipeline
 
 To run the full analysis pipeline using Docker, do the following:
