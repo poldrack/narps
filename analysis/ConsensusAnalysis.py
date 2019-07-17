@@ -89,9 +89,6 @@ def run_ttests(narps, overwrite=True):
               numpy.mean(cc[numpy.triu_indices_from(cc, 1)]))
 
         # perform t-test
-        tvals = numpy.zeros(data.shape[1])
-        pvals = numpy.zeros(data.shape[1])
-        dfs = numpy.zeros(data.shape[1])
         tvals, dfs, pvals = t_corr(data,
                                    res_mean=img_mean,
                                    res_var=img_var,
