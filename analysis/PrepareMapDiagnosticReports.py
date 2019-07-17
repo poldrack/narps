@@ -138,6 +138,7 @@ def create_unthresh_histograms(narps, overwrite=True,
                     ctr_x += 1
             plt.tight_layout()
             plt.savefig(outfile)
+            plt.close(fig)
 
 
 if __name__ == "__main__":
