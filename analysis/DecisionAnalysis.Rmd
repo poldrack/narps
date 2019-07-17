@@ -8,6 +8,9 @@ output:
 Analyze decisions across teams.
 
 ```{r setup, echo=FALSE,message=FALSE}
+library(checkpoint)
+checkpoint("2019-07-16", checkpointLocation = tempdir())
+
 library(plyr)
 library(tidyverse)
 library(lmerTest)
