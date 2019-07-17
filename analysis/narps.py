@@ -5,6 +5,7 @@ import pandas
 import nibabel
 import json
 import os
+import time
 import glob
 import datetime
 import nilearn.image
@@ -17,11 +18,17 @@ from nipype.interfaces.fsl.model import SmoothEstimate
 import wget
 import tarfile
 import subprocess
-
+from urllib.error import HTTPError
 
 from utils import get_metadata, TtoZ, get_map_metadata
 
-DATA_URL = 'https://www.dropbox.com/s/wu0zrrwn2gtqbph/narps_origdata.tgz?dl=1'
+# set up data url
+if os.path.exists('info.json'):
+    info = json.load(open('info.json'))
+    DATA_URL = info['DATA_URL']
+else:
+    DATA_URL = None
+    print('info.json no present - data downloading will be disabled')
 
 # Hypotheses:
 #
@@ -120,9 +127,28 @@ class NarpsDirs(object):
         """
         download original data from repository
         """
+
+        MAX_TRIES = 5
+
+        if self.data_url is None:
+            print('no URL for original data, cannot download')
+            print('should be specified in info.json')
+            return
+
         print('orig data do not exist, downloading...')
         output_directory = self.dirs['base']
-        filename = wget.download(self.data_url, out=output_directory)
+        no_dl = True
+        ntries = 0
+        # try several times in case of http error
+        while no_dl:
+            try:
+                filename = wget.download(self.data_url, out=output_directory)
+                no_dl = False
+            except HTTPError:
+                ntries += 1
+                time.sleep(1) # wait a second
+            if ntries > MAX_TRIES:
+                raise Exception('Problem downloading original data')
         tarfile_obj = tarfile.open(filename)
         tarfile_obj.extractall(path=self.dirs['base'])
         os.remove(filename)
