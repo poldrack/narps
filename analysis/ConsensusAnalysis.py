@@ -58,7 +58,7 @@ def t_corr(y, res_mean=None, res_var=None, Q=None):
     df = numpy.Inf
     p = 1 - scipy.stats.norm.cdf(T)
 
-    return(T, df, p)
+    return(T, p)
 
 
 def run_ttests(narps, overwrite=True):
@@ -89,7 +89,7 @@ def run_ttests(narps, overwrite=True):
               numpy.mean(cc[numpy.triu_indices_from(cc, 1)]))
 
         # perform t-test
-        tvals, dfs, pvals = t_corr(data,
+        tvals, pvals = t_corr(data,
                                    res_mean=img_mean,
                                    res_var=img_var,
                                    Q=cc)
