@@ -19,6 +19,7 @@ import wget
 import tarfile
 import subprocess
 from urllib.error import HTTPError
+import tempfile
 
 from utils import get_metadata, TtoZ, get_map_metadata
 
@@ -438,12 +439,14 @@ class Narps(object):
         return(image_metadata_df)
 
     def create_concat_images(self, datatype='resampled',
-                             imgtypes=['thresh', 'unthresh'],
+                             imgtypes=None,
                              overwrite=None):
         """
         create images concatenated across teams
         ordered by self.complete_image_sets
         """
+        if imgtypes is None:
+            imgtypes = ['thresh', 'unthresh']
         if overwrite is None:
             overwrite = self.overwrite
         for imgtype in imgtypes:
@@ -828,17 +831,18 @@ class Narps(object):
 
 class TestNarps(object):
     """ test object for pytest"""
-    def test_narps_dirs(self):
-        _ = NarpsDirs(
-            "/tmp/narps")
+    @classmethod
+    def test_narps_dirs(tmpdir):
+        _ = NarpsDirs(tmpdir)
 
-    def test_narps_team(self):
-        narpsDirs = NarpsDirs(
-            "/tmp/narps")
+    @classmethod
+    def test_narps_team(tmpdir):
+        narpsDirs = NarpsDirs(tmpdir)
         _ = NarpsTeam('C88N', 'ADFZYYLQ', narpsDirs)
 
-    def test_narps_main_class(self):
-        _ = Narps("/tmp/narps")
+    @classmethod
+    def test_narps_main_class(tmpdir):
+        _ = Narps(tmpdir)
 
 
 if __name__ == "__main__":
