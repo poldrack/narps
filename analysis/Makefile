@@ -13,11 +13,6 @@ current_dir = $(shell pwd)
 # set to your username if you wish to push custom version to a different dockerhub acct
 DOCKER_USERNAME = poldrack
 
-get-data: guard-NARPS_BASEDIR
-	wget https://www.dropbox.com/s/wu0zrrwn2gtqbph/narps_origdata.tgz?dl=1 -O $(NARPS_BASEDIR)/narps_origdata.tgz
-	tar zxvf $(NARPS_BASEDIR)/narps_origdata.tgz -C $(NARPS_BASEDIR)
-	rm $(NARPS_BASEDIR)/narps_origdata.tgz
-
 test:
 	pytest -q narps.py
 
@@ -59,26 +54,28 @@ docker-build: guard-DOCKER_USERNAME
 	docker build -t $(DOCKER_USERNAME)/narps-analysis .
 
 shell: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -it --entrypoint=bash -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data -p 8888:8888 $(DOCKER_USERNAME)/narps-analysis 
+	docker run -it --entrypoint=bash -v $(NARPS_BASEDIR):/data -p 8888:8888 $(DOCKER_USERNAME)/narps-analysis 
 
 
 # this has same functionality as running the PrepareMaps function below, except
 # that it doesn't produce reports
+# previously used -v $(current_dir):/analysis  - now we use the analysis dir in the container
+
 run-all: run-PrepareMaps run-PrepareMetadata run-AnalyzeMaps run-AnalyzeDecisions run-ConsensusAnalysis
 
 run-PrepareMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/narps.py"
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/narps.py"
 
 run-PrepareMetadata: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/PrepareMetadata.py\]
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/PrepareMetadata.py\]
 
 run-AnalyzeMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/AnalyzeMaps.py
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/AnalyzeMaps.py
 
 run-ConsensusAnalysis: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/ConsensusAnalysis.py
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/ConsensusAnalysis.py
 
 run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document")'
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document")'
 
 
