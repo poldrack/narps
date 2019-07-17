@@ -210,7 +210,7 @@ def plot_individual_maps(
 def mk_correlation_maps_unthresh(
         narps,
         corr_type='spearman',
-        n_clusters={1: 4, 2: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 3},
+        n_clusters=Nond,
         dataset='zstat',
         distance_metric='euclidean'):
     """
@@ -219,6 +219,9 @@ def mk_correlation_maps_unthresh(
     with the number of clusters for each hypotheses determined by
     visual examination.
     """
+
+    if n_clusters is None:
+        n_clusters = {1: 4, 2: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 3}
 
     dendrograms = {}
     membership = {}
