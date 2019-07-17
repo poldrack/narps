@@ -88,6 +88,7 @@ def mk_range_maps(narps):
             axes=ax[i])
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'], 'range_map.pdf'))
+    plt.close(fig)
 
 
 def mk_std_maps(narps):
