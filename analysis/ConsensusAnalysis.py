@@ -140,6 +140,7 @@ def mk_figures(narps, thresh=0.95):
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
         'consensus_map.pdf'))
+    plt.close(fig)
 
 
 if __name__ == "__main__":
