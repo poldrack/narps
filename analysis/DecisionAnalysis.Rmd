@@ -9,7 +9,10 @@ Analyze decisions across teams.
 
 ```{r setup, echo=FALSE,message=FALSE}
 library(checkpoint)
-checkpoint("2019-07-16", checkpointLocation = tempdir())
+checkpointDir <- tempfile(pattern = "checkpoint")
+dir.create(checkpointDir)
+dir.create(file.path(checkpointDir, ".checkpoint"))
+checkpoint("2019-07-16", checkpointLocation = checkpointDir)
 
 library(plyr)
 library(tidyverse)
@@ -19,6 +22,7 @@ library(emmeans)
 library(pscl)
 library(arm)
 library(MuMIn)
+library(multcomp)
 
 basedir = Sys.getenv('NARPS_BASEDIR')
 if (basedir == ""){
@@ -125,9 +129,8 @@ m_hyp_nopackage = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + testing 
 cat('\ntesting effect of package\n')
 anova(m_hyp_full,m_hyp_nopackage,test='Chisq')
 leastsquare = emmeans(m_hyp_full,'package')
-CLD(leastsquare, 
-    alpha=.05,  
-    Letters=letters)
+multcomp::cld(leastsquare, 
+    level=.05)
 # compute delta r-squared between this model and full model
 r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nopackage)
 
@@ -141,9 +144,8 @@ m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package 
 cat('\ntesting effect of testing\n')
 anova(m_hyp_full,m_hyp_notesting,test='Chisq')
 leastsquare = emmeans(m_hyp_full,'testing')
-CLD(leastsquare, 
-    alpha=.05,  
-    Letters=letters)
+multcomp::cld(leastsquare, 
+    level=.05)
 
 # compute delta r-squared between this model and full model
 r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_notesting)
@@ -287,7 +289,7 @@ ggplot(decisionSummary_smoothingkernel,aes(varnum,meanAppliedFWHM,color=Decision
 
 ```{r loadPatternDistance}
 
-patterndist_df = read_csv(paste(basedir,'metadata/mean_pattern_distance.csv',sep='/'),skip=0)
+patterndist_df = read_csv(paste(basedir,'metadata/median_pattern_distance.csv',sep='/'),skip=0)
 names(patterndist_df)=c('teamID','mean_distance')
 
 merged_df = join(patterndist_df,narps_df %>% filter(varnum==1),by=c('teamID'))
@@ -348,9 +350,8 @@ cat('\ntesting effect of package\n')
 anova(dist_hyp_full,dist_hyp_nopackage,test='Chisq')
 s$r.squared - summary(dist_hyp_nopackage)$r.squared
 leastsquare = emmeans(dist_hyp_full,'package')
-CLD(leastsquare, 
-    alpha=.05,  
-    Letters=letters)
+multcomp::cld(leastsquare, 
+    level=.05)
 
 
 ```
@@ -363,10 +364,13 @@ anova(dist_hyp_full,dist_hyp_notesting,test='Chisq')
 s$r.squared - summary(dist_hyp_notesting)$r.squared
 
 leastsquare = emmeans(dist_hyp_full,'testing')
-CLD(leastsquare, 
-    alpha=.05,  
-    Letters=letters)
+multcomp::cld(leastsquare, 
+    level=.05)
 
 
+```
+
+```{r tmpCleanup}
+unlink(checkpointDir, recursive = TRUE)
 ```
 
