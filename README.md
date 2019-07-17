@@ -1,6 +1,5 @@
 # Neuroimaging Analysis Replication and Prediction Study
 
-
 [![DOI](https://zenodo.org/badge/85984198.svg)](https://zenodo.org/badge/latestdoi/85984198)
 
 [![CircleCI](https://circleci.com/gh/poldrack/narps.svg?style=svg)](https://circleci.com/gh/poldrack/narps)
@@ -10,6 +9,5 @@
 [![Coverage Status](https://coveralls.io/repos/github/poldrack/narps/badge.svg?branch=master)](https://coveralls.io/github/poldrack/narps?branch=master)
 
 This repository contains code related to the [Neuroimaging Analysis Replication and Prediction Study](http://narps.info).
-
 
 For primary analysis code see the analysis subdirectory
