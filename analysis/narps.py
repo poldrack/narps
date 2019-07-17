@@ -23,9 +23,13 @@ from urllib.error import HTTPError
 from utils import get_metadata, TtoZ, get_map_metadata
 
 # set up data url
-if os.path.exists('info.json'):
+if 'DATA_URL' in os.environ:
+    DATA_URL = os.environ['DATA_URL']
+    print('reading data URL from environment')
+elif os.path.exists('info.json'):
     info = json.load(open('info.json'))
     DATA_URL = info['DATA_URL']
+    print('reading data URL from info.json')
 else:
     DATA_URL = None
     print('info.json no present - data downloading will be disabled')
