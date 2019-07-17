@@ -54,7 +54,7 @@ docker-build: guard-DOCKER_USERNAME
 	docker build -t $(DOCKER_USERNAME)/narps-analysis .
 
 shell: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -it --entrypoint=bash -v $(NARPS_BASEDIR):/data -p 8888:8888 $(DOCKER_USERNAME)/narps-analysis 
+	docker run -it --entrypoint=bash -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data -p 8888:8888 $(DOCKER_USERNAME)/narps-analysis 
 
 
 # this has same functionality as running the PrepareMaps function below, except
@@ -63,19 +63,19 @@ shell: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 
 run-all: run-PrepareMaps run-PrepareMetadata run-AnalyzeMaps run-AnalyzeDecisions run-ConsensusAnalysis
 
-run-PrepareMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
-	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/narps.py"
+run-PrepareMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR guard-DATA_URL
+	docker run -e "DATA_URL=$(DATA_URL)" -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /narps/analysis/narps.py"
 
 run-PrepareMetadata: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/PrepareMetadata.py\]
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /narps/analysis/PrepareMetadata.py
 
 run-AnalyzeMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/AnalyzeMaps.py
+	docker run -v $(current_dir):/narps/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /narps/analysis/AnalyzeMaps.py
 
 run-ConsensusAnalysis: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/ConsensusAnalysis.py
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /narps/analysis/ConsensusAnalysis.py
 
 run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document")'
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/narps/analysis/DecisionAnalysis.Rmd", "html_document")'
 
 
