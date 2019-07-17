@@ -19,7 +19,6 @@ import wget
 import tarfile
 import subprocess
 from urllib.error import HTTPError
-import tempfile
 
 from utils import get_metadata, TtoZ, get_map_metadata
 
