@@ -56,8 +56,15 @@ The outputs can be found in the subdirectories of NARPS_BASEDIR:
 
 This will use the existing version of the docker image from Dockerhub.  If you wish to build the Docker image locally, you should change the DOCKER_USERNAME variable in the Makefile to your own username, and then run ```make docker-build```.
 
+#### Reproducibility
+
+We have attempted to maximize the reproducibility of the analyses in this project as follows:
+
+-   All software versions for UNIX and Python packages are pinned in the Dockerfile
+-   Software versions for R packages are pinned using [packrat](https://rstudio.github.io/packrat/)
+
 ### Local execution
 
-Execution via Docker is recommended, but the analysis can also be run locally, using ```make run-all-local``` - this will require that you have all of the various requirements in place.  Right now these must be inferred from the Dockerfile, but ```make install-R-packages``` will install all of the necessary R packages locally.
+Execution via Docker is recommended, but the analysis can also be run locally, using ```make run-all-local``` - this will require that you have all of the various requirements in place.  Right now these must be inferred from the Dockerfile.
 
 
