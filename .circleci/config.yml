@@ -15,4 +15,6 @@ jobs:
              cd analysis; pytest -q narps.py
       - run:
            name: static analysis and style check using flake8
-           command: cd analysis; make check-style
+           command: |
+             pip install -U flake8
+             cd analysis; make check-style
