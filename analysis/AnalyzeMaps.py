@@ -213,7 +213,7 @@ def plot_individual_maps(
 def mk_correlation_maps_unthresh(
         narps,
         corr_type='spearman',
-        n_clusters=Nond,
+        n_clusters=None,
         dataset='zstat'):
     """
     Create orrelation maps for unthresholded images
