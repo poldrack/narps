@@ -146,7 +146,7 @@ class NarpsDirs(object):
                 no_dl = False
             except HTTPError:
                 ntries += 1
-                time.sleep(1) # wait a second
+                time.sleep(1)  # wait a second
             if ntries > MAX_TRIES:
                 raise Exception('Problem downloading original data')
         tarfile_obj = tarfile.open(filename)
