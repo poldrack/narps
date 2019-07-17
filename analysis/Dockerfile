@@ -46,22 +46,11 @@ WORKDIR /R-3.6.0
 RUN ./configure --enable-R-shlib=yes && make && make install
 RUN rm -rf /R-3.6.0*
 
-RUN echo 'install.packages(c("packrat"), repos="http://cran.us.r-project.org", dependencies=TRUE)' | R --no-save
-
-#RUN echo 'install.packages(c("tidyverse","lme4","lmerTest","emmeans","pscl","arm","MuMIn"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /R-3.6.0*
-
-# copy over current version of code, and use packrat to install R packages
-WORKDIR /
-RUN git clone -n https://github.com/poldrack/narps.git
-
-# ultimately will tag to a specific commit - use develop for now
-WORKDIR /narps
-RUN git checkout develop  
-
-# set up R packages using packrat
-WORKDIR /narps/analysis
-RUN echo "packrat::restore()" | R --no-save
-RUN rm -rf /analysis_tmp
+RUN echo 'install.packages(c("checkpoint"), repos="http://cran.us.r-project.org", dependencies=TRUE)' | R --no-save
+RUN mkdir /root/.checkpoint
+RUN echo 'library(checkpoint)' > /tmp/packages.R 
+RUN echo 'checkpoint("2019-07-16")' >> /tmp/packages.R 
+RUN echo 'install.packages(c("tidyverse","lme4","lmerTest","emmeans","pscl","arm","MuMIn"), repos="http://cran.us.r-project.org", dependencies=TRUE)' >> /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /R-3.6.0*
 
 # environment setup
 ENV C_INCLUDE_PATH /usr/local/lib/R/include
