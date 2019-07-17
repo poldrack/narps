@@ -32,19 +32,19 @@ check-style:
 run-all: run-PrepareMaps run-PrepareMetadata run-AnalyzeMaps run-AnalyzeDecisions run-ConsensusAnalysis
 
 run-PrepareMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR guard-DATA_URL
-	docker run -e "DATA_URL=$(DATA_URL)" -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /narps/analysis/narps.py"
+	docker run -e "DATA_URL=$(DATA_URL)" -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/narps.py"
 
 run-PrepareMetadata: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /narps/analysis/PrepareMetadata.py
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/PrepareMetadata.py
 
 run-AnalyzeMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/narps/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /narps/analysis/AnalyzeMaps.py
+	docker run -v $(current_dir):/narps/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/AnalyzeMaps.py
 
 run-ConsensusAnalysis: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /narps/analysis/ConsensusAnalysis.py
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/ConsensusAnalysis.py
 
 run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/narps/analysis/DecisionAnalysis.Rmd", "html_document")'
+	docker run -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document")'
 
 
 # commands for building and testing docker image
