@@ -44,7 +44,24 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 RUN wget https://cran.r-project.org/src/base/R-3/R-3.6.0.tar.gz && tar zxf R-3.6.0.tar.gz -C /
 WORKDIR /R-3.6.0
 RUN ./configure --enable-R-shlib=yes && make && make install
-RUN echo 'install.packages(c("tidyverse","lme4","lmerTest","emmeans","pscl","arm","MuMIn"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /R-3.6.0*
+RUN rm -rf /R-3.6.0*
+
+RUN echo 'install.packages(c("packrat"), repos="http://cran.us.r-project.org", dependencies=TRUE)' | R --no-save
+
+#RUN echo 'install.packages(c("tidyverse","lme4","lmerTest","emmeans","pscl","arm","MuMIn"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /R-3.6.0*
+
+# copy over current version of code, and use packrat to install R packages
+WORKDIR /
+RUN git clone -n https://github.com/poldrack/narps.git
+
+# ultimately will tag to a specific commit - use develop for now
+WORKDIR /narps
+RUN git checkout develop  
+
+# set up R packages using packrat
+WORKDIR /narps/analysis
+RUN echo "packrat::restore()" | R --no-save
+RUN rm -rf /analysis_tmp
 
 # environment setup
 ENV C_INCLUDE_PATH /usr/local/lib/R/include
