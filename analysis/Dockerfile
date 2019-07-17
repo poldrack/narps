@@ -67,5 +67,6 @@ RUN rm -rf /analysis_tmp
 ENV C_INCLUDE_PATH /usr/local/lib/R/include
 ENV LD_LIBRARY_PATH /usr/local/lib/R/lib
 RUN echo "source /etc/fsl/5.0/fsl.sh" >> /root/.bashrc
+ENV NARPS_BASEDIR /data
 
 CMD ["/bin/bash"]
