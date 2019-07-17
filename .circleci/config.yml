@@ -18,3 +18,8 @@ jobs:
            command: |
              pip install -U flake8
              cd analysis; make check-style
+      - run:
+           name: code coverage
+           command: |
+             pip install -U codecov
+             codecov
