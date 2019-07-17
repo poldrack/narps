@@ -9,7 +9,12 @@ jobs:
             - "e4:d9:2a:de:d8:40:56:15:af:c7:34:93:ad:d2:85:d1"
       - checkout
       - run:
-           name: run narps tests
+           name: run main narps tests
            command: |
-             cd analysis
-             make test
+             pip install -U pytest
+             cd analysis; pytest -q narps.py
+      - run:
+           name: static analysis and style check using flake8
+           command: |
+             pip install -U flake8
+             cd analysis; make check-style

@@ -20,11 +20,32 @@ get-data: guard-NARPS_BASEDIR
 
 test:
 	pytest -q narps.py
-run:
-	python narps.py
 
 check-style:
-	flake8 --show-source narps.py >| stylecheck.out
+	flake8 --show-source  >| stylecheck.out
+
+# commands to run on local machine
+
+install-R-packages:
+	echo 'install.packages(c("tidyverse","lme4","lmerTest","emmeans","pscl","arm","MuMIn"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R
+
+run-all-local: run-PrepareMaps-local run-PrepareMetadata-local run-AnalyzeMaps-local run-ConsensusAnalysis-local # run-AnalyzeDecisions-local
+
+run-PrepareMaps-local:
+	python narps.py
+
+run-PrepareMetadata-local:
+	python PrepareMetadata.py
+
+run-AnalyzeMaps-local:
+	python AnalyzeMaps.py
+
+run-ConsensusAnalysis-local:
+	python ConsensusAnalysis.py
+
+run-AnalyzeDecisions-local:
+	 Rscript -e 'library(rmarkdown); rmarkdown::render("DecisionAnalysis.Rmd", "html_document")'
+
 
 docker-deploy: docker-login docker-upload
 
@@ -43,27 +64,21 @@ shell: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 
 # this has same functionality as running the PrepareMaps function below, except
 # that it doesn't produce reports
-run-narps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/narps.py
-
 run-all: run-PrepareMaps run-PrepareMetadata run-AnalyzeMaps run-AnalyzeDecisions run-ConsensusAnalysis
 
+run-PrepareMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/narps.py"
+
 run-PrepareMetadata: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis jupyter nbconvert --to notebook --inplace --execute /analysis/PrepareMetadata.ipynb
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/PrepareMetadata.py\]
 
-# need to source fsl setup to use smoothest
-run-PrepareMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;jupyter nbconvert --to notebook --inplace --ExecutePreprocessor.timeout=-1 --execute /analysis/PrepareMaps.ipynb"
-
-# requires PrepareMetadata and PrepareMaps to have been run
 run-AnalyzeMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis jupyter nbconvert --to notebook --inplace --ExecutePreprocessor.timeout=-1 --execute /analysis/AnalyzeMaps.ipynb
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/AnalyzeMaps.py
 
-# requires PrepareMetadata and PrepareMaps to have been run
 run-ConsensusAnalysis: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis jupyter nbconvert --to notebook --inplace --ExecutePreprocessor.timeout=-1 --execute /analysis/ConsensusAnalysis.ipynb
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/ConsensusAnalysis.py
 
-# requires AnalyzeMaps to have been run, for pattern distance metadata
 run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document")'
+
 
