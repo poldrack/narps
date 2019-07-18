@@ -17,4 +17,4 @@ jobs:
            name: static analysis and style check using flake8
            command: |
              pip install -U flake8
-             cd analysis; make check-style
+             cd analysis; flake8 --show-source
