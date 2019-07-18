@@ -438,12 +438,14 @@ class Narps(object):
         return(image_metadata_df)
 
     def create_concat_images(self, datatype='resampled',
-                             imgtypes=['thresh', 'unthresh'],
+                             imgtypes=None,
                              overwrite=None):
         """
         create images concatenated across teams
         ordered by self.complete_image_sets
         """
+        if imgtypes is None:
+            imgtypes = ['thresh', 'unthresh']
         if overwrite is None:
             overwrite = self.overwrite
         for imgtype in imgtypes:
@@ -601,50 +603,49 @@ class Narps(object):
         """
         if overwrite is None:
             overwrite = self.overwrite
-        for teamID in self.complete_image_sets:
-            for hyp in range(1, 10):
+        for hyp in range(1, 10):
 
-                unthresh_file = os.path.join(
-                    self.dirs.dirs['output'],
-                    'unthresh_concat_%s/hypo%d.nii.gz' % (datatype, hyp))
+            unthresh_file = os.path.join(
+                self.dirs.dirs['output'],
+                'unthresh_concat_%s/hypo%d.nii.gz' % (datatype, hyp))
 
-                range_outfile = os.path.join(
+            range_outfile = os.path.join(
+                self.dirs.dirs['output'],
+                'unthresh_range_%s/hypo%d.nii.gz' % (datatype, hyp))
+            if not os.path.exists(os.path.join(
+                self.dirs.dirs['output'],
+                    'unthresh_range_%s' % datatype)):
+                os.mkdir(os.path.join(
                     self.dirs.dirs['output'],
-                    'unthresh_range_%s/hypo%d.nii.gz' % (datatype, hyp))
-                if not os.path.exists(os.path.join(
-                    self.dirs.dirs['output'],
-                        'unthresh_range_%s' % datatype)):
-                    os.mkdir(os.path.join(
-                        self.dirs.dirs['output'],
-                        'unthresh_range_%s' % datatype))
+                    'unthresh_range_%s' % datatype))
 
-                std_outfile = os.path.join(
+            std_outfile = os.path.join(
+                self.dirs.dirs['output'],
+                'unthresh_std_%s/hypo%d.nii.gz' % (datatype, hyp))
+            if not os.path.exists(os.path.join(
                     self.dirs.dirs['output'],
-                    'unthresh_std_%s/hypo%d.nii.gz' % (datatype, hyp))
-                if not os.path.exists(os.path.join(
-                        self.dirs.dirs['output'],
-                        'unthresh_std_%s' % datatype)):
-                    os.mkdir(os.path.join(
-                        self.dirs.dirs['output'],
-                        'unthresh_std_%s' % datatype))
+                    'unthresh_std_%s' % datatype)):
+                os.mkdir(os.path.join(
+                    self.dirs.dirs['output'],
+                    'unthresh_std_%s' % datatype))
 
-                if not os.path.exists(range_outfile) \
-                        or not os.path.exists(std_outfile) \
-                        or overwrite:
-                    unthresh_img = nibabel.load(unthresh_file)
-                    unthresh_data = unthresh_img.get_data()
-                    concat_data = numpy.nan_to_num(unthresh_data)
-                    datarange = numpy.max(concat_data, axis=3) \
-                        - numpy.min(concat_data, axis=3)
-                    range_img = nibabel.Nifti1Image(
-                        datarange,
-                        affine=unthresh_img.affine)
-                    range_img.to_filename(range_outfile)
-                    datastd = numpy.std(concat_data, axis=3)
-                    std_img = nibabel.Nifti1Image(
-                        datastd,
-                        affine=unthresh_img.affine)
-                    std_img.to_filename(std_outfile)
+            if not os.path.exists(range_outfile) \
+                    or not os.path.exists(std_outfile) \
+                    or overwrite:
+                unthresh_img = nibabel.load(unthresh_file)
+                unthresh_data = unthresh_img.get_data()
+                concat_data = numpy.nan_to_num(unthresh_data)
+                datarange = numpy.max(concat_data, axis=3) \
+                    - numpy.min(concat_data, axis=3)
+                range_img = nibabel.Nifti1Image(
+                    datarange,
+                    affine=unthresh_img.affine)
+                range_img.to_filename(range_outfile)
+                datastd = numpy.std(concat_data, axis=3)
+                std_img = nibabel.Nifti1Image(
+                    datastd,
+                    affine=unthresh_img.affine)
+                std_img.to_filename(std_outfile)
 
     def convert_to_zscores(self, map_metadata_file=None, overwrite=None):
         """
@@ -829,17 +830,18 @@ class Narps(object):
 
 class TestNarps(object):
     """ test object for pytest"""
-    def test_narps_dirs(self):
-        _ = NarpsDirs(
-            "/tmp/narps")
+    @classmethod
+    def test_narps_dirs(tmpdir):
+        _ = NarpsDirs(tmpdir)
 
-    def test_narps_team(self):
-        narpsDirs = NarpsDirs(
-            "/tmp/narps")
+    @classmethod
+    def test_narps_team(tmpdir):
+        narpsDirs = NarpsDirs(tmpdir)
         _ = NarpsTeam('C88N', 'ADFZYYLQ', narpsDirs)
 
-    def test_narps_main_class(self):
-        _ = Narps("/tmp/narps")
+    @classmethod
+    def test_narps_main_class(tmpdir):
+        _ = Narps(tmpdir)
 
 
 if __name__ == "__main__":

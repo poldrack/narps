@@ -88,6 +88,7 @@ def mk_range_maps(narps):
             axes=ax[i])
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'], 'range_map.pdf'))
+    plt.close(fig)
 
 
 def mk_std_maps(narps):
@@ -112,6 +113,7 @@ def mk_std_maps(narps):
             axes=ax[i])
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'], 'std_map.pdf'))
+    plt.close(fig)
 
 
 def plot_individual_maps(
@@ -205,20 +207,23 @@ def plot_individual_maps(
             ctr += 1
         plt.savefig(os.path.join(
             outdir, '%s.pdf' % teamID))
+        plt.close(fig)
 
 
 def mk_correlation_maps_unthresh(
         narps,
         corr_type='spearman',
-        n_clusters={1: 4, 2: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 3},
-        dataset='zstat',
-        distance_metric='euclidean'):
+        n_clusters=None,
+        dataset='zstat'):
     """
     Create orrelation maps for unthresholded images
     These correlation matrices are clustered using Ward clustering,
     with the number of clusters for each hypotheses determined by
     visual examination.
     """
+
+    if n_clusters is None:
+        n_clusters = {1: 4, 2: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 3}
 
     dendrograms = {}
     membership = {}
@@ -252,7 +257,6 @@ def mk_correlation_maps_unthresh(
         df = pandas.DataFrame(cc, index=labels, columns=labels)
 
         ward_linkage = scipy.cluster.hierarchy.ward(cc)
-        distances = scipy.spatial.distance.pdist(cc, distance_metric)
 
         clustlabels = [
             s[0] for s in
@@ -299,7 +303,7 @@ def mk_correlation_maps_unthresh(
     with open(os.path.join(
             narps.dirs.dirs['output'],
             'unthresh_dendrograms_%s.pkl' % corr_type), 'wb') as f:
-        pickle.dump((dendrograms, membership), f)
+        pickle.dump((dendrograms, membership, cc), f)
 
     # also save correlation info
     median_distance = mean_corr.median(1).sort_values()
@@ -309,6 +313,9 @@ def mk_correlation_maps_unthresh(
     median_distance_df.to_csv(os.path.join(
         narps.dirs.dirs['metadata'],
         'median_pattern_distance.csv'))
+
+    print('median correlation between teams:',
+          numpy.median(cc[numpy.triu_indices_from(cc,1)]))
 
     return((dendrograms, membership))
 
@@ -330,7 +337,7 @@ def analyze_clusters(
         with open(os.path.join(
                 narps.dirs.dirs['output'],
                 'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
-            dendrograms, membership = pickle.load(f)
+            dendrograms, membership, cc = pickle.load(f)
 
     mean_smoothing = {}
     mean_decision = {}
@@ -391,6 +398,7 @@ def analyze_clusters(
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_cluster_means.pdf' % hyp))
+        plt.close(fig)
 
     # create a data frame containing cluster metadata
     print('creating cluster metadata df')

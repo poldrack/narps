@@ -58,13 +58,12 @@ def t_corr(y, res_mean=None, res_var=None, Q=None):
     df = numpy.Inf
     p = 1 - scipy.stats.norm.cdf(T)
 
-    return(T, df, p)
+    return(T, p)
 
 
 def run_ttests(narps, overwrite=True):
     masker = nilearn.input_data.NiftiMasker(mask_img=narps.dirs.MNI_mask)
-    results_dir = os.path.join(narps.dirs.dirs['output'],
-                               'consensus_analysis')
+    results_dir = narps.dirs.dirs['consensus']
     if not os.path.exists(results_dir):
         os.mkdir(results_dir)
 
@@ -89,10 +88,7 @@ def run_ttests(narps, overwrite=True):
               numpy.mean(cc[numpy.triu_indices_from(cc, 1)]))
 
         # perform t-test
-        tvals = numpy.zeros(data.shape[1])
-        pvals = numpy.zeros(data.shape[1])
-        dfs = numpy.zeros(data.shape[1])
-        tvals, dfs, pvals = t_corr(data,
+        tvals, pvals = t_corr(data,
                                    res_mean=img_mean,
                                    res_var=img_var,
                                    Q=cc)
@@ -118,11 +114,11 @@ def mk_figures(narps, thresh=0.95):
 
     for i, hyp in enumerate(hypnums):
         pmap = os.path.join(
-            narps.dirs.dirs['output'],
-            'consensus_analysis/hypo%d_1-fdr.nii.gz' % hyp)
+            narps.dirs.dirs['consensus'],
+            'hypo%d_1-fdr.nii.gz' % hyp)
         tmap = os.path.join(
-            narps.dirs.dirs['output'],
-            'consensus_analysis//hypo%d_t.nii.gz' % hyp)
+            narps.dirs.dirs['consensus'],
+            'hypo%d_t.nii.gz' % hyp)
         pimg = nibabel.load(pmap)
         timg = nibabel.load(tmap)
         pdata = pimg.get_fdata()
@@ -143,6 +139,7 @@ def mk_figures(narps, thresh=0.95):
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
         'consensus_map.pdf'))
+    plt.close(fig)
 
 
 if __name__ == "__main__":
@@ -156,6 +153,12 @@ if __name__ == "__main__":
     # setup main class
     narps = Narps(basedir)
     narps.load_data()
+    narps.dirs.dirs['consensus'] = os.path.join(
+        narps.dirs.dirs['output'],
+        'consensus_analysis')
+
+    if not os.path.exists(narps.dirs.dirs['consensus']):
+        os.mkdir(narps.dirs.dirs['consensus'])
 
     run_ttests(narps)
     mk_figures(narps)

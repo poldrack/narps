@@ -11,15 +11,14 @@ import matplotlib.pyplot as plt
 import numpy
 import nilearn.input_data
 
-from narps import Narps
+from narps import Narps, hypnums
 from utils import get_masked_data
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
 bins = numpy.linspace(-5, 5)
 
 
-def create_map_overlays(narps, overwrite=True,
-                        hypnums=[1, 2, 5, 6, 7, 8, 9]):
+def create_map_overlays(narps, overwrite=True):
     """
     Make report showing all orig maps with threshold overlays
     This report includes all maps for which data were available,
@@ -96,8 +95,7 @@ def create_map_overlays(narps, overwrite=True,
             plt.close(fig)
 
 
-def create_unthresh_histograms(narps, overwrite=True,
-                               hypnums=[1, 2, 5, 6, 7, 8, 9]):
+def create_unthresh_histograms(narps, overwrite=True):
     """
 `   Create histograms for in-mask values in unthresholded images
     These are only created for the images that were successfully
@@ -138,6 +136,7 @@ def create_unthresh_histograms(narps, overwrite=True,
                     ctr_x += 1
             plt.tight_layout()
             plt.savefig(outfile)
+            plt.close(fig)
 
 
 if __name__ == "__main__":
