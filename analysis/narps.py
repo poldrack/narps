@@ -13,7 +13,7 @@ import nilearn.input_data
 import nilearn.plotting
 import shutil
 import warnings
-import pickle
+import hickle
 from nipype.interfaces.fsl.model import SmoothEstimate
 import wget
 import tarfile
@@ -794,8 +794,9 @@ class Narps(object):
             if not outfile:
                 outfile = os.path.join(self.dirs.dirs['cached'],
                                        'narps_prepare_maps.pkl')
-            with open(outfile, 'wb') as f:
-                pickle.dump(info, f)
+            # with open(outfile, 'wb') as f:
+            #    pickle.dump(info, f)
+            hickle.dump(info, outfile, mode='w')
         return(info)
 
     def load_data(self, infile=None):
@@ -807,8 +808,9 @@ class Narps(object):
                                   'narps_prepare_maps.pkl')
         assert os.path.exists(infile)
 
-        with open(infile, 'rb') as f:
-            info = pickle.load(f)
+        # with open(infile, 'rb') as f:
+        #   info = pickle.load(f)
+        info = hickle.load(infile)
 
         self.dirs = info['dirs']
         self.complete_image_sets = info['teamlist']

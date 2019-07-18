@@ -8,7 +8,7 @@ Primary analysis of statistical maps
 import numpy
 import pandas
 import nibabel
-import pickle
+import hickle
 import os
 import glob
 import nilearn.image
@@ -300,10 +300,10 @@ def mk_correlation_maps_unthresh(
             membership[hyp][cl].append(labels[j])
 
     # save cluster data to file so that we don't have to rerun everything
-    with open(os.path.join(
-            narps.dirs.dirs['output'],
-            'unthresh_dendrograms_%s.pkl' % corr_type), 'wb') as f:
-        pickle.dump((dendrograms, membership, cc_unthresh), f)
+    outfile = os.path.join(
+        narps.dirs.dirs['output'],
+        'unthresh_dendrograms_%s.pkl' % corr_type)
+    hickle.dump((dendrograms, membership, cc_unthresh), outfile, mode='w')
 
     # also save correlation info
     median_distance = mean_corr.median(1).sort_values()
@@ -334,10 +334,10 @@ def analyze_clusters(
     """
 
     if dendrograms is None or membership is None:
-        with open(os.path.join(
-                narps.dirs.dirs['output'],
-                'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
-            dendrograms, membership, _ = pickle.load(f)
+        infile = os.path.join(
+            narps.dirs.dirs['output'],
+            'unthresh_dendrograms_%s.pkl' % corr_type)
+        dendrograms, membership, _ = hickle.load(infile)
 
     mean_smoothing = {}
     mean_decision = {}
