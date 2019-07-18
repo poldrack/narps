@@ -6,8 +6,6 @@
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c35f17b180aa4b1e8cbd33b9b1473c3e)](https://www.codacy.com/app/poldrack/narps?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=poldrack/narps&amp;utm_campaign=Badge_Grade)
 
-[![Coverage Status](https://coveralls.io/repos/github/poldrack/narps/badge.svg?branch=master)](https://coveralls.io/github/poldrack/narps?branch=master)
-
 #### Setup
 
 In order to run this code, you must obtain the URL for the original data from Russ Poldrack - these data will be made publicly available upon publication of the paper.
