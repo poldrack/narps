@@ -827,9 +827,10 @@ class Narps(object):
             self.teams[teamID].input_dir = info[
                 'teams'][teamID]['input_dir']
 
+
 # tests
 def test_narps_main_class(tmpdir):
-        _ = Narps(tmpdir)
+    _ = Narps(tmpdir)
 
 
 if __name__ == "__main__":
