@@ -17,7 +17,6 @@ import pickle
 from nipype.interfaces.fsl.model import SmoothEstimate
 import wget
 import tarfile
-import subprocess
 from urllib.error import HTTPError
 
 from utils import get_metadata, TtoZ, get_map_metadata
@@ -157,12 +156,13 @@ class NarpsDirs(object):
         tarfile_obj.extractall(path=self.dirs['base'])
         os.remove(filename)
         # set permissions to read-only
-        subprocess.call(
-            'find %s/orig -type d -exec chmod 555 {} \\;' % output_directory,
-            shell=True)
-        subprocess.call(
-            'find %s -type f -exec chmod 444 {} \\;' % output_directory,
-            shell=True)
+        # this has been removed for now...
+        # subprocess.call(
+        #     'find %s/orig -type d -exec chmod 555 {} \\;' % output_directory,
+        #     shell=True)
+        # subprocess.call(
+        #     'find %s -type f -exec chmod 444 {} \\;' % output_directory,
+        #     shell=True)
 
 
 class NarpsTeam(object):
