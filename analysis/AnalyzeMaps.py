@@ -337,7 +337,7 @@ def analyze_clusters(
         with open(os.path.join(
                 narps.dirs.dirs['output'],
                 'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
-            dendrograms, membership, cc = pickle.load(f)
+            dendrograms, membership, _ = pickle.load(f)
 
     mean_smoothing = {}
     mean_decision = {}
