@@ -48,14 +48,8 @@ def t_corr(y, res_mean=None, res_var=None, Q=None):
     T = (numpy.mean(y, 0)-res_mean
          )/numpy.sqrt(VarMean)*numpy.sqrt(res_var) + res_mean
 
-    # # *If* variance were estimated voxelwise on correlated data,
-    # the DF would follow
-    # # this expression = v = tr(RQ)^2/tr(RQRQ)
-    # df = (numpy.trace(R.dot(Q))**2)/numpy.trace(R.dot(Q).dot(R).dot(Q))
-    # p = 1 - scipy.stats.t.cdf(T,df=df)
-
     # Assuming variance is estimated on whole image
-    df = numpy.Inf
+    # and assuming infinite df
     p = 1 - scipy.stats.norm.cdf(T)
 
     return(T, p)
@@ -89,9 +83,9 @@ def run_ttests(narps, overwrite=True):
 
         # perform t-test
         tvals, pvals = t_corr(data,
-                                   res_mean=img_mean,
-                                   res_var=img_var,
-                                   Q=cc)
+                              res_mean=img_mean,
+                              res_var=img_var,
+                              Q=cc)
 
         # move back into image format
         timg = masker.inverse_transform(tvals)

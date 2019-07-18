@@ -315,7 +315,7 @@ def mk_correlation_maps_unthresh(
         'median_pattern_distance.csv'))
 
     print('median correlation between teams:',
-          numpy.median(cc[numpy.triu_indices_from(cc,1)]))
+          numpy.median(cc[numpy.triu_indices_from(cc, 1)]))
 
     return((dendrograms, membership))
 
