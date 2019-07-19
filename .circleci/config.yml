@@ -12,9 +12,10 @@ jobs:
            name: run main narps tests
            command: |
              pip install -U pytest
-             cd analysis; pytest -q narps.py
+             pytest -q analysis/narps.py
       - run:
            name: static analysis and style check using flake8
            command: |
              pip install -U flake8
-             cd analysis; make check-style
+             flake8 analysis
+

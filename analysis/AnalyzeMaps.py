@@ -303,7 +303,7 @@ def mk_correlation_maps_unthresh(
     with open(os.path.join(
             narps.dirs.dirs['output'],
             'unthresh_dendrograms_%s.pkl' % corr_type), 'wb') as f:
-        pickle.dump((dendrograms, membership, cc), f)
+        pickle.dump((dendrograms, membership, cc_unthresh), f)
 
     # also save correlation info
     median_distance = mean_corr.median(1).sort_values()
@@ -315,7 +315,7 @@ def mk_correlation_maps_unthresh(
         'median_pattern_distance.csv'))
 
     print('median correlation between teams:',
-          numpy.median(cc[numpy.triu_indices_from(cc,1)]))
+          numpy.median(cc[numpy.triu_indices_from(cc, 1)]))
 
     return((dendrograms, membership))
 
@@ -337,7 +337,7 @@ def analyze_clusters(
         with open(os.path.join(
                 narps.dirs.dirs['output'],
                 'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
-            dendrograms, membership, cc = pickle.load(f)
+            dendrograms, membership, _ = pickle.load(f)
 
     mean_smoothing = {}
     mean_decision = {}
