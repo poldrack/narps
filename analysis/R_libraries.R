@@ -9,3 +9,6 @@ library(multcompView)
 library(pscl)
 library(arm)
 library(MuMIn)
+library(optimx)
+library(xtable)
+
