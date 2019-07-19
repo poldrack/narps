@@ -66,6 +66,7 @@ def mk_overlap_maps(narps, verbose=True):
             print('hyp%d' % hyp, numpy.max(overlap))
         max_overlap[hyp] = overlap
     plt.savefig(os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'))
+    plt.close()
     return(max_overlap)
 
 
@@ -238,6 +239,7 @@ def mk_correlation_maps_unthresh(
 
     for i, hyp in enumerate(hypnums):
         print('creating correlation map for hypothesis', hyp)
+        membership[str(hyp)] = {}
         maskdata, labels = get_masked_data(
             hyp,
             narps.dirs.MNI_mask,
@@ -299,20 +301,20 @@ def mk_correlation_maps_unthresh(
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_%s_map_unthresh.pdf' % (hyp, corr_type)))
+        plt.close()
         dendrograms[hyp] = ward_linkage
 
         # get cluster membership
-        membership[hyp] = {}
         for j in cm.dendrogram_row.reordered_ind:
             cl = clustlabels[j]
-            if cl not in membership[hyp]:
-                membership[hyp][cl] = []
-            membership[hyp][cl].append(labels[j])
+            if str(cl) not in membership[str(hyp)]:
+                membership[str(hyp)][str(cl)] = []
+            membership[str(hyp)][str(cl)].append(labels[j])
 
     # save cluster data to file so that we don't have to rerun everything
     with open(os.path.join(
-            output_dir,
-            'unthresh_cluster_membership_%s.json' % corr_type), 'w') as f:
+              output_dir,
+              'unthresh_cluster_membership_%s.json' % corr_type), 'w') as f:
         json.dump(membership, f)
 
     # also save correlation info
@@ -357,7 +359,7 @@ def analyze_clusters(
 
     for i, hyp in enumerate(hypnums):
         print('hyp', hyp)
-        clusters = list(membership[hyp].keys())
+        clusters = list(membership[str(hyp)].keys())
         clusters.sort()
         fig, ax = plt.subplots(len(clusters), 1, figsize=(12, 12))
         mean_smoothing[hyp] = {}
@@ -367,7 +369,7 @@ def analyze_clusters(
             member_maps = []
             member_smoothing = []
             member_decision = []
-            for member in membership[hyp][cl]:
+            for member in membership[str(hyp)][str(cl)]:
                 cid = narps.teams[member].datadir_label
                 infile = os.path.join(
                     narps.dirs.dirs['output'],
@@ -420,15 +422,15 @@ def analyze_clusters(
     for i, hyp in enumerate(hypnums):
         cluster_metadata[hyp] = {}
         print('Hypothesis', hyp)
-        clusters = list(membership[hyp].keys())
+        clusters = list(membership[str(hyp)].keys())
         clusters.sort()
 
         for i, cl in enumerate(clusters):
             print('cluster %d (%s)' % (cl, cluster_colors[i-1]))
-            print(membership[hyp][cl])
+            print(membership[str(hyp)][str(cl)])
             cluster_metadata[hyp][cl] = narps.metadata[
-                narps.metadata.teamID.isin(membership[hyp][cl])]
-            for m in membership[hyp][cl]:
+                narps.metadata.teamID.isin(membership[str(hyp)][str(cl)])]
+            for m in membership[str(hyp)][str(cl)]:
                 cluster_metadata_df.loc[m, 'hyp%d' % hyp] = cl
         print('')
 
@@ -470,6 +472,7 @@ def plot_distance_from_mean(narps):
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
         'median_distance_sorted.png'))
+    plt.close()
 
     # This plot is limited to the teams with particularly
     # low median correlations (<.2)
@@ -528,6 +531,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_jaccard_map_thresh.pdf' % hyp))
+        plt.close()
         seaborn.clustermap(
             df_nonzero,
             cmap='jet',
@@ -537,6 +541,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_jaccard_nonzero_map_thresh.pdf' % hyp))
+        plt.close()
 
 
 if __name__ == "__main__":
@@ -563,6 +568,7 @@ if __name__ == "__main__":
     narps.metadata = pandas.read_csv(
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
 
+    lkjasdf
     # create maps showing overlap of thresholded images
     mk_overlap_maps(narps)
 
