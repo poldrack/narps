@@ -3,7 +3,9 @@ python:
   - "3.6"
 # command to install dependencies
 install:
-  - pip install -U pytest flake8
+  - pip install -U pytest pytest-cov coveralls
 # command to run tests
 script:
-  - pytest -q analysis/narps.py
+  - pytest --cov=./ -q analysis/narps.py
+after_success:
+  - coveralls
