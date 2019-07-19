@@ -11,11 +11,16 @@ jobs:
       - run:
            name: run main narps tests
            command: |
-             pip install -U pytest
-             pytest -q analysis/narps.py
+             pip install -U pytest pytest-cov
+             pytest --cov=analysis -q analysis/narps.py
       - run:
            name: static analysis and style check using flake8
            command: |
              pip install -U flake8
              flake8 analysis
+      - run:
+           name: coverage
+           command: |
+              pip install coveralls
+              coveralls
 
