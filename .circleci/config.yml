@@ -18,4 +18,9 @@ jobs:
            command: |
              pip install -U flake8
              flake8 analysis
+      - run:
+           name: coverage
+           command: |
+              pip install coveralls
+              coveralls
 
