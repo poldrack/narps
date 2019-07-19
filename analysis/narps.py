@@ -5,6 +5,7 @@ import pandas
 import nibabel
 import json
 import os
+import sys
 import time
 import glob
 import datetime
@@ -18,8 +19,11 @@ from nipype.interfaces.fsl.model import SmoothEstimate
 import wget
 import tarfile
 from urllib.error import HTTPError
+import hashlib
+import inspect
 
-from utils import get_metadata, TtoZ, get_map_metadata
+from utils import get_metadata, TtoZ, get_map_metadata,\
+    log_to_file, stringify_dict
 
 # set up data url
 if 'DATA_URL' in os.environ:
@@ -87,15 +91,7 @@ class NarpsDirs(object):
             self.data_url = DATA_URL
 
         self.dirs['orig'] = os.path.join(self.dirs['base'], 'orig')
-
-        # if raw data don't exist, download them
-        if not os.path.exists(self.dirs['orig']) or self.force_download:
-            self.get_orig_data()
-        assert os.path.exists(self.dirs['orig'])
-
-        # templates should also be downloaded with orig data
         self.dirs['templates'] = os.path.join(self.dirs['base'], 'templates')
-        assert os.path.exists(self.dirs['templates'])
 
         self.dirs['output'] = os.path.join(self.dirs['base'], 'maps')
         self.dirs['metadata'] = os.path.join(self.dirs['base'], 'metadata')
@@ -108,6 +104,9 @@ class NarpsDirs(object):
             if not os.path.exists(self.dirs[d]):
                 os.mkdir(self.dirs[d])
 
+        self.logfile = os.path.join(self.dirs['logs'], 'narps.txt')
+        log_to_file(self.logfile, 'Running Narps main class', flush=True)
+
         output_dirs = ['resampled', 'rectified', 'zstat',
                        'thresh_mask_orig', 'concat_thresh']
 
@@ -115,6 +114,11 @@ class NarpsDirs(object):
             self.dirs[o] = os.path.join(self.dirs['output'], o)
             if not os.path.exists(self.dirs[o]):
                 os.mkdir(self.dirs[o])
+
+        # if raw data don't exist, download them
+        if not os.path.exists(self.dirs['orig']) or self.force_download:
+            self.get_orig_data()
+        assert os.path.exists(self.dirs['orig'])
 
         self.MNI_mask = os.path.join(self.dirs['templates'],
                                      'MNI152_T1_2mm_brain_mask.nii.gz')
@@ -127,11 +131,15 @@ class NarpsDirs(object):
         self.full_mask_img = os.path.join(self.dirs['templates'],
                                           'MNI152_all_voxels.nii.gz')
 
+        # templates should also be downloaded with orig data
+        assert os.path.exists(self.dirs['templates'])
+
     def get_orig_data(self):
         """
         download original data from repository
         """
-
+        log_to_file(self.logfile, '\n\nget_orig_data')
+        log_to_file(self.logfile, 'DATA_URL: %s' % DATA_URL)
         MAX_TRIES = 5
 
         if self.data_url is None:
@@ -153,6 +161,9 @@ class NarpsDirs(object):
                 time.sleep(1)  # wait a second
             if ntries > MAX_TRIES:
                 raise Exception('Problem downloading original data')
+
+        filehash = hashlib.md5(open(filename, 'rb').read()).hexdigest()
+        log_to_file(self.logfile, 'hash of tar file: %s' % filehash)
         tarfile_obj = tarfile.open(filename)
         tarfile_obj.extractall(path=self.dirs['base'])
         os.remove(filename)
@@ -329,8 +340,10 @@ class Narps(object):
         # check images for each team
         self.complete_image_sets = None
         self.get_orig_images(self.dirs)
-        print('found %d teams with complete original datasets' % len(
-            self.complete_image_sets))
+        log_to_file(
+            self.dirs.logfile,
+            'found %d teams with complete original datasets' % len(
+                self.complete_image_sets))
 
         # set up metadata
         if metadata_file is None:
@@ -367,8 +380,10 @@ class Narps(object):
         """
         input_jsons = glob.glob(
             os.path.join(dirs.dirs['orig'], '*/images.json'))
-        if verbose:
-            print('found', len(input_jsons), 'input directories')
+
+        log_to_file(
+            self.dirs.logfile,
+            'found %d input directories' % len(input_jsons))
         if load_json:
             for i in input_jsons:
                 collection_id = os.path.basename(os.path.dirname(i))
@@ -396,6 +411,9 @@ class Narps(object):
         """
         create binarized thresholded maps for each team
         """
+        log_to_file(
+            self.dirs.logfile, '\n\n%s' %
+            sys._getframe().f_code.co_name)
         for teamID in self.complete_image_sets:
             self.teams[teamID].create_binarized_thresh_masks()
 
@@ -403,6 +421,9 @@ class Narps(object):
         """
         resample all images into FSL MNI space
         """
+        log_to_file(
+            self.dirs.logfile, '\n\n%s' %
+            sys._getframe().f_code.co_name)
         if overwrite is None:
             overwrite = self.overwrite
         for teamID in self.complete_image_sets:
@@ -412,6 +433,9 @@ class Narps(object):
         """
         get # of nonzero and NA voxels for each image
         """
+        log_to_file(
+            self.dirs.logfile, '\n\n%s' %
+            sys._getframe().f_code.co_name)
         if overwrite is None:
             overwrite = self.overwrite
         image_metadata_file = os.path.join(
@@ -445,6 +469,15 @@ class Narps(object):
         create images concatenated across teams
         ordered by self.complete_image_sets
         """
+        log_to_file(
+            self.dirs.logfile, '\n\n%s' %
+            sys._getframe().f_code.co_name)
+        func_args = inspect.getargvalues(
+            inspect.currentframe()).locals
+        log_to_file(
+            self.dirs.logfile,
+            stringify_dict(func_args))
+
         if imgtypes is None:
             imgtypes = ['thresh', 'unthresh']
         if overwrite is None:
@@ -487,6 +520,15 @@ class Narps(object):
         """
         create overlap maps for thresholded iamges
         """
+        log_to_file(
+            self.dirs.logfile, '\n\n%s' %
+            sys._getframe().f_code.co_name)
+        func_args = inspect.getargvalues(
+            inspect.currentframe()).locals
+        log_to_file(
+            self.dirs.logfile,
+            stringify_dict(func_args))
+
         imgtype = 'thresh'
         if overwrite is None:
             overwrite = self.overwrite
@@ -524,6 +566,14 @@ class Narps(object):
         create rectified images
         using metadata provided by teams
         """
+        log_to_file(
+            self.dirs.logfile, '\n\n%s' %
+            sys._getframe().f_code.co_name)
+        func_args = inspect.getargvalues(
+            inspect.currentframe()).locals
+        log_to_file(
+            self.dirs.logfile,
+            stringify_dict(func_args))
         if map_metadata_file is None:
             map_metadata_file = os.path.join(
                 self.dirs.dirs['orig'],
@@ -602,6 +652,15 @@ class Narps(object):
         """
         compute std and range on statistical images
         """
+        log_to_file(
+            self.dirs.logfile, '\n\n%s' %
+            sys._getframe().f_code.co_name)
+        func_args = inspect.getargvalues(
+            inspect.currentframe()).locals
+        log_to_file(
+            self.dirs.logfile,
+            stringify_dict(func_args))
+
         if overwrite is None:
             overwrite = self.overwrite
         for hyp in range(1, 10):
@@ -654,6 +713,15 @@ class Narps(object):
         - if they are already z then just copy
         - use metadata supplied by teams to determine image type
         """
+        log_to_file(
+            self.dirs.logfile, '\n\n%s' %
+            sys._getframe().f_code.co_name)
+        func_args = inspect.getargvalues(
+            inspect.currentframe()).locals
+        log_to_file(
+            self.dirs.logfile,
+            stringify_dict(func_args))
+
         if overwrite is None:
             overwrite = self.overwrite
         if map_metadata_file is None:
@@ -728,6 +796,15 @@ class Narps(object):
         """
         estimate smoothness of Z maps using FSL's smoothness estimation
         """
+        log_to_file(
+            self.dirs.logfile, '\n\n%s' %
+            sys._getframe().f_code.co_name)
+        func_args = inspect.getargvalues(
+            inspect.currentframe()).locals
+        log_to_file(
+            self.dirs.logfile,
+            stringify_dict(func_args))
+
         if overwrite is None:
             overwrite = self.overwrite
         output_file = os.path.join(self.dirs.dirs['metadata'],
