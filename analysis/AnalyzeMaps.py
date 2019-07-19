@@ -8,13 +8,14 @@ Primary analysis of statistical maps
 import numpy
 import pandas
 import nibabel
-import pickle
 import os
+import json
 import glob
 import nilearn.image
 import nilearn.input_data
 import nilearn.plotting
 import sklearn
+from sklearn.metrics.pairwise import pairwise_distances
 import matplotlib.pyplot as plt
 import seaborn
 import scipy.cluster
@@ -228,6 +229,11 @@ def mk_correlation_maps_unthresh(
     dendrograms = {}
     membership = {}
     cc_unthresh = {}
+    output_dir = os.path.join(
+        narps.dirs.dirs['output'],
+        'correlation_unthresh')
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
 
     for i, hyp in enumerate(hypnums):
         print('creating correlation map for hypothesis', hyp)
@@ -255,6 +261,9 @@ def mk_correlation_maps_unthresh(
             cc = numpy.corrcoef(maskdata)
         cc = numpy.nan_to_num(cc)
         df = pandas.DataFrame(cc, index=labels, columns=labels)
+        df.to_csv(os.path.join(
+            output_dir,
+            '%s_unthresh_hyp%d.csv' % (corr_type, hyp)))
 
         ward_linkage = scipy.cluster.hierarchy.ward(cc)
 
@@ -301,9 +310,9 @@ def mk_correlation_maps_unthresh(
 
     # save cluster data to file so that we don't have to rerun everything
     with open(os.path.join(
-            narps.dirs.dirs['output'],
-            'unthresh_dendrograms_%s.pkl' % corr_type), 'wb') as f:
-        pickle.dump((dendrograms, membership, cc_unthresh), f)
+            output_dir,
+            'unthresh_cluster_membership_%s.json' % corr_type), 'w') as f:
+        json.dump(membership, f)
 
     # also save correlation info
     median_distance = mean_corr.median(1).sort_values()
@@ -322,8 +331,8 @@ def mk_correlation_maps_unthresh(
 
 def analyze_clusters(
         narps,
-        dendrograms=None,
-        membership=None,
+        dendrograms,
+        membership,
         dataset='zstat',
         corr_type='spearman',
         thresh=2.,
@@ -333,11 +342,11 @@ def analyze_clusters(
     and then create separate mean statstical map for each cluster.
     """
 
-    if dendrograms is None or membership is None:
-        with open(os.path.join(
-                narps.dirs.dirs['output'],
-                'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
-            dendrograms, membership, _ = pickle.load(f)
+    # if dendrograms is None or membership is None:
+    #     with open(os.path.join(
+    #             narps.dirs.dirs['output'],
+    #             'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
+    #         dendrograms, membership = pickle.load(f)
 
     mean_smoothing = {}
     mean_decision = {}
@@ -475,27 +484,40 @@ def plot_distance_from_mean(narps):
           median_distance_high.shape[0])
 
 
-def get_thresh_similarity(narps):
+def get_thresh_similarity(narps, dataset='resampled'):
     """
     For each pair of thresholded images, compute the similarity
     of the thresholded/binarized maps using the Jaccard coefficient.
+    Computation per https://stackoverflow.com/questions/37003272/how-to-compute-jaccard-similarity-from-a-pandas-dataframe # noqa
     """
-    jaccard_thresh={}
-    get_jaccard = False
+
+    output_dir = os.path.join(
+        narps.dirs.dirs['output'],
+        'jaccard_thresh')
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
     for hyp in hypnums:
         print('creating Jaccard map for hypothesis', hyp)
         maskdata, labels = get_masked_data(
             hyp,
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
+            imgtype='thresh',
             dataset=dataset)
-        cc = matrix_jaccard(maskdata)
-        df = pandas.DataFrame(cc,index=labels,columns=labels)
+        jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
+        df = pandas.DataFrame(jacsim, index=labels, columns=labels)
         df.to_csv(os.path.join(
-            output_dir,'jaccard_thresh_hyp%d.csv'%hyp)))
-        seaborn.clustermap(df,cmap='jet',figsize=(16,16),method='ward')
+            output_dir, 'jacsim_thresh_hyp%d.csv' % hyp))
+        seaborn.clustermap(
+            df,
+            cmap='jet',
+            figsize=(16, 16),
+            method='ward')
         plt.title(hypotheses[hyp])
-        plt.savefig(os.path.join(self.dirs.dirs['figures'],'hyp%d_jaccard_map_thresh.pdf'%hyp))
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_jaccard_map_thresh.pdf' % hyp))
 
 
 if __name__ == "__main__":
@@ -536,7 +558,11 @@ if __name__ == "__main__":
         narps, corr_type=corr_type)
 
     # if variables don't exist then load them
-    cluster_metadata_df = analyze_clusters(narps, corr_type=corr_type)
+    cluster_metadata_df = analyze_clusters(
+        narps,
+        dendrograms,
+        membership,
+        corr_type=corr_type)
 
     plot_distance_from_mean(narps)
 
