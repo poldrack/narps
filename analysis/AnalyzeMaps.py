@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import seaborn
 import scipy.cluster
 import scipy.stats
+from scipy.spatial.distance import pdist, squareform
 from utils import get_masked_data
 from narps import Narps, hypotheses, hypnums
 from narps import NarpsDirs # noqa, flake8 issue
@@ -488,7 +489,9 @@ def get_thresh_similarity(narps, dataset='resampled'):
     """
     For each pair of thresholded images, compute the similarity
     of the thresholded/binarized maps using the Jaccard coefficient.
-    Computation per https://stackoverflow.com/questions/37003272/how-to-compute-jaccard-similarity-from-a-pandas-dataframe # noqa
+    Computation with zeros per https://stackoverflow.com/questions/37003272/how-to-compute-jaccard-similarity-from-a-pandas-dataframe # noqa
+    also add computation of jaccard on only nonzero pairs
+    (ala scipy)
     """
 
     output_dir = os.path.join(
@@ -506,9 +509,16 @@ def get_thresh_similarity(narps, dataset='resampled'):
             imgtype='thresh',
             dataset=dataset)
         jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
+        jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
         df = pandas.DataFrame(jacsim, index=labels, columns=labels)
         df.to_csv(os.path.join(
             output_dir, 'jacsim_thresh_hyp%d.csv' % hyp))
+        df_nonzero = pandas.DataFrame(
+            jacsim_nonzero,
+            index=labels,
+            columns=labels)
+        df_nonzero.to_csv(os.path.join(
+            output_dir, 'jacsim_nonzero_thresh_hyp%d.csv' % hyp))
         seaborn.clustermap(
             df,
             cmap='jet',
@@ -518,6 +528,15 @@ def get_thresh_similarity(narps, dataset='resampled'):
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_jaccard_map_thresh.pdf' % hyp))
+        seaborn.clustermap(
+            df_nonzero,
+            cmap='jet',
+            figsize=(16, 16),
+            method='ward')
+        plt.title(hypotheses[hyp])
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_jaccard_nonzero_map_thresh.pdf' % hyp))
 
 
 if __name__ == "__main__":
