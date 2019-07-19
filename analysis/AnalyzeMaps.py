@@ -640,7 +640,7 @@ if __name__ == "__main__":
 
     mk_std_maps(narps)
 
-    # plot_individual_maps(narps, imgtype='unthresh', dataset='zstat')
+    plot_individual_maps(narps, imgtype='unthresh', dataset='zstat')
 
     corr_type = 'spearman'
     dendrograms, membership = mk_correlation_maps_unthresh(
