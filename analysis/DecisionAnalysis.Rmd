@@ -8,11 +8,16 @@ output:
 Analyze decisions across teams.
 
 ```{r setup, echo=FALSE,message=FALSE}
-library(checkpoint)
-checkpointDir <- tempfile(pattern = "checkpoint")
-dir.create(checkpointDir)
-dir.create(file.path(checkpointDir, ".checkpoint"))
-checkpoint("2019-07-16", checkpointLocation = checkpointDir)
+
+use_checkpoint = TRUE
+
+if (use_checkpoint) {
+  library(checkpoint)
+  checkpointDir <- tempfile(pattern = "checkpoint")
+  dir.create(checkpointDir)
+  dir.create(file.path(checkpointDir, ".checkpoint"))
+  checkpoint("2019-07-16", checkpointLocation = checkpointDir)
+}
 
 library(plyr)
 library(tidyverse)
@@ -23,6 +28,8 @@ library(pscl)
 library(arm)
 library(MuMIn)
 library(multcomp)
+library(optimx)
+library(xtable)
 
 basedir = Sys.getenv('NARPS_BASEDIR')
 if (basedir == ""){
@@ -62,7 +69,7 @@ narps_df <- narps_df %>%
 
 narps_df$testing[is.na(narps_df$testing)] <- "Other"
 narps_df$teamID = as.factor(narps_df$teamID)
-
+narps_df$varnum = as.factor(narps_df$varnum)
 ```
 
 Estimate correlation between reported smoothing kernel and estimated image smoothness.
@@ -75,7 +82,7 @@ cor(narps_df$fwhm,narps_df$TSc_smoothing,use='pairwise.complete',method='spearma
 ### Models
 
 
-First run mixed models across full dataset to assess overall effects on hypothesis acceptance.
+First run mixed models across full dataset to assess overall effects on hypothesis acceptance. We use nlminb as the optimizer because the model failed to converge using the standard optimizer in lmer.
 
 ```{r fullModel}
 hyp_df = narps_df %>% drop_na(fwhm,used_fmriprep_data,
@@ -83,26 +90,51 @@ hyp_df = narps_df %>% drop_na(fwhm,used_fmriprep_data,
                                     testing)
 m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
-            control = glmerControl(optimizer = "bobyqa"),nAGQ = 10)
-summary(m_hyp_full)
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+
+summary_full_model <- summary(m_hyp_full)
+print(summary_full_model)
 r.squaredGLMM(m_hyp_full)
 
 ```
 
 #### Model comparisons
 
+Model without hypothesis
+
+```{r hypModel}
+m_hyp_nohyp = glmer(Decision ~ fwhm + used_fmriprep_data + package + testing + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+cat('\ntesting effect of smoothing\n')
+
+anova_hyp<- anova(m_hyp_full,m_hyp_nohyp,test='Chisq')
+print(anova_hyp)
+
+# compute delta r-squared between this model and full model
+delta_r2_hyp <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nohyp) 
+print(delta_r2_hyp)
+```
+
 Model without smoothing
 
 ```{r nosmoothModel}
 m_hyp_nosmooth = glmer(Decision ~ varnum + used_fmriprep_data + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
-            control = glmerControl(optimizer = "bobyqa"),nAGQ = 10)
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
 cat('\ntesting effect of smoothing\n')
-anova(m_hyp_full,m_hyp_nosmooth,test='Chisq')
-emtrends(m_hyp_full,specs='fwhm',var='fwhm')
-# compute delta r-squared between this model and full model
-r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nosmooth) 
 
+anova_smoothing <- anova(m_hyp_full,m_hyp_nosmooth,test='Chisq')
+print(anova_smoothing)
+
+emtrends(m_hyp_full,specs='fwhm',var='fwhm')
+
+# compute delta r-squared between this model and full model
+delta_r2_smoothing <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nosmooth) 
+print(delta_r2_smoothing)
 ```
 
 Model without fmriprep
@@ -110,14 +142,19 @@ Model without fmriprep
 ```{r noprepModel}
 m_hyp_noprep = glmer(Decision ~ varnum + fwhm + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
-            control = glmerControl(optimizer = "bobyqa"),nAGQ = 10)
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
 cat('\ntesting effect of fmriprep\n')
-anova(m_hyp_full,m_hyp_noprep,test='Chisq')
+
+anova_fmriprep <- anova(m_hyp_full,m_hyp_noprep,test='Chisq')
+print(anova_fmriprep)
+
 emmeans(m_hyp_full,'used_fmriprep_data')
+
 # compute delta r-squared between this model and full model
-r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_noprep) 
+delta_r2_fmriprep <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_noprep) 
 
-
+print(delta_r2_fmriprep)
 ```
 
 ```{r nopackageModel}
@@ -125,40 +162,50 @@ r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_noprep)
 
 m_hyp_nopackage = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + testing + (1|teamID),
             data = hyp_df,family=binomial,
-            control = glmerControl(optimizer = "bobyqa"),nAGQ = 10) 
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb'))) 
 cat('\ntesting effect of package\n')
-anova(m_hyp_full,m_hyp_nopackage,test='Chisq')
+
+anova_package <- anova(m_hyp_full,m_hyp_nopackage,test='Chisq')
+print(anova_package)
+
 leastsquare = emmeans(m_hyp_full,'package')
 multcomp::cld(leastsquare, 
     level=.05)
-# compute delta r-squared between this model and full model
-r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nopackage)
 
+# compute delta r-squared between this model and full model
+delta_r2_package <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nopackage)
+print(delta_r2_package)
 ```
 
 ```{r notestingModel}
   
 m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package + (1|teamID),
             data = hyp_df,family=binomial,
-            control = glmerControl(optimizer = "bobyqa"),nAGQ = 10)   
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))   
 cat('\ntesting effect of testing\n')
-anova(m_hyp_full,m_hyp_notesting,test='Chisq')
+
+anova_testing <- anova(m_hyp_full,m_hyp_notesting,test='Chisq')
+print(anova_testing)
+
 leastsquare = emmeans(m_hyp_full,'testing')
 multcomp::cld(leastsquare, 
     level=.05)
 
 # compute delta r-squared between this model and full model
-r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_notesting)
-
+delta_r2_testing <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_notesting)
+print(delta_r2_testing)
 ```
 
 Full model using specified smoothing filter rather than estimated smoothness.
 
 ```{r kernelModel}
-m_hyp_full = glmer(Decision ~ varnum + TSc_smoothing + used_fmriprep_data + package + testing + (1|teamID),
+m_hyp_full_tsc = glmer(Decision ~ varnum + TSc_smoothing + used_fmriprep_data + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
-            control = glmerControl(optimizer = "bobyqa"),nAGQ = 10)
-summary(m_hyp_full)
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+summary(m_hyp_full_tsc)
 
 ```
 
@@ -241,9 +288,7 @@ decisionSummary_fmriprep <- narps_df %>%
   summarize(meanAccept = mean(Decision),
             numTeams = n()) 
 
-ggplot(decisionSummary_fmriprep,aes(varnum,meanAccept,color=used_fmriprep_data)) +
-  geom_line() +
-  scale_x_continuous(name='Hypotheses',breaks=seq(1,9,1))
+ggplot(decisionSummary_fmriprep,aes(varnum,meanAccept,color=used_fmriprep_data, group=used_fmriprep_data)) + geom_line()
 
 ```
 
@@ -370,7 +415,49 @@ multcomp::cld(leastsquare,
 
 ```
 
+Make supplementary table 5
+
+```{r mkSuppTable5}
+
+df_SuppTable5 <- data.frame(
+  Effects = c('Hypothesis', 
+              'Smoothing', 
+              'Used fMRIprep data', 
+              'Software package', 
+              'Multiple testing correction')) %>%
+  mutate(ChiSquared = NA,
+         Pvalue = NA,
+         delta_r2 = NA)
+
+df_SuppTable5[1,2:4] = c(anova_hyp$`Chisq`[2],
+                         anova_hyp$`Pr(>Chisq)`[2],
+                         delta_r2_hyp[2,1]
+                         )
+df_SuppTable5[2,2:4] = c(anova_smoothing$`Chisq`[2],
+                         anova_smoothing$`Pr(>Chisq)`[2],
+                         delta_r2_smoothing[2,1]
+                         )
+df_SuppTable5[3,2:4] = c(anova_fmriprep$`Chisq`[2],
+                         anova_fmriprep$`Pr(>Chisq)`[2],
+                         delta_r2_fmriprep[2,1]
+                         )
+df_SuppTable5[4,2:4] = c(anova_package$`Chisq`[2],
+                         anova_package$`Pr(>Chisq)`[2],
+                         delta_r2_package[2,1]
+                         )
+df_SuppTable5[5,2:4] = c(anova_testing$`Chisq`[2],
+                         anova_testing$`Pr(>Chisq)`[2],
+                         delta_r2_testing[2,1]
+                         )
+
+print(df_SuppTable5)
+xtable(df_SuppTable5)
+```
+
+
 ```{r tmpCleanup}
-unlink(checkpointDir, recursive = TRUE)
+if (use_checkpoint){
+  unlink(checkpointDir, recursive = TRUE)
+}
 ```
 
