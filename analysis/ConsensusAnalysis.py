@@ -92,7 +92,7 @@ def run_ttests(narps, logfile,
             logfile,
             'mean = %f, var = %f, mean_cc = %f' %
             (img_mean, img_var,
-            numpy.mean(cc[numpy.triu_indices_from(cc, 1)])))
+             numpy.mean(cc[numpy.triu_indices_from(cc, 1)])))
 
         # perform t-test
         tvals, pvals = t_corr(data,
