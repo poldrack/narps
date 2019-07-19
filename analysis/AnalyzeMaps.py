@@ -66,7 +66,7 @@ def mk_overlap_maps(narps, verbose=True):
             print('hyp%d' % hyp, numpy.max(overlap))
         max_overlap[hyp] = overlap
     plt.savefig(os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'))
-    plt.close()
+    plt.close
     return(max_overlap)
 
 
@@ -359,12 +359,14 @@ def analyze_clusters(
 
     for i, hyp in enumerate(hypnums):
         print('hyp', hyp)
-        clusters = list(membership[str(hyp)].keys())
+        # set cluster indices back to int, for consistency with above
+        clusters = [int(x) for x in list(membership[str(hyp)].keys())]
         clusters.sort()
+
         fig, ax = plt.subplots(len(clusters), 1, figsize=(12, 12))
-        mean_smoothing[hyp] = {}
-        mean_decision[hyp] = {}
-        for i, cl in enumerate(clusters):
+        mean_smoothing[str(hyp)] = {}
+        mean_decision[str(hyp)] = {}
+        for j, cl in enumerate(clusters):
             # get all images for this cluster and average them
             member_maps = []
             member_smoothing = []
@@ -387,10 +389,10 @@ def analyze_clusters(
                                 'teamID=="%s"' % member)['Decision'].iloc[0])
 
             print('cluster %d: found %d maps' % (cl, len(member_maps)))
-            mean_smoothing[hyp][cl] = numpy.mean(numpy.array(member_smoothing))
-            mean_decision[hyp][cl] = numpy.mean(numpy.array(member_decision))
-            print('mean fwhm:', mean_smoothing[hyp][cl])
-            print('pYes:', mean_decision[hyp][cl])
+            mean_smoothing[str(hyp)][str(cl)] = numpy.mean(numpy.array(member_smoothing))
+            mean_decision[str(hyp)][str(cl)] = numpy.mean(numpy.array(member_decision))
+            print('mean fwhm:', mean_smoothing[str(hyp)][str(cl)])
+            print('pYes:', mean_decision[str(hyp)][str(cl)] )
             maskdata = masker.fit_transform(member_maps)
             meandata = numpy.mean(maskdata, 0)
             mean_img = masker.inverse_transform(meandata)
@@ -401,11 +403,11 @@ def analyze_clusters(
                 display_mode="z",
                 colorbar=True,
                 title='hyp%d - cluster%d (fwhm=%0.2f, pYes = %0.2f)' % (
-                    hyp, cl, mean_smoothing[hyp][cl],
-                    mean_decision[hyp][cl]
+                    hyp, cl, mean_smoothing[str(hyp)][str(cl)],
+                    mean_decision[str(hyp)][str(cl)]
                 ),
                 cut_coords=cut_coords,
-                axes=ax[i])
+                axes=ax[j])
 
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
