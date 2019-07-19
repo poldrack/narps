@@ -15,13 +15,15 @@ import nilearn.image
 import nilearn.input_data
 import nilearn.plotting
 import sklearn
+import sys
+import inspect
 from sklearn.metrics.pairwise import pairwise_distances
 import matplotlib.pyplot as plt
 import seaborn
 import scipy.cluster
 import scipy.stats
 from scipy.spatial.distance import pdist, squareform
-from utils import get_masked_data, log_to_file
+from utils import get_masked_data, log_to_file, stringify_dict
 from narps import Narps, hypotheses, hypnums
 from narps import NarpsDirs # noqa, flake8 issue
 
@@ -33,15 +35,20 @@ cluster_colors = ['r', 'g', 'b', 'y', 'k']
 
 def mk_overlap_maps(narps, verbose=True):
     """ create overlap maps for thresholded maps"""
-    logfile = os.path.join(narps.dirs.dirs['logs'], 'AnalyzeMaps-mk_overlap_maps.txt')
-    log_to_file(logfile, 'Running mk_overlap_maps', flush=True)
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
     log_to_file(logfile, 'Maximum voxel overlap:')
+
     masker = nilearn.input_data.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
     max_overlap = {}
     fig, ax = plt.subplots(7, 1, figsize=(12, 24))
-    if verbose:
-        print('Maximum voxel overlap:')
     for i, hyp in enumerate(hypnums):
         imgfile = os.path.join(
             narps.dirs.dirs['output'],
@@ -67,13 +74,13 @@ def mk_overlap_maps(narps, verbose=True):
         log_to_file(logfile, 'hyp%d: %f' % (hyp, numpy.max(overlap)))
         max_overlap[hyp] = overlap
     plt.savefig(os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'))
-    plt.close
+    plt.close()
     return(max_overlap)
 
 
 def mk_range_maps(narps):
     """ create maps of range of unthresholded values"""
-    print('making range maps')
+
     fig, ax = plt.subplots(7, 1, figsize=(12, 24))
     for i, hyp in enumerate(hypnums):
         range_img = nibabel.load(
@@ -220,14 +227,24 @@ def mk_correlation_maps_unthresh(
         n_clusters=None,
         dataset='zstat'):
     """
-    Create orrelation maps for unthresholded images
+    Create correlation maps for unthresholded images
     These correlation matrices are clustered using Ward clustering,
     with the number of clusters for each hypotheses determined by
     visual examination.
     """
-
-    logfile = os.path.join(narps.dirs.dirs['logs'], 'AnalyzeMaps-mk_correlation_maps_unthresh.txt')
-    log_to_file(logfile, 'mk_correlation_maps_unthresh', flush=True)
+    func_args = inspect.getargvalues(
+        inspect.currentframe()).locals
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
+    log_to_file(
+        logfile,
+        stringify_dict(func_args))
 
     if n_clusters is None:
         n_clusters = {1: 4, 2: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 3}
@@ -331,7 +348,7 @@ def mk_correlation_maps_unthresh(
         'median_pattern_distance.csv'))
 
     log_to_file(logfile, 'median correlation between teams: %f' %
-          numpy.median(cc[numpy.triu_indices_from(cc, 1)]))
+                numpy.median(cc[numpy.triu_indices_from(cc, 1)]))
 
     return((dendrograms, membership))
 
@@ -355,14 +372,28 @@ def analyze_clusters(
     #             'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
     #         dendrograms, membership = pickle.load(f)
 
+    func_args = inspect.getargvalues(
+        inspect.currentframe()).locals
+    del func_args['membership']
+    del func_args['dendrograms']
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
+    log_to_file(
+        logfile,
+        stringify_dict(func_args))
+
     mean_smoothing = {}
     mean_decision = {}
     cluster_metadata = {}
     cluster_metadata_df = pandas.DataFrame(
         columns=['hyp%d' % i for i in hypnums],
         index=narps.metadata.teamID)
-    logfile = os.path.join(narps.dirs.dirs['logs'], 'AnalyzeMaps-analyze_clusters.txt')
-    log_to_file(logfile, 'Running analyze_clusters', flush=True)
 
     masker = nilearn.input_data.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
@@ -469,6 +500,15 @@ def analyze_clusters(
 
 def plot_distance_from_mean(narps):
 
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
+
     median_distance_df = pandas.read_csv(os.path.join(
         narps.dirs.dirs['metadata'],
         'median_pattern_distance.csv'))
@@ -485,14 +525,18 @@ def plot_distance_from_mean(narps):
     # low median correlations (<.2)
     median_distance_low = median_distance_df.query(
         'median_distance < 0.2')
-    print('found %d teams with r<0.2 with mean pattern' %
-          median_distance_low.shape[0])
-    print(median_distance_low.iloc[:, 0].values)
+    log_to_file(
+        logfile,
+        'found %d teams with r<0.2 with mean pattern' %
+        median_distance_low.shape[0])
+    log_to_file(logfile, median_distance_low.iloc[:, 0].values)
 
     median_distance_high = median_distance_df.query(
         'median_distance > 0.7')
-    print('found %d teams with r>0.7 with mean pattern' %
-          median_distance_high.shape[0])
+    log_to_file(
+        logfile,
+        'found %d teams with r>0.7 with mean pattern' %
+        median_distance_high.shape[0])
 
 
 def get_thresh_similarity(narps, dataset='resampled'):
@@ -503,6 +547,20 @@ def get_thresh_similarity(narps, dataset='resampled'):
     also add computation of jaccard on only nonzero pairs
     (ala scipy)
     """
+
+    func_args = inspect.getargvalues(
+        inspect.currentframe()).locals
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
+    log_to_file(
+        logfile,
+        stringify_dict(func_args))
 
     output_dir = os.path.join(
         narps.dirs.dirs['output'],
@@ -565,7 +623,7 @@ if __name__ == "__main__":
         basedir = '/data'
 
     # which dataset to use for analyses
-    unthresh_dataset_to_use = 'zstat'x
+    unthresh_dataset_to_use = 'zstat'
 
     # setup main class
     narps = Narps(basedir)
@@ -582,7 +640,7 @@ if __name__ == "__main__":
 
     mk_std_maps(narps)
 
-    plot_individual_maps(narps, imgtype='unthresh', dataset='zstat')
+    # plot_individual_maps(narps, imgtype='unthresh', dataset='zstat')
 
     corr_type = 'spearman'
     dendrograms, membership = mk_correlation_maps_unthresh(
