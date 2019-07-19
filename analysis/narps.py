@@ -101,8 +101,9 @@ class NarpsDirs(object):
         self.dirs['metadata'] = os.path.join(self.dirs['base'], 'metadata')
         self.dirs['cached'] = os.path.join(self.dirs['base'], 'cached')
         self.dirs['figures'] = os.path.join(self.dirs['base'], 'figures')
+        self.dirs['logs'] = os.path.join(self.dirs['base'], 'logs')
 
-        dirs_to_make = ['output', 'metadata', 'cached', 'figures']
+        dirs_to_make = ['output', 'metadata', 'cached', 'figures', 'logs']
         for d in dirs_to_make:
             if not os.path.exists(self.dirs[d]):
                 os.mkdir(self.dirs[d])
