@@ -474,23 +474,28 @@ def plot_distance_from_mean(narps):
     print('found %d teams with r>0.7 with mean pattern' %
           median_distance_high.shape[0])
 
-# #### SKIP FOR NOW Similarity maps for thresholded images
-# For each pair of thresholded images, compute the similarity
-# of the thresholded/binarized maps using the Jaccard coefficient.
-# def get_thresh_similarity(narps):
-#     cc_thresh={}
-#     get_jaccard = False
-#     for hyp in [1,2,5,6,7,8,9]:
-#         maskdata,labels = get_masked_data(hyp,
-#           mask_img,output_dir,imgtype='thresh')
-#         cc = matrix_jaccard(maskdata)
-#         df = pandas.DataFrame(cc,index=labels,columns=labels)
-#         cc_thresh[hyp]=df
-#     for hyp in [1,2,5,6,7,8,9]:
-#         df = cc_thresh[hyp]
-#         seaborn.clustermap(df,cmap='jet',figsize=(16,16),method='ward')
-#         plt.title(hypotheses[hyp])
-#         plt.savefig(os.path.join(figure_dir,'hyp%d_jaccard_map_thresh.pdf'%hyp))
+
+def get_thresh_similarity(narps):
+    """
+    For each pair of thresholded images, compute the similarity
+    of the thresholded/binarized maps using the Jaccard coefficient.
+    """
+    jaccard_thresh={}
+    get_jaccard = False
+    for hyp in hypnums:
+        print('creating Jaccard map for hypothesis', hyp)
+        maskdata, labels = get_masked_data(
+            hyp,
+            narps.dirs.MNI_mask,
+            narps.dirs.dirs['output'],
+            dataset=dataset)
+        cc = matrix_jaccard(maskdata)
+        df = pandas.DataFrame(cc,index=labels,columns=labels)
+        df.to_csv(os.path.join(
+            output_dir,'jaccard_thresh_hyp%d.csv'%hyp)))
+        seaborn.clustermap(df,cmap='jet',figsize=(16,16),method='ward')
+        plt.title(hypotheses[hyp])
+        plt.savefig(os.path.join(self.dirs.dirs['figures'],'hyp%d_jaccard_map_thresh.pdf'%hyp))
 
 
 if __name__ == "__main__":
@@ -534,3 +539,5 @@ if __name__ == "__main__":
     cluster_metadata_df = analyze_clusters(narps, corr_type=corr_type)
 
     plot_distance_from_mean(narps)
+
+    get_thresh_similarity(narps)
