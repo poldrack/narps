@@ -28,7 +28,7 @@ check-style:
 
 # get list of R packages needed by checkpoint
 get-R-packages:
-	cat DecisionAnalysis.Rmd | grep library >| R_libraries.R
+	cat *.Rmd | grep library >| R_libraries.R
 
 
 # commands to run analyses via docker
