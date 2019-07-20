@@ -9,7 +9,7 @@ Analyze decisions across teams.
 
 ```{r setup, echo=FALSE,message=FALSE}
 
-use_checkpoint = TRUE
+use_checkpoint = FALSE
 
 if (use_checkpoint) {
   library(checkpoint)
@@ -45,7 +45,9 @@ Load the data and clean up some variables.  Requires metadata that is created by
 
 ```{r loadData}
 # load and clean up data
-narps_df = read_csv(paste(basedir,'metadata/all_metadata.csv',sep='/'))
+narps_df <- read_csv(paste(basedir,
+                           'metadata/all_metadata.csv',
+                           sep='/'))
 
 narps_df <- narps_df %>% 
   mutate(package = recode_factor(TSc_SW,
@@ -75,7 +77,9 @@ narps_df$varnum = as.factor(narps_df$varnum)
 Estimate correlation between reported smoothing kernel and estimated image smoothness.
 
 ```{r smoothCorr}
-cor(narps_df$fwhm,narps_df$TSc_smoothing,use='pairwise.complete',method='spearman')
+cor(narps_df$fwhm,narps_df$TSc_smoothing,
+    use='pairwise.complete',
+    method='spearman')
 ```
 
 
@@ -85,9 +89,11 @@ cor(narps_df$fwhm,narps_df$TSc_smoothing,use='pairwise.complete',method='spearma
 First run mixed models across full dataset to assess overall effects on hypothesis acceptance. We use nlminb as the optimizer because the model failed to converge using the standard optimizer in lmer.
 
 ```{r fullModel}
-hyp_df = narps_df %>% drop_na(fwhm,used_fmriprep_data,
-                                    package,
-                                    testing)
+hyp_df = narps_df %>% drop_na(fwhm,
+                              used_fmriprep_data,
+                              package,
+                              testing)
+
 m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
@@ -95,6 +101,7 @@ m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + tes
 
 summary_full_model <- summary(m_hyp_full)
 print(summary_full_model)
+
 r.squaredGLMM(m_hyp_full)
 
 ```
@@ -110,7 +117,9 @@ m_hyp_nohyp = glmer(Decision ~ fwhm + used_fmriprep_data + package + testing + (
                                    optCtrl=list(method='nlminb')))
 cat('\ntesting effect of smoothing\n')
 
-anova_hyp<- anova(m_hyp_full,m_hyp_nohyp,test='Chisq')
+anova_hyp<- anova(m_hyp_full,
+                  m_hyp_nohyp,
+                  test='Chisq')
 print(anova_hyp)
 
 # compute delta r-squared between this model and full model
@@ -125,9 +134,12 @@ m_hyp_nosmooth = glmer(Decision ~ varnum + used_fmriprep_data + package + testin
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
+
 cat('\ntesting effect of smoothing\n')
 
-anova_smoothing <- anova(m_hyp_full,m_hyp_nosmooth,test='Chisq')
+anova_smoothing <- anova(m_hyp_full,
+                         m_hyp_nosmooth,
+                         test='Chisq')
 print(anova_smoothing)
 
 emtrends(m_hyp_full,specs='fwhm',var='fwhm')
@@ -146,7 +158,9 @@ m_hyp_noprep = glmer(Decision ~ varnum + fwhm + package + testing + (1|teamID),
                                    optCtrl=list(method='nlminb')))
 cat('\ntesting effect of fmriprep\n')
 
-anova_fmriprep <- anova(m_hyp_full,m_hyp_noprep,test='Chisq')
+anova_fmriprep <- anova(m_hyp_full,
+                        m_hyp_noprep,
+                        test='Chisq')
 print(anova_fmriprep)
 
 emmeans(m_hyp_full,'used_fmriprep_data')
@@ -166,10 +180,13 @@ m_hyp_nopackage = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + testing 
                                    optCtrl=list(method='nlminb'))) 
 cat('\ntesting effect of package\n')
 
-anova_package <- anova(m_hyp_full,m_hyp_nopackage,test='Chisq')
+anova_package <- anova(m_hyp_full,
+                       m_hyp_nopackage,
+                       test='Chisq')
 print(anova_package)
 
-leastsquare = emmeans(m_hyp_full,'package')
+leastsquare = emmeans(m_hyp_full,
+                      'package')
 multcomp::cld(leastsquare, 
     level=.05)
 
@@ -186,10 +203,12 @@ m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package 
                                    optCtrl=list(method='nlminb')))   
 cat('\ntesting effect of testing\n')
 
-anova_testing <- anova(m_hyp_full,m_hyp_notesting,test='Chisq')
+anova_testing <- anova(m_hyp_full,
+                       m_hyp_notesting,test='Chisq')
 print(anova_testing)
 
-leastsquare = emmeans(m_hyp_full,'testing')
+leastsquare = emmeans(m_hyp_full,
+                      'testing')
 multcomp::cld(leastsquare, 
     level=.05)
 
@@ -216,17 +235,21 @@ For each hypothesis, we ask whether decisions are associated with fwhm and use o
 
 runModels = function(hyp){
   pvals = c()
-  hyp_df = narps_df %>% filter(varnum==!!hyp) %>% drop_na(fwhm,
-                                            used_fmriprep_data,
-                                            package,
-                                            testing)
+  hyp_df = narps_df %>% 
+    filter(varnum==!!hyp) %>% drop_na(fwhm,
+                                      used_fmriprep_data,
+                                      package,
+                                      testing)
+
   m_hyp_full = bayesglm(Decision ~ fwhm + used_fmriprep_data + package + testing,
                    data = hyp_df,family=binomial)
   
   m_hyp_nosmooth = bayesglm(Decision ~ used_fmriprep_data + package + testing,
                    data = hyp_df,family=binomial)
   #cat('testing effect of smoothing\n')
-  a = anova(m_hyp_full,m_hyp_nosmooth,test='Chisq')
+  a = anova(m_hyp_full,
+            m_hyp_nosmooth,
+            test='Chisq')
   pvals = c(pvals,unlist(a)['Pr(>Chi)2'])
   
   m_hyp_noprep = bayesglm(Decision ~ fwhm + package + testing,
@@ -238,14 +261,18 @@ runModels = function(hyp){
   m_hyp_nopackage = bayesglm(Decision ~ used_fmriprep_data + fwhm + testing,
                    data = hyp_df,family=binomial)
   #cat('testing effect of package\n')
-  a=anova(m_hyp_full,m_hyp_nopackage,test='Chisq')
+  a=anova(m_hyp_full,
+          m_hyp_nopackage,
+          test='Chisq')
   pvals = c(pvals,unlist(a)['Pr(>Chi)2'])
   
   
   m_hyp_notesting = bayesglm(Decision ~ used_fmriprep_data + fwhm + package,
                    data = hyp_df,family=binomial)
   #cat('testing effect of testing\n')
-  a=anova(m_hyp_full,m_hyp_notesting,test='Chisq')
+  a=anova(m_hyp_full,
+          m_hyp_notesting,
+          test='Chisq')
   pvals = c(pvals,unlist(a)['Pr(>Chi)2'])
   return(pvals)
 }
@@ -273,7 +300,8 @@ decisionSummary_package <- narps_df %>%
   summarize(meanAccept = mean(Decision),
             numTeams = n()) 
 
-ggplot(decisionSummary_package,aes(varnum,meanAccept,color=package,group=package)) +
+ggplot(decisionSummary_package,
+       aes(varnum,meanAccept,color=package,group=package)) +
   geom_line(aes(size=numTeams))
 
 ```
@@ -288,7 +316,11 @@ decisionSummary_fmriprep <- narps_df %>%
   summarize(meanAccept = mean(Decision),
             numTeams = n()) 
 
-ggplot(decisionSummary_fmriprep,aes(varnum,meanAccept,color=used_fmriprep_data, group=used_fmriprep_data)) + geom_line()
+ggplot(decisionSummary_fmriprep,
+       aes(varnum,meanAccept,
+           color=used_fmriprep_data, 
+           group=used_fmriprep_data)) + 
+  geom_line()
 
 ```
 
@@ -305,7 +337,10 @@ decisionSummary_smoothing <- narps_df %>%
   summarize(meanFWHM = mean(fwhm),
             numTeams = n()) 
 
-ggplot(decisionSummary_smoothing,aes(varnum,meanFWHM,color=Decision_factor,group=Decision_factor)) +
+ggplot(decisionSummary_smoothing,
+       aes(varnum,meanFWHM,
+           color=Decision_factor,
+           group=Decision_factor)) +
   geom_line() 
   
 
@@ -322,7 +357,9 @@ decisionSummary_smoothingkernel <- narps_df %>%
   summarize(meanAppliedFWHM = mean(TSc_smoothing),
             numTeams = n()) 
 
-ggplot(decisionSummary_smoothingkernel,aes(varnum,meanAppliedFWHM,color=Decision_factor)) +
+ggplot(decisionSummary_smoothingkernel,
+       aes(varnum,meanAppliedFWHM,
+           color=Decision_factor)) +
   geom_line() 
 
 ```
@@ -332,10 +369,13 @@ ggplot(decisionSummary_smoothingkernel,aes(varnum,meanAppliedFWHM,color=Decision
 
 ```{r loadPatternDistance}
 
-patterndist_df = read_csv(paste(basedir,'metadata/median_pattern_distance.csv',sep='/'),skip=0)
+patterndist_df = read_csv(paste(basedir,
+          'metadata/median_pattern_distance.csv',
+          sep='/'),skip=0)
 names(patterndist_df)=c('teamID','mean_distance')
 
-merged_df = join(patterndist_df,narps_df %>% filter(varnum==1),by=c('teamID'))
+merged_df = join(patterndist_df,narps_df %>% 
+                   filter(varnum==1),by=c('teamID'))
 ```
 
 ### fit model
@@ -355,22 +395,27 @@ r2z = function(r){
 merged_df <- merged_df %>%
   mutate(z_mean_distance = r2z(mean_distance))
 
-merged_df = merged_df %>% drop_na(fwhm,used_fmriprep_data,
-                                    package,
-                                    testing)
+merged_df = merged_df %>% 
+  drop_na(fwhm,used_fmriprep_data,package,testing)
 
 dist_hyp_full = lm(z_mean_distance ~ fwhm + used_fmriprep_data + package + testing,
             data = merged_df)
-s= summary(dist_hyp_full)
+
+s <- summary(dist_hyp_full)
 print(s)
 
 ```
 
 ```{r fitnoSmoothDistanceModel}
-dist_hyp_nosmooth = lm(z_mean_distance ~ used_fmriprep_data + package + testing,
+dist_hyp_nosmooth <- lm(z_mean_distance ~ used_fmriprep_data + package + testing,
             data = merged_df)
+
 cat('\ntesting effect of smoothing\n')
-anova(dist_hyp_full,dist_hyp_nosmooth,test='Chisq')
+
+anova(dist_hyp_full,
+      dist_hyp_nosmooth,
+      test='Chisq')
+
 emtrends(dist_hyp_full,specs='fwhm',var='fwhm')
 s$r.squared - summary(dist_hyp_nosmooth)$r.squared
 
@@ -380,7 +425,11 @@ s$r.squared - summary(dist_hyp_nosmooth)$r.squared
 dist_hyp_noprep = lm(z_mean_distance ~ fwhm + package + testing,
             data = merged_df)
 cat('\ntesting effect of fmriprep\n')
-anova(dist_hyp_full,dist_hyp_noprep,test='Chisq')
+
+anova(dist_hyp_full,
+      dist_hyp_noprep,
+      test='Chisq')
+
 emmeans(dist_hyp_full,'used_fmriprep_data')
 s$r.squared - summary(dist_hyp_noprep)$r.squared
 
@@ -390,7 +439,10 @@ s$r.squared - summary(dist_hyp_noprep)$r.squared
 dist_hyp_nopackage = lm(z_mean_distance ~ used_fmriprep_data + fwhm + testing,
             data = merged_df) 
 cat('\ntesting effect of package\n')
-anova(dist_hyp_full,dist_hyp_nopackage,test='Chisq')
+
+anova(dist_hyp_full,
+      dist_hyp_nopackage,
+      test='Chisq')
 s$r.squared - summary(dist_hyp_nopackage)$r.squared
 leastsquare = emmeans(dist_hyp_full,'package')
 multcomp::cld(leastsquare, 
@@ -403,10 +455,14 @@ multcomp::cld(leastsquare,
 dist_hyp_notesting = lm(z_mean_distance ~ used_fmriprep_data + fwhm + package,
             data = merged_df)   
 cat('\ntesting effect of testing\n')
-anova(dist_hyp_full,dist_hyp_notesting,test='Chisq')
+
+anova(dist_hyp_full,
+      dist_hyp_notesting,
+      test='Chisq')
 s$r.squared - summary(dist_hyp_notesting)$r.squared
 
-leastsquare = emmeans(dist_hyp_full,'testing')
+leastsquare = emmeans(dist_hyp_full,
+                      'testing')
 multcomp::cld(leastsquare, 
     level=.05)
 
