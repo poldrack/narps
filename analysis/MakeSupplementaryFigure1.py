@@ -11,6 +11,8 @@ import sys
 import pandas
 import seaborn
 import matplotlib.pyplot as plt
+from matplotlib import colors
+
 from narps import Narps
 from narps import NarpsDirs # noqa, flake8 issue
 from utils import log_to_file
@@ -38,18 +40,29 @@ def mk_supp_figure1(narps, metadata):
     #     columns='varnum',
     #     values='Similar')
 
-    plt.figure(figsize=(6, 20))
+    # from Rotem:
+    # I think maybe change the colors to more gentle shades
+    # such that the numbers will be clearer? E.g.
+    # 9dc183 for green and #CD5C5C fir red?
+
+    cmap = colors.ListedColormap(
+        ['#CD5C5C', '#9dc183'])
+
+    plt.figure(figsize=(6, 18))
     h = seaborn.heatmap(
         decision_wide,
-        cmap='prism',
+        cmap=cmap,
         annot=confidence_wide,
         fmt="d",
-        annot_kws={'size': 7},
+        annot_kws={'size': 12},
         cbar=False)
-    h.axes.set_yticklabels(h.axes.get_ymajorticklabels(), fontsize=7)
+    h.axes.set_yticklabels(h.axes.get_ymajorticklabels(), fontsize=12)
+    h.axes.set_xticklabels(h.axes.get_xmajorticklabels(), fontsize=14)
     plt.subplots_adjust(bottom=0.05, top=0.99)
     plt.tight_layout()
-    plt.xlabel('Hypothesis number')
+    plt.xlabel('Hypothesis number', fontsize=16)
+    plt.ylabel('Team ID', fontsize=16)
+
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
         'SuppFigure1.png'))
