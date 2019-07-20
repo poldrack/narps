@@ -1,4 +1,17 @@
-# main class for narps analysis
+"""
+This is the main class for the NARPS analysis
+There are three classes defined here:
+Narps: this is a class that wraps the entire dataset
+NarpsTeam: this class is instantiated for each team
+NarpsDirs: This class contains info about all
+of the directories that are needed for this and
+subsequent analyses
+
+The code under the main loop at the bottom
+runs all of the image preprocessing that is
+needed for subsequent analyses
+
+"""
 
 import numpy
 import pandas
@@ -26,6 +39,9 @@ from utils import get_metadata, TtoZ, get_map_metadata,\
     log_to_file, stringify_dict
 
 # set up data url
+# this is necessary for now because the data are still private
+# once the data are public we can share the info.json file
+
 if 'DATA_URL' in os.environ:
     DATA_URL = os.environ['DATA_URL']
     print('reading data URL from environment')
@@ -79,8 +95,11 @@ class NarpsDirs(object):
     """
     def __init__(self, basedir, data_url=None,
                  force_download=False):
-        # set up directories and template files
+
+        # set up a dictionary to contain all of the
+        # directories
         self.dirs = {}
+
         # check to make sure home of basedir exists
         assert os.path.exists(os.path.dirname(basedir))
         self.dirs['base'] = basedir
@@ -90,16 +109,14 @@ class NarpsDirs(object):
         if data_url is None:
             self.data_url = DATA_URL
 
-        self.dirs['orig'] = os.path.join(self.dirs['base'], 'orig')
-        self.dirs['templates'] = os.path.join(self.dirs['base'], 'templates')
+        dirs_to_add = ['output', 'templates', 'metadata',
+                       'cached', 'figures', 'logs', 'orig']
+        for d in dirs_to_add:
+            self.dirs[d] = os.path.join(self.dirs['base'], d)
 
-        self.dirs['output'] = os.path.join(self.dirs['base'], 'maps')
-        self.dirs['metadata'] = os.path.join(self.dirs['base'], 'metadata')
-        self.dirs['cached'] = os.path.join(self.dirs['base'], 'cached')
-        self.dirs['figures'] = os.path.join(self.dirs['base'], 'figures')
-        self.dirs['logs'] = os.path.join(self.dirs['base'], 'logs')
-
-        dirs_to_make = ['output', 'metadata', 'cached', 'figures', 'logs']
+        # autogenerate all of the directories
+        # except for the orig dir
+        dirs_to_make = list(set(dirs_to_add).difference(['orig']))
         for d in dirs_to_make:
             if not os.path.exists(self.dirs[d]):
                 os.mkdir(self.dirs[d])
@@ -116,10 +133,14 @@ class NarpsDirs(object):
                 os.mkdir(self.dirs[o])
 
         # if raw data don't exist, download them
-        if not os.path.exists(self.dirs['orig']) or self.force_download:
+        if self.force_download and os.path.exists(self.dirs['orig']):
+            shutil.rmtree(self.dirs['orig'])
+        if not os.path.exists(self.dirs['orig']):
             self.get_orig_data()
         assert os.path.exists(self.dirs['orig'])
 
+        # make sure the necessary templates are present
+        # these should be downloaded with the raw data
         self.MNI_mask = os.path.join(self.dirs['templates'],
                                      'MNI152_T1_2mm_brain_mask.nii.gz')
         assert os.path.exists(self.MNI_mask)
@@ -130,9 +151,6 @@ class NarpsDirs(object):
 
         self.full_mask_img = os.path.join(self.dirs['templates'],
                                           'MNI152_all_voxels.nii.gz')
-
-        # templates should also be downloaded with orig data
-        assert os.path.exists(self.dirs['templates'])
 
     def get_orig_data(self):
         """
@@ -162,19 +180,12 @@ class NarpsDirs(object):
             if ntries > MAX_TRIES:
                 raise Exception('Problem downloading original data')
 
+        # save a hash of the tarball for data integrity
         filehash = hashlib.md5(open(filename, 'rb').read()).hexdigest()
         log_to_file(self.logfile, 'hash of tar file: %s' % filehash)
         tarfile_obj = tarfile.open(filename)
         tarfile_obj.extractall(path=self.dirs['base'])
         os.remove(filename)
-        # set permissions to read-only
-        # this has been removed for now...
-        # subprocess.call(
-        #     'find %s/orig -type d -exec chmod 555 {} \\;' % output_directory,
-        #     shell=True)
-        # subprocess.call(
-        #     'find %s -type f -exec chmod 444 {} \\;' % output_directory,
-        #     shell=True)
 
 
 class NarpsTeam(object):
@@ -186,6 +197,7 @@ class NarpsTeam(object):
         self.teamID = teamID
         self.NV_collection_id = NV_collection_id
         self.datadir_label = '%s_%s' % (NV_collection_id, teamID)
+        # directory for the original maps
         self.input_dir = os.path.join(self.dirs.dirs['orig'],
                                       '%s_%s' % (NV_collection_id, teamID))
         if not os.path.exists(self.input_dir):
@@ -208,9 +220,11 @@ class NarpsTeam(object):
         self.n_mask_vox = {}
         self.n_nan_inmask_values = {}
         self.n_zero_inmask_values = {}
-        self.get_orig_images()
         self.has_resampled = None
         self.has_binarized_masks = None
+
+        # populate the image data structure
+        self.get_orig_images()
 
     def get_orig_images(self):
         """
@@ -229,7 +243,8 @@ class NarpsTeam(object):
                     self.has_all_images = False
 
     def create_binarized_thresh_masks(self, thresh=1e-6,
-                                      overwrite=False, replace_na=False):
+                                      overwrite=False,
+                                      replace_na=True):
         """
         create binarized version of thresholded maps
         """
@@ -251,7 +266,8 @@ class NarpsTeam(object):
                     self.images['thresh']['thresh_mask_orig'][hyp]):
                 threshimg = nibabel.load(img)
                 threshdata = threshimg.get_data()
-                # probably don't want to do this, false by default
+                # some images use nan instead of zero for the non-excursion
+                # voxels, so we need to replace with zeros
                 if replace_na:
                     threshdata = numpy.nan_to_num(threshdata)
                 threshdata_bin = numpy.zeros(threshdata.shape)
