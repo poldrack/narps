@@ -8,18 +8,22 @@ Primary analysis of statistical maps
 import numpy
 import pandas
 import nibabel
-import pickle
 import os
+import json
 import glob
 import nilearn.image
 import nilearn.input_data
 import nilearn.plotting
 import sklearn
+import sys
+import inspect
+from sklearn.metrics.pairwise import pairwise_distances
 import matplotlib.pyplot as plt
 import seaborn
 import scipy.cluster
 import scipy.stats
-from utils import get_masked_data
+from scipy.spatial.distance import pdist, squareform
+from utils import get_masked_data, log_to_file, stringify_dict
 from narps import Narps, hypotheses, hypnums
 from narps import NarpsDirs # noqa, flake8 issue
 
@@ -31,13 +35,20 @@ cluster_colors = ['r', 'g', 'b', 'y', 'k']
 
 def mk_overlap_maps(narps, verbose=True):
     """ create overlap maps for thresholded maps"""
-    print('making overlap maps')
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
+    log_to_file(logfile, 'Maximum voxel overlap:')
+
     masker = nilearn.input_data.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
     max_overlap = {}
     fig, ax = plt.subplots(7, 1, figsize=(12, 24))
-    if verbose:
-        print('Maximum voxel overlap:')
     for i, hyp in enumerate(hypnums):
         imgfile = os.path.join(
             narps.dirs.dirs['output'],
@@ -60,16 +71,16 @@ def mk_overlap_maps(narps, verbose=True):
             'thresh_concat_resampled/hypo%d.nii.gz' % hyp)
         thresh_concat_data = masker.fit_transform(thresh_concat_file)
         overlap = numpy.mean(thresh_concat_data, 0)
-        if verbose:
-            print('hyp%d' % hyp, numpy.max(overlap))
+        log_to_file(logfile, 'hyp%d: %f' % (hyp, numpy.max(overlap)))
         max_overlap[hyp] = overlap
     plt.savefig(os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'))
+    plt.close()
     return(max_overlap)
 
 
 def mk_range_maps(narps):
     """ create maps of range of unthresholded values"""
-    print('making range maps')
+
     fig, ax = plt.subplots(7, 1, figsize=(12, 24))
     for i, hyp in enumerate(hypnums):
         range_img = nibabel.load(
@@ -216,11 +227,24 @@ def mk_correlation_maps_unthresh(
         n_clusters=None,
         dataset='zstat'):
     """
-    Create orrelation maps for unthresholded images
+    Create correlation maps for unthresholded images
     These correlation matrices are clustered using Ward clustering,
     with the number of clusters for each hypotheses determined by
     visual examination.
     """
+    func_args = inspect.getargvalues(
+        inspect.currentframe()).locals
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
+    log_to_file(
+        logfile,
+        stringify_dict(func_args))
 
     if n_clusters is None:
         n_clusters = {1: 4, 2: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 3}
@@ -228,9 +252,15 @@ def mk_correlation_maps_unthresh(
     dendrograms = {}
     membership = {}
     cc_unthresh = {}
+    output_dir = os.path.join(
+        narps.dirs.dirs['output'],
+        'correlation_unthresh')
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
 
     for i, hyp in enumerate(hypnums):
         print('creating correlation map for hypothesis', hyp)
+        membership[str(hyp)] = {}
         maskdata, labels = get_masked_data(
             hyp,
             narps.dirs.MNI_mask,
@@ -255,6 +285,9 @@ def mk_correlation_maps_unthresh(
             cc = numpy.corrcoef(maskdata)
         cc = numpy.nan_to_num(cc)
         df = pandas.DataFrame(cc, index=labels, columns=labels)
+        df.to_csv(os.path.join(
+            output_dir,
+            '%s_unthresh_hyp%d.csv' % (corr_type, hyp)))
 
         ward_linkage = scipy.cluster.hierarchy.ward(cc)
 
@@ -289,21 +322,21 @@ def mk_correlation_maps_unthresh(
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_%s_map_unthresh.pdf' % (hyp, corr_type)))
+        plt.close()
         dendrograms[hyp] = ward_linkage
 
         # get cluster membership
-        membership[hyp] = {}
         for j in cm.dendrogram_row.reordered_ind:
             cl = clustlabels[j]
-            if cl not in membership[hyp]:
-                membership[hyp][cl] = []
-            membership[hyp][cl].append(labels[j])
+            if str(cl) not in membership[str(hyp)]:
+                membership[str(hyp)][str(cl)] = []
+            membership[str(hyp)][str(cl)].append(labels[j])
 
     # save cluster data to file so that we don't have to rerun everything
     with open(os.path.join(
-            narps.dirs.dirs['output'],
-            'unthresh_dendrograms_%s.pkl' % corr_type), 'wb') as f:
-        pickle.dump((dendrograms, membership, cc_unthresh), f)
+              output_dir,
+              'unthresh_cluster_membership_%s.json' % corr_type), 'w') as f:
+        json.dump(membership, f)
 
     # also save correlation info
     median_distance = mean_corr.median(1).sort_values()
@@ -314,16 +347,16 @@ def mk_correlation_maps_unthresh(
         narps.dirs.dirs['metadata'],
         'median_pattern_distance.csv'))
 
-    print('median correlation between teams:',
-          numpy.median(cc[numpy.triu_indices_from(cc, 1)]))
+    log_to_file(logfile, 'median correlation between teams: %f' %
+                numpy.median(cc[numpy.triu_indices_from(cc, 1)]))
 
     return((dendrograms, membership))
 
 
 def analyze_clusters(
         narps,
-        dendrograms=None,
-        membership=None,
+        dendrograms,
+        membership,
         dataset='zstat',
         corr_type='spearman',
         thresh=2.,
@@ -333,31 +366,54 @@ def analyze_clusters(
     and then create separate mean statstical map for each cluster.
     """
 
-    if dendrograms is None or membership is None:
-        with open(os.path.join(
-                narps.dirs.dirs['output'],
-                'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
-            dendrograms, membership, _ = pickle.load(f)
+    # if dendrograms is None or membership is None:
+    #     with open(os.path.join(
+    #             narps.dirs.dirs['output'],
+    #             'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
+    #         dendrograms, membership = pickle.load(f)
+
+    func_args = inspect.getargvalues(
+        inspect.currentframe()).locals
+    del func_args['membership']
+    del func_args['dendrograms']
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
+    log_to_file(
+        logfile,
+        stringify_dict(func_args))
 
     mean_smoothing = {}
     mean_decision = {}
+    cluster_metadata = {}
+    cluster_metadata_df = pandas.DataFrame(
+        columns=['hyp%d' % i for i in hypnums],
+        index=narps.metadata.teamID)
 
     masker = nilearn.input_data.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
 
     for i, hyp in enumerate(hypnums):
-        print('hyp', hyp)
-        clusters = list(membership[hyp].keys())
+        log_to_file(logfile, 'hyp %d' % hyp)
+        # set cluster indices back to int, for consistency with above
+        clusters = [int(x) for x in list(membership[str(hyp)].keys())]
         clusters.sort()
+
         fig, ax = plt.subplots(len(clusters), 1, figsize=(12, 12))
-        mean_smoothing[hyp] = {}
-        mean_decision[hyp] = {}
-        for i, cl in enumerate(clusters):
+        cluster_metadata[hyp] = {}
+        mean_smoothing[str(hyp)] = {}
+        mean_decision[str(hyp)] = {}
+        for j, cl in enumerate(clusters):
             # get all images for this cluster and average them
             member_maps = []
             member_smoothing = []
             member_decision = []
-            for member in membership[hyp][cl]:
+            for member in membership[str(hyp)][str(cl)]:
                 cid = narps.teams[member].datadir_label
                 infile = os.path.join(
                     narps.dirs.dirs['output'],
@@ -373,12 +429,24 @@ def analyze_clusters(
                         narps.metadata.query(
                             'varnum==%d' % hyp).query(
                                 'teamID=="%s"' % member)['Decision'].iloc[0])
+            log_to_file(logfile,
+                        'hyp %d cluster %d (%s)' % (
+                            hyp, cl, cluster_colors[j-1]))
+            log_to_file(logfile, membership[str(hyp)][str(cl)])
+            cluster_metadata[hyp][cl] = narps.metadata[
+                narps.metadata.teamID.isin(membership[str(hyp)][str(cl)])]
+            for m in membership[str(hyp)][str(cl)]:
+                cluster_metadata_df.loc[m, 'hyp%d' % hyp] = cl
 
-            print('cluster %d: found %d maps' % (cl, len(member_maps)))
-            mean_smoothing[hyp][cl] = numpy.mean(numpy.array(member_smoothing))
-            mean_decision[hyp][cl] = numpy.mean(numpy.array(member_decision))
-            print('mean fwhm:', mean_smoothing[hyp][cl])
-            print('pYes:', mean_decision[hyp][cl])
+            log_to_file(logfile, 'found %d maps: %d' % (cl, len(member_maps)))
+            mean_smoothing[str(hyp)][str(cl)] = numpy.mean(
+                numpy.array(member_smoothing))
+            mean_decision[str(hyp)][str(cl)] = numpy.mean(
+                numpy.array(member_decision))
+            log_to_file(logfile,
+                        'mean fwhm: %f' % mean_smoothing[str(hyp)][str(cl)])
+            log_to_file(logfile,
+                        'pYes: %f' % mean_decision[str(hyp)][str(cl)])
             maskdata = masker.fit_transform(member_maps)
             meandata = numpy.mean(maskdata, 0)
             mean_img = masker.inverse_transform(meandata)
@@ -389,45 +457,27 @@ def analyze_clusters(
                 display_mode="z",
                 colorbar=True,
                 title='hyp%d - cluster%d (fwhm=%0.2f, pYes = %0.2f)' % (
-                    hyp, cl, mean_smoothing[hyp][cl],
-                    mean_decision[hyp][cl]
+                    hyp, cl, mean_smoothing[str(hyp)][str(cl)],
+                    mean_decision[str(hyp)][str(cl)]
                 ),
                 cut_coords=cut_coords,
-                axes=ax[i])
-
+                axes=ax[j])
+            log_to_file(logfile, '')
+        log_to_file(logfile, '')
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_cluster_means.pdf' % hyp))
         plt.close(fig)
 
-    # create a data frame containing cluster metadata
-    print('creating cluster metadata df')
-    cluster_metadata = {}
-    cluster_metadata_df = pandas.DataFrame(
-        columns=['hyp%d' % i for i in hypnums],
-        index=narps.metadata.teamID)
-
-    for i, hyp in enumerate(hypnums):
-        cluster_metadata[hyp] = {}
-        print('Hypothesis', hyp)
-        clusters = list(membership[hyp].keys())
-        clusters.sort()
-
-        for i, cl in enumerate(clusters):
-            print('cluster %d (%s)' % (cl, cluster_colors[i-1]))
-            print(membership[hyp][cl])
-            cluster_metadata[hyp][cl] = narps.metadata[
-                narps.metadata.teamID.isin(membership[hyp][cl])]
-            for m in membership[hyp][cl]:
-                cluster_metadata_df.loc[m, 'hyp%d' % hyp] = cl
-        print('')
-
+    # save cluster metadata to data frame
     cluster_metadata_df = cluster_metadata_df.dropna()
     cluster_metadata_df.to_csv(os.path.join(
         narps.dirs.dirs['output'],
         'cluster_metadata_df.csv'))
 
     # compute clustering similarity across hypotheses
+    log_to_file(logfile, 'Computing cluster similarity (Rand score)')
+    log_to_file(logfile, 'pairs with adjusted Rand index > %f' % rand_thresh)
 
     randmtx = numpy.zeros((10, 10))
     for i, j in enumerate(hypnums):
@@ -438,7 +488,7 @@ def analyze_clusters(
                 cluster_metadata_df['hyp%d' % j],
                 cluster_metadata_df['hyp%d' % k])
             if randmtx[j, k] > rand_thresh:
-                print(j, k, randmtx[j, k])
+                log_to_file(logfile, '%d, %d: %f' % (j, k, randmtx[j, k]))
 
     numpy.savetxt(os.path.join(
         narps.dirs.dirs['output'],
@@ -450,6 +500,15 @@ def analyze_clusters(
 
 def plot_distance_from_mean(narps):
 
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
+
     median_distance_df = pandas.read_csv(os.path.join(
         narps.dirs.dirs['metadata'],
         'median_pattern_distance.csv'))
@@ -460,37 +519,94 @@ def plot_distance_from_mean(narps):
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
         'median_distance_sorted.png'))
+    plt.close()
 
     # This plot is limited to the teams with particularly
     # low median correlations (<.2)
     median_distance_low = median_distance_df.query(
         'median_distance < 0.2')
-    print('found %d teams with r<0.2 with mean pattern' %
-          median_distance_low.shape[0])
-    print(median_distance_low.iloc[:, 0].values)
+    log_to_file(
+        logfile,
+        'found %d teams with r<0.2 with mean pattern' %
+        median_distance_low.shape[0])
+    log_to_file(logfile, median_distance_low.iloc[:, 0].values)
 
     median_distance_high = median_distance_df.query(
         'median_distance > 0.7')
-    print('found %d teams with r>0.7 with mean pattern' %
-          median_distance_high.shape[0])
+    log_to_file(
+        logfile,
+        'found %d teams with r>0.7 with mean pattern' %
+        median_distance_high.shape[0])
 
-# #### SKIP FOR NOW Similarity maps for thresholded images
-# For each pair of thresholded images, compute the similarity
-# of the thresholded/binarized maps using the Jaccard coefficient.
-# def get_thresh_similarity(narps):
-#     cc_thresh={}
-#     get_jaccard = False
-#     for hyp in [1,2,5,6,7,8,9]:
-#         maskdata,labels = get_masked_data(hyp,
-#           mask_img,output_dir,imgtype='thresh')
-#         cc = matrix_jaccard(maskdata)
-#         df = pandas.DataFrame(cc,index=labels,columns=labels)
-#         cc_thresh[hyp]=df
-#     for hyp in [1,2,5,6,7,8,9]:
-#         df = cc_thresh[hyp]
-#         seaborn.clustermap(df,cmap='jet',figsize=(16,16),method='ward')
-#         plt.title(hypotheses[hyp])
-#         plt.savefig(os.path.join(figure_dir,'hyp%d_jaccard_map_thresh.pdf'%hyp))
+
+def get_thresh_similarity(narps, dataset='resampled'):
+    """
+    For each pair of thresholded images, compute the similarity
+    of the thresholded/binarized maps using the Jaccard coefficient.
+    Computation with zeros per https://stackoverflow.com/questions/37003272/how-to-compute-jaccard-similarity-from-a-pandas-dataframe # noqa
+    also add computation of jaccard on only nonzero pairs
+    (ala scipy)
+    """
+
+    func_args = inspect.getargvalues(
+        inspect.currentframe()).locals
+    func_name = sys._getframe().f_code.co_name
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+    log_to_file(
+        logfile, '%s' %
+        func_name,
+        flush=True)
+    log_to_file(
+        logfile,
+        stringify_dict(func_args))
+
+    output_dir = os.path.join(
+        narps.dirs.dirs['output'],
+        'jaccard_thresh')
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
+    for hyp in hypnums:
+        print('creating Jaccard map for hypothesis', hyp)
+        maskdata, labels = get_masked_data(
+            hyp,
+            narps.dirs.MNI_mask,
+            narps.dirs.dirs['output'],
+            imgtype='thresh',
+            dataset=dataset)
+        jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
+        jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
+        df = pandas.DataFrame(jacsim, index=labels, columns=labels)
+        df.to_csv(os.path.join(
+            output_dir, 'jacsim_thresh_hyp%d.csv' % hyp))
+        df_nonzero = pandas.DataFrame(
+            jacsim_nonzero,
+            index=labels,
+            columns=labels)
+        df_nonzero.to_csv(os.path.join(
+            output_dir, 'jacsim_nonzero_thresh_hyp%d.csv' % hyp))
+        seaborn.clustermap(
+            df,
+            cmap='jet',
+            figsize=(16, 16),
+            method='ward')
+        plt.title(hypotheses[hyp])
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_jaccard_map_thresh.pdf' % hyp))
+        plt.close()
+        seaborn.clustermap(
+            df_nonzero,
+            cmap='jet',
+            figsize=(16, 16),
+            method='ward')
+        plt.title(hypotheses[hyp])
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_jaccard_nonzero_map_thresh.pdf' % hyp))
+        plt.close()
 
 
 if __name__ == "__main__":
@@ -531,6 +647,12 @@ if __name__ == "__main__":
         narps, corr_type=corr_type)
 
     # if variables don't exist then load them
-    cluster_metadata_df = analyze_clusters(narps, corr_type=corr_type)
+    cluster_metadata_df = analyze_clusters(
+        narps,
+        dendrograms,
+        membership,
+        corr_type=corr_type)
 
     plot_distance_from_mean(narps)
+
+    get_thresh_similarity(narps)

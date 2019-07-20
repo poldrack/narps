@@ -11,6 +11,35 @@ import nibabel
 from scipy.stats import norm, t
 import scipy.stats
 import sklearn.metrics
+from datetime import datetime
+
+
+def stringify_dict(d):
+    """create a pretty version of arguments for printing"""
+    if 'self' in d:
+        del d['self']
+    s = 'Arguments:\n'
+    for k in d:
+        if not isinstance(d[k], str):
+            d[k] = str(d[k])
+        s = s + '%s: %s\n' % (k, d[k])
+    return(s)
+
+
+def log_to_file(fname, s, flush=False,
+                add_timestamp=True,
+                also_print=True):
+    """ save string to log file"""
+    if flush and os.path.exists(fname):
+        os.remove(fname)
+    with open(fname, 'a+') as f:
+        if not isinstance(s, str):
+            s = str(s)
+        if also_print:
+            print(s)
+        f.write(s+'\n')
+        if flush and add_timestamp:
+            f.write(datetime.isoformat(datetime.now())+'\n\n')
 
 
 def get_masked_data(hyp, mask_img, output_dir,

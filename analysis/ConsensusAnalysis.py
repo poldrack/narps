@@ -7,6 +7,7 @@ analysis method developed by T Nichols and J Mumford
 
 
 import os
+import sys
 import glob
 import numpy
 import nibabel
@@ -17,6 +18,7 @@ from statsmodels.stats.multitest import multipletests
 import scipy.stats
 from narps import Narps, hypnums, hypotheses
 from narps import NarpsDirs # noqa, flake8 issue
+from utils import log_to_file
 
 
 def t_corr(y, res_mean=None, res_var=None, Q=None):
@@ -55,9 +57,17 @@ def t_corr(y, res_mean=None, res_var=None, Q=None):
     return(T, p)
 
 
-def run_ttests(narps, overwrite=True):
-    masker = nilearn.input_data.NiftiMasker(mask_img=narps.dirs.MNI_mask)
+def run_ttests(narps, logfile,
+               overwrite=True):
+    masker = nilearn.input_data.NiftiMasker(
+        mask_img=narps.dirs.MNI_mask)
     results_dir = narps.dirs.dirs['consensus']
+
+    func_name = sys._getframe().f_code.co_name
+    log_to_file(
+        logfile, '%s' %
+        func_name)
+
     if not os.path.exists(results_dir):
         os.mkdir(results_dir)
 
@@ -78,8 +88,11 @@ def run_ttests(narps, overwrite=True):
         img_mean = numpy.mean(data)
         img_var = numpy.mean(numpy.var(data, 1))
         cc = numpy.corrcoef(data)
-        print(img_mean, img_var,
-              numpy.mean(cc[numpy.triu_indices_from(cc, 1)]))
+        log_to_file(
+            logfile,
+            'mean = %f, var = %f, mean_cc = %f' %
+            (img_mean, img_var,
+             numpy.mean(cc[numpy.triu_indices_from(cc, 1)])))
 
         # perform t-test
         tvals, pvals = t_corr(data,
@@ -93,15 +106,22 @@ def run_ttests(narps, overwrite=True):
         pimg = masker.inverse_transform(1-pvals)
         pimg.to_filename(os.path.join(results_dir, 'hypo%d_1-p.nii.gz' % hyp))
         fdr_results = multipletests(pvals[0, :], 0.05, 'fdr_tsbh')
-        print("%d voxels significant at FDR corrected p<.05" %
-              numpy.sum(fdr_results[0]))
+        log_to_file(
+            logfile,
+            "%d voxels significant at FDR corrected p<.05" %
+            numpy.sum(fdr_results[0]))
         fdrimg = masker.inverse_transform(1 - fdr_results[1])
         fdrimg.to_filename(os.path.join(
             results_dir,
             'hypo%d_1-fdr.nii.gz' % hyp))
 
 
-def mk_figures(narps, thresh=0.95):
+def mk_figures(narps, logfile, thresh=0.95):
+
+    func_name = sys._getframe().f_code.co_name
+    log_to_file(
+        logfile, '%s' %
+        func_name)
 
     fig, ax = plt.subplots(7, 1, figsize=(12, 24))
     cut_coords = [-24, -10, 4, 18, 32, 52, 64]
@@ -151,8 +171,16 @@ if __name__ == "__main__":
         narps.dirs.dirs['output'],
         'consensus_analysis')
 
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        '%s.txt' % sys.argv[0].split('.')[0])
+    log_to_file(
+        logfile, 'running %s' %
+        sys.argv[0].split('.')[0],
+        flush=True)
+
     if not os.path.exists(narps.dirs.dirs['consensus']):
         os.mkdir(narps.dirs.dirs['consensus'])
 
-    run_ttests(narps)
-    mk_figures(narps)
+    run_ttests(narps, logfile)
+    mk_figures(narps, logfile)
