@@ -323,9 +323,7 @@ decisionSummary_smoothingkernel <- narps_df %>%
             numTeams = n()) 
 
 ggplot(decisionSummary_smoothingkernel,aes(varnum,meanAppliedFWHM,color=Decision_factor)) +
-  geom_line() +
-  scale_x_continuous(name='Hypotheses',breaks=seq(1,9,1))
-  
+  geom_line() 
 
 ```
 
