@@ -78,7 +78,7 @@ def mk_overlap_maps(narps, verbose=True):
     return(max_overlap)
 
 
-def mk_range_maps(narps):
+def mk_range_maps(narps, dataset='zstat'):
     """ create maps of range of unthresholded values"""
 
     fig, ax = plt.subplots(7, 1, figsize=(12, 24))
@@ -87,7 +87,7 @@ def mk_range_maps(narps):
             os.path.join(
                 narps.dirs.dirs['output'],
                 'unthresh_range_%s/hypo%d.nii.gz' % (
-                    unthresh_dataset_to_use, hyp)))
+                    dataset, hyp)))
         nilearn.plotting.plot_stat_map(
             range_img,
             threshold=.1,
@@ -102,7 +102,7 @@ def mk_range_maps(narps):
     plt.close(fig)
 
 
-def mk_std_maps(narps):
+def mk_std_maps(narps, dataset='zstat'):
     """ create maps of standard deviation of unthresholded values"""
     print('making standard deviation maps')
     # show std maps
@@ -112,7 +112,7 @@ def mk_std_maps(narps):
             os.path.join(
                 narps.dirs.dirs['output'],
                 'unthresh_std_%s/hypo%d.nii.gz' % (
-                    unthresh_dataset_to_use, hyp)))
+                    dataset, hyp)))
         nilearn.plotting.plot_stat_map(
             std_img,
             threshold=.1,
@@ -621,9 +621,6 @@ if __name__ == "__main__":
         basedir = os.environ['NARPS_BASEDIR']
     else:
         basedir = '/data'
-
-    # which dataset to use for analyses
-    unthresh_dataset_to_use = 'zstat'
 
     # setup main class
     narps = Narps(basedir)
