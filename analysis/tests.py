@@ -136,5 +136,5 @@ def test_consensus_analysis(narps):
 
 # MakeSupplementaryFigure1
 def test_mk_suppfigure1(narps):
-    metadata = get_all_metadata()
+    metadata = get_all_metadata(narps)
     mk_supp_figure1(narps, metadata)
