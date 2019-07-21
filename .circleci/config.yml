@@ -12,7 +12,7 @@ jobs:
            name: run main narps tests
            command: |
              pip install -U pytest pytest-cov
-             cd analysis; pytest --cov=./ -q tests.py; cp coverage.xml ..
+             cd analysis; source /etc/fsl/5.0/fsl.sh; pytest --cov=./ -q tests.py; cp coverage.xml ..
       - run:
            name: static analysis and style check using flake8
            command: |
