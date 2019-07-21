@@ -86,4 +86,4 @@ if __name__ == "__main__":
     # setup main class
     narps = Narps(basedir, overwrite=overwrite)
 
-    prepare_metadata()
+    prepare_metadata(narps)
