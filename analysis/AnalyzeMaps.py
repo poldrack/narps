@@ -38,7 +38,7 @@ def mk_overlap_maps(narps, verbose=True):
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
@@ -237,7 +237,7 @@ def mk_correlation_maps_unthresh(
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
@@ -379,7 +379,7 @@ def analyze_clusters(
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
@@ -503,7 +503,7 @@ def plot_distance_from_mean(narps):
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
@@ -553,7 +553,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
