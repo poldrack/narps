@@ -17,7 +17,7 @@ from narps import NarpsDirs # noqa, flake8 issue
 from utils import log_to_file
 
 
-def get_all_metadata():
+def get_all_metadata(narps):
     metadata = pandas.read_csv(
         os.path.join(
             narps.dirs.dirs['metadata'],
@@ -88,5 +88,5 @@ if __name__ == "__main__":
         'running MakeSupplementaryFigure1.py',
         flush=True)
 
-    metadata = get_all_metadata()
+    metadata = get_all_metadata(narps)
     mk_supp_figure1(narps, metadata)
