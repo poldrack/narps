@@ -11,6 +11,8 @@ from AnalyzeMaps import mk_overlap_maps,\
     plot_distance_from_mean, get_thresh_similarity
 from PrepareMetadata import prepare_metadata
 from ConsensusAnalysis import run_ttests, mk_figures
+from MakeSupplementaryFigure1 import mk_supp_figure1,\
+    get_all_metadata
 
 # use a session-scoped fixture to
 # save data for entire session
@@ -71,6 +73,7 @@ def test_narps_estimate_smoothness(narps):
     _ = narps.estimate_smoothness()
 
 
+# PrepareMetadata
 def test_prepare_metadata(narps):
     prepare_metadata(narps)
     # Load full metadata and put into narps structure
@@ -78,6 +81,7 @@ def test_prepare_metadata(narps):
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
 
 
+# AnalyzeMaps
 def test_mk_overlap_maps(narps):
     # create maps showing overlap of thresholded images
     mk_overlap_maps(narps)
@@ -113,6 +117,7 @@ def test_get_thresh_similarity(narps):
     get_thresh_similarity(narps)
 
 
+# ConsensusAnalysis
 def test_consensus_analysis(narps):
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
@@ -127,3 +132,9 @@ def test_consensus_analysis(narps):
 
     run_ttests(narps, logfile)
     mk_figures(narps, logfile)
+
+
+# MakeSupplementaryFigure1
+def test_mk_suppfigure1(narps):
+    metadata = get_all_metadata()
+    mk_supp_figure1(narps, metadata)
