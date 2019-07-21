@@ -10,7 +10,6 @@ import pandas
 import nibabel
 from scipy.stats import norm, t
 import scipy.stats
-import sklearn.metrics
 from datetime import datetime
 
 

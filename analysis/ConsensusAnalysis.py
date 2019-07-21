@@ -15,7 +15,6 @@ import nilearn.plotting
 import nilearn.input_data
 import matplotlib.pyplot as plt
 from statsmodels.stats.multitest import multipletests
-import scipy.stats
 from narps import Narps, hypnums, hypotheses
 from narps import NarpsDirs # noqa, flake8 issue
 from utils import log_to_file, t_corr
