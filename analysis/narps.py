@@ -264,6 +264,8 @@ class NarpsTeam(object):
                     self.images['thresh']['thresh_mask_orig'][hyp]))
             if overwrite or not os.path.exists(
                     self.images['thresh']['thresh_mask_orig'][hyp]):
+
+                # load the image and threshold/binarize it
                 threshimg = nibabel.load(img)
                 threshdata = threshimg.get_data()
                 # some images use nan instead of zero for the non-excursion
@@ -271,32 +273,40 @@ class NarpsTeam(object):
                 if replace_na:
                     threshdata = numpy.nan_to_num(threshdata)
                 threshdata_bin = numpy.zeros(threshdata.shape)
+                # use a small number instead of zero to address
+                # numeric issues
                 threshdata_bin[numpy.abs(threshdata) > thresh] = 1
+                # save back to a nifti image with same geometry
+                # as original
                 bin_img = nibabel.Nifti1Image(threshdata_bin,
                                               affine=threshimg.affine)
                 bin_img.to_filename(
                     self.images['thresh']['thresh_mask_orig'][hyp])
             else:
+                # if it already exists, just use existing
                 bin_img = nibabel.load(
                     self.images['thresh']['thresh_mask_orig'][hyp])
                 if self.verbose:
                     print('using existing binary mask for', self.teamID)
                 threshdata_bin = bin_img.get_data()
+            # get number of suprathreshold voxels
             self.n_mask_vox[hyp] = numpy.sum(threshdata_bin)
 
     def get_resampled_images(self, overwrite=False, replace_na=False):
         """
-        resample images into common space
+        resample images into common space using nilearn
         """
         self.has_resampled = True
         # use linear interpolation for binarized maps, then threshold at 0.5
         # this avoids empty voxels that can occur with NN interpolation
         interp_type = {'thresh': 'linear', 'unthresh': 'continuous'}
+        data_dirname = {'thresh': 'thresh_mask_orig',
+                        'unthresh': 'orig'}
 
         for hyp in hypotheses:
             for imgtype in self.images:
                 infile = os.path.join(
-                    self.dirs.dirs['orig'],
+                    self.dirs.dirs[data_dirname[imgtype]],
                     self.datadir_label,
                     'hypo%d_%s.nii.gz' % (hyp, imgtype))
                 outfile = os.path.join(
@@ -309,8 +319,18 @@ class NarpsTeam(object):
                 if not os.path.exists(outfile) or overwrite:
                     if self.verbose:
                         print("resampling", infile)
+
                     # create resampled file
-                    with warnings.catch_warnings():  # ignore nilearn warnings
+
+                    # ignore nilearn warnings
+                    # these occur on some of the unthresholded images
+                    # that contains NaN values
+                    # we probably don't want to set those to zero
+                    # because those would enter into interpolation
+                    # and then would be treated as real zeros later
+                    # rather than "missing data" which is the usual
+                    # intention
+                    with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
                         resampled = nilearn.image.resample_to_img(
                             infile,
@@ -519,6 +539,9 @@ class Narps(object):
                     self.all_maps[imgtype][datatype] = [
                         self.teams[teamID].images[imgtype][datatype][hyp]
                         for teamID in concat_teams]
+
+                    # use nilearn NiftiMasker to load data
+                    # and save to a new file
                     masker = nilearn.input_data.NiftiMasker(
                         mask_img=self.dirs.MNI_mask)
                     concat_data = masker.fit_transform(
@@ -532,9 +555,9 @@ class Narps(object):
         return(self.all_maps)
 
     def create_thresh_overlap_images(self, datatype='resampled',
-                                     overwrite=None, thresh=10e-6):
+                                     overwrite=None, thresh=1e-5):
         """
-        create overlap maps for thresholded iamges
+        create overlap maps for thresholded images
         """
         log_to_file(
             self.dirs.logfile, '\n\n%s' %
@@ -580,7 +603,12 @@ class Narps(object):
                                 overwrite=None):
         """
         create rectified images
-        using metadata provided by teams
+        - contrasts 5 and 6 were negative contrasts
+        some teams uploaded images where negative values
+        provided evidence in favor of the contrast
+        using metadata provided by teams, we identify these
+        images and flip their valence so that all maps
+        present positive evidence for each contrast
         """
         log_to_file(
             self.dirs.logfile, '\n\n%s' %
@@ -619,9 +647,6 @@ class Narps(object):
                 unthresh_file = self.teams[
                     teamID].images['unthresh']['resampled'][hyp]
 
-                # need to catch ValueError that occurs is mask is
-                # completely empty -
-                # in that case just copy over the data
                 self.teams[
                     teamID].images[
                         'unthresh']['rectified'][hyp] = os.path.join(
@@ -726,6 +751,7 @@ class Narps(object):
     def convert_to_zscores(self, map_metadata_file=None, overwrite=None):
         """
         convert rectified images to z scores
+        - unthresholded images could be either t or z images
         - if they are already z then just copy
         - use metadata supplied by teams to determine image type
         """
@@ -758,6 +784,11 @@ class Narps(object):
             if teamID not in unthresh_stat_type.index:
                 print('no map metadata for', teamID)
                 continue
+            # this is a bit of a kludge
+            # since some contrasts include all subjects
+            # but others only include some
+            # we don't have the number of participants in each
+            # group so we just use the entire number
             n = unthresh_stat_type.loc[teamID, 'n_participants']
 
             for hyp in range(1, 10):
@@ -806,6 +837,7 @@ class Narps(object):
                                 self.teams[
                                     teamID].images['unthresh']['zstat'][hyp]))
                 else:
+                    # if it's not T or Z then we skip it as it's not usable
                     print('skipping %s - other data type' % teamID)
 
     def estimate_smoothness(self, overwrite=None, imgtype='zstat'):
@@ -831,6 +863,7 @@ class Narps(object):
             smoothness_df = pandas.read_csv(output_file)
             return(smoothness_df)
 
+        # use nipype's interface to the FSL smoothest command
         est = SmoothEstimate()
         smoothness = []
         for teamID in self.complete_image_sets:
@@ -848,6 +881,7 @@ class Narps(object):
                 else:
                     if self.verbose:
                         print('estimating smoothness for hyp', hyp)
+
                     est.inputs.zstat_file = infile
                     est.inputs.mask_file = self.dirs.MNI_mask
                     est.terminal_output = 'file_split'
