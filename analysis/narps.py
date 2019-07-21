@@ -956,11 +956,6 @@ class Narps(object):
                 'teams'][teamID]['input_dir']
 
 
-# tests
-def test_narps_main_class(tmpdir):
-    _ = Narps(tmpdir)
-
-
 if __name__ == "__main__":
     # team data (from neurovault) should be in
     # # <basedir>/orig
