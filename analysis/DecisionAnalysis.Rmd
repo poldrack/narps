@@ -9,7 +9,7 @@ Analyze decisions across teams.
 
 ```{r setup, echo=FALSE,message=FALSE}
 
-use_checkpoint = FALSE
+use_checkpoint = TRUE
 
 if (use_checkpoint) {
   library(checkpoint)
@@ -28,6 +28,7 @@ library(pscl)
 library(arm)
 library(MuMIn)
 library(multcomp)
+library(multcompView)
 library(optimx)
 library(xtable)
 
@@ -473,7 +474,7 @@ Make supplementary table 5
 
 ```{r mkSuppTable5}
 
-df_SuppTable5 <- data.frame(
+df_SuppTable4 <- data.frame(
   Effects = c('Hypothesis', 
               'Smoothing', 
               'Used fMRIprep data', 
@@ -483,29 +484,57 @@ df_SuppTable5 <- data.frame(
          Pvalue = NA,
          delta_r2 = NA)
 
-df_SuppTable5[1,2:4] = c(anova_hyp$`Chisq`[2],
+df_SuppTable4[1,2:4] = c(anova_hyp$`Chisq`[2],
                          anova_hyp$`Pr(>Chisq)`[2],
                          delta_r2_hyp[2,1]
                          )
-df_SuppTable5[2,2:4] = c(anova_smoothing$`Chisq`[2],
+df_SuppTable4[2,2:4] = c(anova_smoothing$`Chisq`[2],
                          anova_smoothing$`Pr(>Chisq)`[2],
                          delta_r2_smoothing[2,1]
                          )
-df_SuppTable5[3,2:4] = c(anova_fmriprep$`Chisq`[2],
+df_SuppTable4[3,2:4] = c(anova_fmriprep$`Chisq`[2],
                          anova_fmriprep$`Pr(>Chisq)`[2],
                          delta_r2_fmriprep[2,1]
                          )
-df_SuppTable5[4,2:4] = c(anova_package$`Chisq`[2],
+df_SuppTable4[4,2:4] = c(anova_package$`Chisq`[2],
                          anova_package$`Pr(>Chisq)`[2],
                          delta_r2_package[2,1]
                          )
-df_SuppTable5[5,2:4] = c(anova_testing$`Chisq`[2],
+df_SuppTable4[5,2:4] = c(anova_testing$`Chisq`[2],
                          anova_testing$`Pr(>Chisq)`[2],
                          delta_r2_testing[2,1]
                          )
 
-print(df_SuppTable5)
-xtable(df_SuppTable5)
+print(df_SuppTable4)
+
+write.table(df_SuppTable4,
+            file=paste(basedir,"SuppTable4.txt",sep='/'))
+
+tab_latex = print(xtable(df_SuppTable4, 
+             type = "latex", 
+             digits=c(0,0,2,3,2)),
+      floating=FALSE,
+      latex.environments=NULL,
+      booktabs=TRUE)
+
+latex_preamble=c('\\documentclass[11pt, oneside]{article}',
+'\\title{Supplementary Table 4}',
+'\\date{}',
+'\\usepackage{booktabs}',
+'\\begin{document}',
+'\\maketitle')
+
+if (TRUE) {
+fileConn<-file(paste(basedir,"SuppTable4.tex",sep='/'))
+writeLines(c(latex_preamble,tab_latex,c('\\end{document}')), fileConn)
+#writeLines(tab_latex, fileConn)
+close(fileConn)
+
+# leave this out so that we don't have to install tex within docker
+#texi2dvi(paste(basedir,"SuppTable4.tex",sep='/'),
+#         clean = TRUE)
+}
+
 ```
 
 

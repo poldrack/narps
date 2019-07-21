@@ -26,6 +26,10 @@ test:
 check-style:
 	flake8 --show-source  >| stylecheck.out
 
+# get list of R packages needed by checkpoint
+get-R-packages:
+	cat *.Rmd | grep library >| R_libraries.R
+
 
 # commands to run analyses via docker
 
@@ -43,8 +47,12 @@ run-AnalyzeMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 run-ConsensusAnalysis: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/ConsensusAnalysis.py
 
-run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
+run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR get-R-packages
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data")'
+
+run-MakeFigures: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/MakeSupplementaryFigure1.py
+
 
 
 # commands for building and testing docker image
@@ -68,6 +76,7 @@ shell: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 install-R-packages:
 	echo 'install.packages(c("tidyverse","lme4","lmerTest","emmeans","pscl","arm","MuMIn"), repos="http://cran.us.r-project.org", dependencies=TRUE)' > /tmp/packages.R && Rscript /tmp/packages.R
 
+
 run-all-local: run-PrepareMaps-local run-PrepareMetadata-local run-AnalyzeMaps-local run-ConsensusAnalysis-local # run-AnalyzeDecisions-local
 
 run-PrepareMaps-local:
@@ -82,6 +91,6 @@ run-AnalyzeMaps-local:
 run-ConsensusAnalysis-local:
 	python ConsensusAnalysis.py
 
-run-AnalyzeDecisions-local:
+run-AnalyzeDecisions-local: get-R-packages
 	 Rscript -e 'library(rmarkdown); rmarkdown::render("DecisionAnalysis.Rmd", "html_document")'
 
