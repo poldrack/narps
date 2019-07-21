@@ -15,46 +15,9 @@ import nilearn.plotting
 import nilearn.input_data
 import matplotlib.pyplot as plt
 from statsmodels.stats.multitest import multipletests
-import scipy.stats
 from narps import Narps, hypnums, hypotheses
 from narps import NarpsDirs # noqa, flake8 issue
-from utils import log_to_file
-
-
-def t_corr(y, res_mean=None, res_var=None, Q=None):
-    """
-    perform a one-sample t-test on correlated data
-    y = data (n observations X n vars)
-    res_mean = Common mean over voxels and results
-    res_var  = Common variance over voxels and results
-    Q = "known" correlation across observations
-    - (use empirical correlation based on maps)
-    """
-
-    npts = y.shape[0]
-    X = numpy.ones((npts, 1))
-
-    if res_mean is None:
-        res_mean = 0
-
-    if res_var is None:
-        res_var = 1
-
-    if Q is None:
-        Q = numpy.eye(npts)
-
-    VarMean = res_var * X.T.dot(Q).dot(X) / npts**2
-
-    # T  =  mean(y,0)/s-hat-2
-    # use diag to get s_hat2 for each variable
-    T = (numpy.mean(y, 0)-res_mean
-         )/numpy.sqrt(VarMean)*numpy.sqrt(res_var) + res_mean
-
-    # Assuming variance is estimated on whole image
-    # and assuming infinite df
-    p = 1 - scipy.stats.norm.cdf(T)
-
-    return(T, p)
+from utils import log_to_file, t_corr
 
 
 def run_ttests(narps, logfile,
@@ -173,7 +136,7 @@ if __name__ == "__main__":
 
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s.txt' % sys.argv[0].split('.')[0])
+        'ConsensusAnalysis.txt')
     log_to_file(
         logfile, 'running %s' %
         sys.argv[0].split('.')[0],

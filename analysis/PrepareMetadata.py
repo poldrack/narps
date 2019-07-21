@@ -23,24 +23,7 @@ def package_recoder(p):
         return p
 
 
-if __name__ == "__main__":
-    # team data (from neurovault) should be in
-    # # <basedir>/orig
-    # some data need to be renamed before using -
-    # see rename.sh in individual dirs
-
-    # set an environment variable called NARPS_BASEDIR
-    # with location of base directory
-    if 'NARPS_BASEDIR' in os.environ:
-        basedir = os.environ['NARPS_BASEDIR']
-    else:
-        basedir = '/data'
-
-    overwrite = False
-
-    # setup main class
-    narps = Narps(basedir, overwrite=overwrite)
-
+def prepare_metadata(narps):
     # get original image and decision metadata
     alldata_df = get_merged_metadata_decisions(
         narps.metadata_file,
@@ -83,3 +66,24 @@ if __name__ == "__main__":
     # save data for loading into R
     alldata_df.to_csv(os.path.join(
         narps.dirs.dirs['metadata'], 'all_metadata.csv'))
+
+
+if __name__ == "__main__":
+    # team data (from neurovault) should be in
+    # # <basedir>/orig
+    # some data need to be renamed before using -
+    # see rename.sh in individual dirs
+
+    # set an environment variable called NARPS_BASEDIR
+    # with location of base directory
+    if 'NARPS_BASEDIR' in os.environ:
+        basedir = os.environ['NARPS_BASEDIR']
+    else:
+        basedir = '/data'
+
+    overwrite = False
+
+    # setup main class
+    narps = Narps(basedir, overwrite=overwrite)
+
+    prepare_metadata()

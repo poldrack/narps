@@ -38,7 +38,7 @@ def mk_overlap_maps(narps, verbose=True):
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
@@ -78,7 +78,7 @@ def mk_overlap_maps(narps, verbose=True):
     return(max_overlap)
 
 
-def mk_range_maps(narps):
+def mk_range_maps(narps, dataset='zstat'):
     """ create maps of range of unthresholded values"""
 
     fig, ax = plt.subplots(7, 1, figsize=(12, 24))
@@ -87,7 +87,7 @@ def mk_range_maps(narps):
             os.path.join(
                 narps.dirs.dirs['output'],
                 'unthresh_range_%s/hypo%d.nii.gz' % (
-                    unthresh_dataset_to_use, hyp)))
+                    dataset, hyp)))
         nilearn.plotting.plot_stat_map(
             range_img,
             threshold=.1,
@@ -102,7 +102,7 @@ def mk_range_maps(narps):
     plt.close(fig)
 
 
-def mk_std_maps(narps):
+def mk_std_maps(narps, dataset='zstat'):
     """ create maps of standard deviation of unthresholded values"""
     print('making standard deviation maps')
     # show std maps
@@ -112,7 +112,7 @@ def mk_std_maps(narps):
             os.path.join(
                 narps.dirs.dirs['output'],
                 'unthresh_std_%s/hypo%d.nii.gz' % (
-                    unthresh_dataset_to_use, hyp)))
+                    dataset, hyp)))
         nilearn.plotting.plot_stat_map(
             std_img,
             threshold=.1,
@@ -237,7 +237,7 @@ def mk_correlation_maps_unthresh(
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
@@ -379,7 +379,7 @@ def analyze_clusters(
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
@@ -503,7 +503,7 @@ def plot_distance_from_mean(narps):
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
@@ -553,7 +553,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
-        '%s-%s.txt' % (sys.argv[0].split('.')[0], func_name))
+        'AnalyzeMaps-%s.txt' % func_name)
     log_to_file(
         logfile, '%s' %
         func_name,
@@ -621,9 +621,6 @@ if __name__ == "__main__":
         basedir = os.environ['NARPS_BASEDIR']
     else:
         basedir = '/data'
-
-    # which dataset to use for analyses
-    unthresh_dataset_to_use = 'zstat'
 
     # setup main class
     narps = Narps(basedir)
