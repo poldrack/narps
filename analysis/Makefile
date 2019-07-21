@@ -24,7 +24,7 @@ test:
 	pytest -q narps.py
 
 check-style:
-	flake8 --show-source  >| stylecheck.out
+	flake8 --show-source  | tee stylecheck.out
 
 # get list of R packages needed by checkpoint
 get-R-packages:
