@@ -89,10 +89,6 @@ def get_metadata(metadata_file,
         else i for i in metadata['n_participants']]
     return(metadata)
 
-# to be removed?
-# def get_tidy_metadata(metadata_file):
-#    return(pandas.read_csv(metadata_file))
-
 
 def get_map_metadata(map_metadata_file):
     """
@@ -192,22 +188,6 @@ def get_teamID_to_collectionID_dict(metadata):
     return(teamid_to_collectionID_dict)
 
 
-def matrix_jaccard(mtx):
-    jacmtx = numpy.zeros((mtx.shape[0], mtx.shape[0]))
-    for i in range(mtx.shape[0]):
-        for j in range(i+1, mtx.shape[0]):
-            if i == j:
-                continue
-            if numpy.sum(mtx[i, :]) > 0 and numpy.sum(mtx[j, :]) > 0:
-                jacmtx[i, j] = sklearn.metrics.jaccard_score(
-                    mtx[i, :], mtx[j, :])
-
-    jacmtx = numpy.nan_to_num(jacmtx)
-    jacmtx = jacmtx + jacmtx.T
-    jacmtx[numpy.diag_indices_from(jacmtx)] = 1
-    return(jacmtx)
-
-
 def TtoZ(tmapfile, outfile, df):
     """
     takes a nibabel file object and converts from z to t
@@ -261,8 +241,9 @@ def t_corr(y, res_mean=None, res_var=None, Q=None):
     res_mean = Common mean over voxels and results
     res_var  = Common variance over voxels and results
     Q = "known" correlation across observations
-    (use empirical correlation based on maps)
+    - (use empirical correlation based on maps)
     """
+
     npts = y.shape[0]
     X = numpy.ones((npts, 1))
 
@@ -283,7 +264,7 @@ def t_corr(y, res_mean=None, res_var=None, Q=None):
          )/numpy.sqrt(VarMean)*numpy.sqrt(res_var) + res_mean
 
     # Assuming variance is estimated on whole image
-    df = numpy.Inf
+    # and assuming infinite df
     p = 1 - scipy.stats.norm.cdf(T)
 
-    return(T, df, p)
+    return(T, p)
