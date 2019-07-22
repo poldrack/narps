@@ -149,4 +149,4 @@ def test_simulated_data(narps):
 
     basedir = setup_simulated_data(narps, verbose=False)
 
-    narps = make_orig_image_sets(narps, basedir)
+    make_orig_image_sets(narps, basedir)
