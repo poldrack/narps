@@ -13,6 +13,7 @@ needed for subsequent analyses
 
 """
 
+import argparse
 import numpy
 import pandas
 import nibabel
@@ -34,7 +35,7 @@ import tarfile
 from urllib.error import HTTPError
 import hashlib
 import inspect
-
+from MakeSimulatedData import setup_simulated_data
 from utils import get_metadata, TtoZ, get_map_metadata,\
     log_to_file, stringify_dict
 
@@ -962,17 +963,53 @@ if __name__ == "__main__":
     # some data need to be renamed before using -
     # see rename.sh in individual dirs
 
-    # set an environment variable called NARPS_BASEDIR
-    # with location of base directory
-    if 'NARPS_BASEDIR' in os.environ:
+    # parse arguments
+    parser = argparse.ArgumentParser(
+        description='Process NARPS data')
+    parser.add_argument('-u', '--dataurl', 
+                        help='URL to download data')
+    parser.add_argument('-b', '--basedir',
+                        help='base directory')
+    parser.add_argument('-s', '--simulate',
+                        action='store_true',
+                        help='use simulated data')
+    args = parser.parse_args()
+
+    # set up base directory
+    if args.basedir is not None:
+        basedir = args.basedir
+    elif 'NARPS_BASEDIR' in os.environ:
         basedir = os.environ['NARPS_BASEDIR']
+        print("using basedir specified in NARPS_BASEDIR")
     else:
         basedir = '/data'
+        print("using default basedir:", basedir)
 
-    overwrite = False
+    # set up simulation if specified
+    if args.simulate:
+        print('using simulated data')
+        # load main class from real analysis
+        narps = Narps(basedir, overwrite=False)
+        # copy data from orig/templates
+        origdir = narps.dirs.dirs['orig']
+        templatedir = narps.dirs.dirs['templates']
+        basedir = basedir + '_simulated'
+        print('using basedir:', basedir)
+        if os.path.exists(basedir):
+            shutil.rmtree(basedir)
+        os.mkdir(basedir)
+        print('copying orig data to new basedir')
+        shutil.copytree(
+            origdir, 
+            os.path.join(basedir, 'orig_basis'))
+        shutil.copytree(
+            templatedir,
+            os.path.join(basedir, 'templates'))
+
 
     # setup main class
-    narps = Narps(basedir, overwrite=overwrite)
+
+    narps = Narps(basedir)
 
     print('getting binarized/thresholded orig maps')
     narps.get_binarized_thresh_masks()
