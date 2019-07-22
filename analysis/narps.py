@@ -1206,7 +1206,7 @@ if __name__ == "__main__":
         narps.metadata = pandas.read_csv(
             os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
 
-        basedir = setup_simulated_data(narps, verbose=True)
+        basedir = setup_simulated_data(narps, verbose=False)
 
         narps = make_orig_image_sets(narps, basedir)
 
