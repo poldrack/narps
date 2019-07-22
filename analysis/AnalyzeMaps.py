@@ -613,7 +613,7 @@ if __name__ == "__main__":
 
      # parse arguments
     parser = argparse.ArgumentParser(
-        description='Process NARPS data')
+        description='Analyze NARPS data')
     parser.add_argument('-b', '--basedir',
                         help='base directory')
     parser.add_argument('-d', '--detailed',
