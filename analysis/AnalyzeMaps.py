@@ -6,6 +6,7 @@ Primary analysis of statistical maps
 
 
 import numpy
+import argparse
 import pandas
 import nibabel
 import os
@@ -611,7 +612,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
 
 if __name__ == "__main__":
 
-     # parse arguments
+    # parse arguments
     parser = argparse.ArgumentParser(
         description='Analyze NARPS data')
     parser.add_argument('-b', '--basedir',

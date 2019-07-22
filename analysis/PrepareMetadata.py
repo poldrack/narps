@@ -6,6 +6,7 @@ It requires that narps.py has already been run.
 """
 
 import os
+import argparse
 import pandas
 from narps import Narps
 from utils import get_merged_metadata_decisions
@@ -70,7 +71,7 @@ def prepare_metadata(narps):
 
 if __name__ == "__main__":
 
-   # parse arguments
+    # parse arguments
     parser = argparse.ArgumentParser(
         description='Generate NARPS metadata')
     parser.add_argument('-b', '--basedir',
