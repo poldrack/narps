@@ -133,13 +133,13 @@ if __name__ == "__main__":
     narps.dirs.dirs['consensus'] = os.path.join(
         narps.dirs.dirs['output'],
         'consensus_analysis')
+    narps.write_data()
 
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
         'ConsensusAnalysis.txt')
     log_to_file(
-        logfile, 'running %s' %
-        sys.argv[0].split('.')[0],
+        logfile, 'running ConsensusAnalysis',
         flush=True)
 
     if not os.path.exists(narps.dirs.dirs['consensus']):
