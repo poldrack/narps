@@ -972,8 +972,11 @@ def setup_simulated_data(
     basedir = narps.basedir + '_simulated'
     if verbose:
         print("writing files to new directory:", basedir)
-    log_to_file(self.logfile,
-        'Creating simulated dataset')
+    if not os.path.exists(os.path.join(basedir, 'logs')):
+        os.mkdir(os.path.join(basedir, 'logs'))
+
+    log_to_file(os.path.join(basedir, 'logs/simulated_data.log'),
+                'Creating simulated dataset', flush=True)
     # copy data from orig/templates
     origdir = narps.dirs.dirs['orig']
     new_origdir = os.path.join(basedir, 'orig')
@@ -1140,15 +1143,19 @@ def make_orig_image_sets(narps, basedir, verbose=False):
     rectify_status = get_teams_to_rectify(narps)
 
     # arbitrarily assign some teams to be flipped or noise
+    logfile = os.path.join(basedir, 'logs/simulated_data.log')
     flip_dirs = dirlist[0:4]
-    log_to_file(self.logfile,
-        'flipped teams: %s' % ' '.join(flip_dirs))
+    flip_teams = [i.split('_')[1] for i in flip_dirs]
+    log_to_file(logfile,
+                'flipped teams: %s' % ' '.join(flip_teams))
     noise_dirs = dirlist[5:9]
-    log_to_file(self.logfile,
-        'noise teams: %s' % ' '.join(noise_dirs))
+    noise_teams = [i.split('_')[1] for i in noise_dirs]
+    log_to_file(logfile,
+                'noise teams: %s' % ' '.join(noise_teams))
     highvar_dirs = dirlist[9:21]
-    log_to_file(self.logfile,
-        'noise teams: %s' % ' '.join(noise_dirs))
+    highvar_teams = [i.split('_')[1] for i in highvar_dirs]
+    log_to_file(logfile,
+                'high variance teams: %s' % ' '.join(highvar_teams))
 
     for teamCollectionID in dirlist:
         teamID = teamCollectionID.split('_')[1]
