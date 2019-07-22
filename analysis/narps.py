@@ -984,11 +984,6 @@ def setup_simulated_data(
         os.mkdir(basedir)
     if not os.path.exists(new_origdir) or overwrite:
         if verbose:
-            print('copying orig data to new basedir')
-        shutil.copytree(
-            origdir,
-            os.path.join(basedir, 'orig_basis'))
-        if verbose:
             print('copying template data to new basedir')
         shutil.copytree(
             templatedir,
@@ -1156,7 +1151,7 @@ def make_orig_image_sets(narps, basedir, verbose=False):
             noise_team=teamCollectionID in noise_dirs,
             flip_team=teamCollectionID in flip_dirs,
             rectify_status=rectify_status[teamID],
-            verbose=True)
+            verbose=verbose)
 
 
 if __name__ == "__main__":
