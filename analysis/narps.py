@@ -1009,6 +1009,7 @@ def make_orig_images(basedir,
                      teamCollectionID,
                      consensus_dir,
                      noise_sd=.1,
+                     thresh=2.,
                      noise_team=None,
                      flip_team=None,
                      rectify_status=[],
@@ -1036,7 +1037,13 @@ def make_orig_images(basedir,
     if verbose:
         print('teamdir', teamdir)
 
-    for hyp in hypnums:
+    for hyp in range(1,10):
+        # deal with missing hypotheses in consensus
+        if hyp in [3,4]:
+            hyp_orig = hyp - 2
+        else:
+            hyp_orig = hyp
+    
         outfile = {'thresh': os.path.join(
             teamdir, 'hypo%d_thresh.nii.gz' % hyp),
             'unthresh': os.path.join(
@@ -1045,7 +1052,7 @@ def make_orig_images(basedir,
         # get t image from consensus map
         baseimgfile = os.path.join(
             consensus_dir,
-            'hypo%d_t.nii.gz' % hyp)
+            'hypo%d_t.nii.gz' % hyp_orig)
         if verbose:
             print("baseimg:", baseimgfile)
         assert os.path.exists(baseimgfile)
@@ -1087,6 +1094,14 @@ def make_orig_images(basedir,
         if verbose:
             print('saving', outfile['unthresh'])
         newimg.to_filename(outfile['unthresh'])
+        threshdata = (newimgdata > thresh).astype('int')
+        newimg = nibabel.Nifti1Image(
+            threshdata,
+            affine=baseimg.affine)
+        if verbose:
+            print('saving', outfile['thresh'])
+        newimg.to_filename(outfile['thresh'])
+
 
 
 def get_teams_to_rectify(narps):
