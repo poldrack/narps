@@ -972,6 +972,8 @@ def setup_simulated_data(
     basedir = narps.basedir + '_simulated'
     if verbose:
         print("writing files to new directory:", basedir)
+    log_to_file(self.logfile,
+        'Creating simulated dataset')
     # copy data from orig/templates
     origdir = narps.dirs.dirs['orig']
     new_origdir = os.path.join(basedir, 'orig')
@@ -1006,7 +1008,7 @@ def setup_simulated_data(
 def make_orig_images(basedir,
                      teamCollectionID,
                      consensus_dir,
-                     noise_sd=.1,
+                     noise_sd=.5,
                      thresh=2.,
                      noise_team=None,
                      flip_team=None,
@@ -1139,7 +1141,15 @@ def make_orig_image_sets(narps, basedir, verbose=False):
 
     # arbitrarily assign some teams to be flipped or noise
     flip_dirs = dirlist[0:4]
-    noise_dirs = dirlist[5:8]
+    log_to_file(self.logfile,
+        'flipped teams: %s' % ' '.join(flip_dirs))
+    noise_dirs = dirlist[5:9]
+    log_to_file(self.logfile,
+        'noise teams: %s' % ' '.join(noise_dirs))
+    highvar_dirs = dirlist[9:21]
+    log_to_file(self.logfile,
+        'noise teams: %s' % ' '.join(noise_dirs))
+
     for teamCollectionID in dirlist:
         teamID = teamCollectionID.split('_')[1]
         if teamID not in rectify_status:
@@ -1150,6 +1160,7 @@ def make_orig_image_sets(narps, basedir, verbose=False):
             narps.dirs.dirs['consensus'],
             noise_team=teamCollectionID in noise_dirs,
             flip_team=teamCollectionID in flip_dirs,
+            noise_sd=0.5 + 2*(teamCollectionID in highvar_dirs),
             rectify_status=rectify_status[teamID],
             verbose=verbose)
 
