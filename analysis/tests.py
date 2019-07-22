@@ -4,7 +4,8 @@
 import pytest
 import pandas
 import os
-from narps import Narps
+from narps import Narps, setup_simulated_data,\
+    make_orig_image_sets
 from AnalyzeMaps import mk_overlap_maps,\
     mk_range_maps, mk_std_maps,\
     mk_correlation_maps_unthresh, analyze_clusters,\
@@ -138,3 +139,14 @@ def test_consensus_analysis(narps):
 def test_mk_suppfigure1(narps):
     metadata = get_all_metadata(narps)
     mk_supp_figure1(narps, metadata)
+
+
+# simulated data analysis
+def test_simulated_data(narps):
+    narps.metadata = pandas.read_csv(
+        os.path.join(narps.dirs.dirs['metadata'],
+                     'all_metadata.csv'))
+
+    basedir = setup_simulated_data(narps, verbose=False)
+
+    narps = make_orig_image_sets(narps, basedir)
