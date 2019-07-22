@@ -267,3 +267,17 @@ def t_corr(y, res_mean=None, res_var=None, Q=None):
     p = 1 - scipy.stats.norm.cdf(T)
 
     return(T, p)
+
+
+def randn_from_shape(shape):
+    """
+    take in a tuple defining a 4d matrix shape,
+    and return a random matrix of that shape
+    """
+    assert len(shape) == 4
+    return(
+        numpy.random.randn(
+            shape[0],
+            shape[1],
+            shape[2],
+            shape[3]))
