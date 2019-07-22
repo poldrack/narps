@@ -973,7 +973,7 @@ def setup_simulated_data(
     if verbose:
         print("writing files to new directory:", basedir)
     if not os.path.exists(os.path.join(basedir, 'logs')):
-        os.mkdir(os.path.join(basedir, 'logs'))
+        os.makedirs(os.path.join(basedir, 'logs'))
 
     log_to_file(os.path.join(basedir, 'logs/simulated_data.log'),
                 'Creating simulated dataset', flush=True)
@@ -1015,7 +1015,7 @@ def make_orig_images(basedir,
                      thresh=2.,
                      noise_team=None,
                      flip_team=None,
-                     rectify_status=[],
+                     rectify_status=None,
                      verbose=False):
     """
     for a particular team and hypothesis,
@@ -1025,7 +1025,8 @@ def make_orig_images(basedir,
     - included to simulate flipping errors
     We also flip those teams/hyps that will be rectified
     """
-
+    if rectify_status is None:
+        rectify_status = []
     if noise_team is None:
         noise_team = False
     if flip_team is None:
@@ -1221,7 +1222,7 @@ if __name__ == "__main__":
 
         basedir = setup_simulated_data(narps, verbose=False)
 
-        narps = make_orig_image_sets(narps, basedir)
+        make_orig_image_sets(narps, basedir)
 
         # doublecheck basedir name
         assert basedir.find('_simulated') > -1
