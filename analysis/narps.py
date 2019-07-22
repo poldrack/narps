@@ -414,22 +414,25 @@ class Narps(object):
         get orig dirs
         - assumes that images.json is present for each valid dir
         """
-        input_jsons = glob.glob(
-            os.path.join(dirs.dirs['orig'], '*/images.json'))
+
+        input_files = glob.glob(
+            os.path.join(dirs.dirs['orig'], '*/hypo1_thresh.nii.gz'))
+        input_dirs = [os.path.dirname(i) for i in input_files]
 
         log_to_file(
             self.dirs.logfile,
-            'found %d input directories' % len(input_jsons))
-        if load_json:
-            for i in input_jsons:
-                collection_id = os.path.basename(os.path.dirname(i))
-                NV_collection_id, teamID = collection_id.split('_')
-                if teamID not in self.teams:
-                    self.teams[teamID] = NarpsTeam(
-                        teamID, NV_collection_id, dirs, verbose=self.verbose)
-                    self.teams[teamID].jsonfile = i
-                with open(i) as f:
-                    self.teams[teamID].image_json = json.load(f)
+            'found %d input directories' % len(input_dirs))
+        for i in input_dirs:
+            collection_id = os.path.basename(i)
+            NV_collection_id, teamID = collection_id.split('_')
+            if teamID not in self.teams:
+                self.teams[teamID] = NarpsTeam(
+                    teamID, NV_collection_id, dirs, verbose=self.verbose)
+                if os.path.exists(os.path.join(i, 'images.json')):
+                    self.teams[teamID].jsonfile = os.path.join(
+                        i, 'images.json')
+                    with open(self.teams[teamID].jsonfile) as f:
+                        self.teams[teamID].image_json = json.load(f)
 
     def get_orig_images(self, dirs):
         """
@@ -1037,13 +1040,13 @@ def make_orig_images(basedir,
     if verbose:
         print('teamdir', teamdir)
 
-    for hyp in range(1,10):
+    for hyp in range(1, 10):
         # deal with missing hypotheses in consensus
-        if hyp in [3,4]:
+        if hyp in [3, 4]:
             hyp_orig = hyp - 2
         else:
             hyp_orig = hyp
-    
+
         outfile = {'thresh': os.path.join(
             teamdir, 'hypo%d_thresh.nii.gz' % hyp),
             'unthresh': os.path.join(
@@ -1101,7 +1104,6 @@ def make_orig_images(basedir,
         if verbose:
             print('saving', outfile['thresh'])
         newimg.to_filename(outfile['thresh'])
-
 
 
 def get_teams_to_rectify(narps):
@@ -1214,6 +1216,8 @@ if __name__ == "__main__":
     # setup main class
 
     narps = Narps(basedir)
+
+    assert len(narps.complete_image_sets) > 0
 
     if args.test:
         print('testing mode, exiting after setup')
