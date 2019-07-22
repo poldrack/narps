@@ -1127,7 +1127,7 @@ def get_teams_to_rectify(narps):
     return(rectify_status)
 
 
-def make_orig_image_sets(narps, basedir, verbose=True):
+def make_orig_image_sets(narps, basedir, verbose=False):
     """for each team in orig,
     make a set of orig_simulated images
     """
