@@ -1,0 +1,7 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.pytest_cache
+.ipynb_checkpoints
+.cache

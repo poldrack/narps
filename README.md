@@ -4,4 +4,6 @@
 
 This repository contains code related to the [Neuroimaging Analysis Replication and Prediction Study](http://narps.info).
 
-For primary analysis code see the analysis subdirectory
+For analyses of the prediction market data, see the [PredictionMarketAnalyses](PredictionMarketAnalyses) directory.
+
+For analyses of the imaging results, see the [ImageAnalyses](ImageAnalyses) directory.
