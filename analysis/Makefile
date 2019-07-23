@@ -5,6 +5,9 @@
 # set to your username if you wish to push custom version to a different dockerhub acct
 DOCKER_USERNAME = poldrack
 
+# need this for simulations
+NARPS_BASEDIR_SIMULATED = ${NARPS_BASEDIR}_simulated
+
 # code to check environment variables
 # from https://stackoverflow.com/questions/4728810/makefile-variable-as-prerequisite
 
@@ -52,6 +55,32 @@ run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR get-R-packages
 
 run-MakeFigures: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/MakeSupplementaryFigure1.py
+
+# commands to run simulated data analyses via docker
+
+run-all-simulated: run-PrepareMaps-simulated run-PrepareMetadata-simulated run-AnalyzeMaps-simulated run-AnalyzeDecisions-simulated run-ConsensusAnalysis-simulated
+
+run-PrepareMaps-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR guard-DATA_URL
+	-mkdir $(NARPS_BASEDIR_SIMULATED)
+	docker run -e "DATA_URL=$(DATA_URL)" -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data -v $(NARPS_BASEDIR_SIMULATED):/data_simulated $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/narps.py -s"
+
+run-PrepareMetadata-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/PrepareMetadata.py
+
+# need to link both directories to the basedir
+run-AnalyzeMaps-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data_simulated -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/AnalyzeMaps.py
+
+run-ConsensusAnalysis-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
+	# docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data -v $(NARPS_BASEDIR_SIMULATED):/data_simulated $(DOCKER_USERNAME)/narps-analysis python /analysis/ConsensusAnalysis.py
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data -v $(NARPS_BASEDIR_SIMULATED):/data_simulated $(DOCKER_USERNAME)/narps-analysis python /analysis/CheckSimulatedValues.py
+
+
+run-AnalyzeDecisions-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR get-R-packages
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data")'
+
+run-MakeFigures-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/MakeSupplementaryFigure1.py
 
 
 

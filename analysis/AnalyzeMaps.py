@@ -6,6 +6,7 @@ Primary analysis of statistical maps
 
 
 import numpy
+import argparse
 import pandas
 import nibabel
 import os
@@ -610,17 +611,26 @@ def get_thresh_similarity(narps, dataset='resampled'):
 
 
 if __name__ == "__main__":
-    # team data (from neurovault) should be in
-    # # <basedir>/orig
-    # some data need to be renamed before using -
-    # see rename.sh in individual dirs
 
-    # set an environment variable called NARPS_BASEDIR
-    # with location of base directory
-    if 'NARPS_BASEDIR' in os.environ:
+    # parse arguments
+    parser = argparse.ArgumentParser(
+        description='Analyze NARPS data')
+    parser.add_argument('-b', '--basedir',
+                        help='base directory')
+    parser.add_argument('-d', '--detailed',
+                        action='store_true',
+                        help='generate detailed team-level figures')
+    args = parser.parse_args()
+
+    # set up base directory
+    if args.basedir is not None:
+        basedir = args.basedir
+    elif 'NARPS_BASEDIR' in os.environ:
         basedir = os.environ['NARPS_BASEDIR']
+        print("using basedir specified in NARPS_BASEDIR")
     else:
         basedir = '/data'
+        print("using default basedir:", basedir)
 
     # setup main class
     narps = Narps(basedir)
@@ -637,7 +647,11 @@ if __name__ == "__main__":
 
     mk_std_maps(narps)
 
-    plot_individual_maps(narps, imgtype='unthresh', dataset='zstat')
+    if args.detailed:
+        plot_individual_maps(
+            narps,
+            imgtype='unthresh',
+            dataset='zstat')
 
     corr_type = 'spearman'
     dendrograms, membership = mk_correlation_maps_unthresh(

@@ -58,3 +58,8 @@ We have attempted to maximize the reproducibility of the analyses in this projec
 Execution via Docker is recommended, but the analysis can also be run locally, using ```make run-all-local``` - this will require that you have all of the various requirements in place, which must be inferred from the Dockerfile.
 
 
+### Simulation mode
+
+In order to validate the analysis stream, we have included the ability to run the entire analysis stream on simulated data.  This requires that the entire analysis (e.g. run all) has first been run in regular mode, because the simulated data are generated on the basis of the consensus analysis results. The data are generated so that most teams will be correlated, but four teams will be anticorrelated and four teams will be pure noise, and 12 teams have higher variance than the others.  See the code in narps.py for more details.
+
+To run in simulation model, you should use ```python narps.py -s```.  The specified basedir should be the one in which you have already run the full analysis.  A new base directory, with "_simulated" appended to the original directory name, will be generated and the new data will be generated in that directory.  The subsequent analysis methods can then be applied to that new simulated directory structure.  This entire process can be executed using Docker via ```make run-simulated```.

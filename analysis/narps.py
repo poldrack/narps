@@ -13,6 +13,7 @@ needed for subsequent analyses
 
 """
 
+import argparse
 import numpy
 import pandas
 import nibabel
@@ -34,9 +35,8 @@ import tarfile
 from urllib.error import HTTPError
 import hashlib
 import inspect
-
 from utils import get_metadata, TtoZ, get_map_metadata,\
-    log_to_file, stringify_dict
+    log_to_file, stringify_dict, randn_from_shape
 
 # set up data url
 # this is necessary for now because the data are still private
@@ -414,22 +414,25 @@ class Narps(object):
         get orig dirs
         - assumes that images.json is present for each valid dir
         """
-        input_jsons = glob.glob(
-            os.path.join(dirs.dirs['orig'], '*/images.json'))
+
+        input_files = glob.glob(
+            os.path.join(dirs.dirs['orig'], '*/hypo1_thresh.nii.gz'))
+        input_dirs = [os.path.dirname(i) for i in input_files]
 
         log_to_file(
             self.dirs.logfile,
-            'found %d input directories' % len(input_jsons))
-        if load_json:
-            for i in input_jsons:
-                collection_id = os.path.basename(os.path.dirname(i))
-                NV_collection_id, teamID = collection_id.split('_')
-                if teamID not in self.teams:
-                    self.teams[teamID] = NarpsTeam(
-                        teamID, NV_collection_id, dirs, verbose=self.verbose)
-                    self.teams[teamID].jsonfile = i
-                with open(i) as f:
-                    self.teams[teamID].image_json = json.load(f)
+            'found %d input directories' % len(input_dirs))
+        for i in input_dirs:
+            collection_id = os.path.basename(i)
+            NV_collection_id, teamID = collection_id.split('_')
+            if teamID not in self.teams:
+                self.teams[teamID] = NarpsTeam(
+                    teamID, NV_collection_id, dirs, verbose=self.verbose)
+                if os.path.exists(os.path.join(i, 'images.json')):
+                    self.teams[teamID].jsonfile = os.path.join(
+                        i, 'images.json')
+                    with open(self.teams[teamID].jsonfile) as f:
+                        self.teams[teamID].image_json = json.load(f)
 
     def get_orig_images(self, dirs):
         """
@@ -919,7 +922,9 @@ class Narps(object):
                 'NV_collection_id': self.teams[teamID].NV_collection_id,
                 'jsonfile': self.teams[teamID].jsonfile}
         if save_data:
-            if not outfile:
+            if not os.path.exists(self.dirs.dirs['cached']):
+                os.mkdir(self.dirs.dirs['cached'])
+            if outfile is None:
                 outfile = os.path.join(self.dirs.dirs['cached'],
                                        'narps_prepare_maps.pkl')
             with open(outfile, 'wb') as f:
@@ -956,55 +961,316 @@ class Narps(object):
                 'teams'][teamID]['input_dir']
 
 
+# functions for simulated data
+def setup_simulated_data(
+        narps,
+        verbose=False,
+        overwrite=False):
+    """create directories for simulated data"""
+
+    # consensus analysis must exist
+    assert os.path.exists(narps.dirs.dirs['consensus'])
+
+    basedir = narps.basedir + '_simulated'
+    if verbose:
+        print("writing files to new directory:", basedir)
+    if not os.path.exists(os.path.join(basedir, 'logs')):
+        os.makedirs(os.path.join(basedir, 'logs'))
+
+    log_to_file(os.path.join(basedir, 'logs/simulated_data.log'),
+                'Creating simulated dataset', flush=True)
+    # copy data from orig/templates
+    origdir = narps.dirs.dirs['orig']
+    new_origdir = os.path.join(basedir, 'orig')
+    templatedir = narps.dirs.dirs['templates']
+    if verbose:
+        print('using basedir:', basedir)
+    if os.path.exists(basedir) and overwrite:
+        shutil.rmtree(basedir)
+    if not os.path.exists(basedir):
+        os.mkdir(basedir)
+    if not os.path.exists(new_origdir) or overwrite:
+        if verbose:
+            print('copying template data to new basedir')
+        shutil.copytree(
+            templatedir,
+            os.path.join(basedir, 'templates'))
+        if not os.path.exists(new_origdir):
+            os.mkdir(new_origdir)
+        # copy metadata files from orig
+        for f in glob.glob(os.path.join(
+                origdir, '*.*')):
+            if os.path.isfile(f):
+                if verbose:
+                    print('copying', f, 'to', new_origdir)
+                shutil.copy(f, new_origdir)
+    else:
+        print('using existing new basedir')
+
+    return(basedir)
+
+
+def make_orig_images(basedir,
+                     teamCollectionID,
+                     consensus_dir,
+                     noise_sd=.5,
+                     thresh=2.,
+                     noise_team=None,
+                     flip_team=None,
+                     rectify_status=None,
+                     verbose=False):
+    """
+    for a particular team and hypothesis,
+    generate the images
+    NOTE: flip_teams are teams whose data will be
+    flipped but will not be rectified
+    - included to simulate flipping errors
+    We also flip those teams/hyps that will be rectified
+    """
+    if rectify_status is None:
+        rectify_status = []
+    if noise_team is None:
+        noise_team = False
+    if flip_team is None:
+        flip_team = False
+
+    if verbose:
+        print('make_orig_images:', teamCollectionID)
+
+    teamdir = os.path.join(basedir, 'orig/%s' % teamCollectionID)
+    if not os.path.exists(teamdir):
+        os.mkdir(teamdir)
+    if verbose:
+        print('teamdir', teamdir)
+
+    for hyp in range(1, 10):
+        # deal with missing hypotheses in consensus
+        if hyp in [3, 4]:
+            hyp_orig = hyp - 2
+        else:
+            hyp_orig = hyp
+
+        outfile = {'thresh': os.path.join(
+            teamdir, 'hypo%d_thresh.nii.gz' % hyp),
+            'unthresh': os.path.join(
+            teamdir, 'hypo%d_unthresh.nii.gz' % hyp)}
+
+        # get t image from consensus map
+        baseimgfile = os.path.join(
+            consensus_dir,
+            'hypo%d_t.nii.gz' % hyp_orig)
+        if verbose:
+            print("baseimg:", baseimgfile)
+        assert os.path.exists(baseimgfile)
+
+        # load template data
+        baseimg = nibabel.load(baseimgfile)
+        baseimgdata = baseimg.get_data()
+        newimgdata = baseimgdata.copy()
+
+        if noise_team:
+            # threshold to get in-mask voxels
+            baseimgvox = numpy.abs(baseimgdata) > 0
+            # fill in-mask voxels with N(0,std) Gaussian noise
+            # where std is based on the original image
+            newimgdata = randn_from_shape(
+                baseimgdata.shape)*numpy.std(baseimgdata)
+            # clear out-of-mask voxels
+            newimgdata = newimgdata * baseimgvox
+        else:
+            newimgdata = newimgdata + randn_from_shape(
+                newimgdata.shape)*noise_sd
+
+        flip_sign = False
+        if flip_team:
+            flip_sign = True
+        if hyp in rectify_status:
+            flip_sign = True
+
+        if flip_sign:
+            if verbose:
+                print('flipping', teamCollectionID, hyp)
+            # flip sign of data
+            newimgdata = newimgdata * -1
+
+        # save image
+        newimg = nibabel.Nifti1Image(
+            newimgdata,
+            affine=baseimg.affine)
+        if verbose:
+            print('saving', outfile['unthresh'])
+        newimg.to_filename(outfile['unthresh'])
+        threshdata = (newimgdata > thresh).astype('int')
+        newimg = nibabel.Nifti1Image(
+            threshdata,
+            affine=baseimg.affine)
+        if verbose:
+            print('saving', outfile['thresh'])
+        newimg.to_filename(outfile['thresh'])
+
+
+def get_teams_to_rectify(narps):
+    map_metadata_file = os.path.join(
+        narps.dirs.dirs['orig'],
+        'narps_neurovault_images_details.csv')
+    map_metadata = get_map_metadata(map_metadata_file)
+    rectify_status = {}
+    # manual fix for one
+    rectify_status['R7D1'] = [5, 6]
+    for teamID in narps.teams:
+        for hyp in [5, 6]:
+            mdstring = map_metadata.query(
+                'teamID == "%s"' % teamID
+                )['hyp%d_direction' % hyp].iloc[0]
+            rectify = mdstring.split()[0] == 'Negative'
+            if rectify:
+                if teamID not in rectify_status:
+                    rectify_status[teamID] = []
+                rectify_status[teamID].append(hyp)
+    return(rectify_status)
+
+
+def make_orig_image_sets(narps, basedir, verbose=False):
+    """for each team in orig,
+    make a set of orig_simulated images
+    """
+    dirlist = [os.path.basename(i)
+               for i in glob.glob(os.path.join(
+                   narps.basedir,
+                   'orig/*_*')) if os.path.isdir(i)]
+    if verbose:
+        print('found %d team dirs' % len(dirlist))
+
+    # for teams that are to be rectified, we should
+    # also flip their data
+    rectify_status = get_teams_to_rectify(narps)
+
+    # arbitrarily assign some teams to be flipped or noise
+    logfile = os.path.join(basedir, 'logs/simulated_data.log')
+    flip_dirs = dirlist[0:4]
+    flip_teams = [i.split('_')[1] for i in flip_dirs]
+    log_to_file(logfile,
+                'flipped teams: %s' % ' '.join(flip_teams))
+    noise_dirs = dirlist[5:9]
+    noise_teams = [i.split('_')[1] for i in noise_dirs]
+    log_to_file(logfile,
+                'noise teams: %s' % ' '.join(noise_teams))
+    highvar_dirs = dirlist[9:21]
+    highvar_teams = [i.split('_')[1] for i in highvar_dirs]
+    log_to_file(logfile,
+                'high variance teams: %s' % ' '.join(highvar_teams))
+
+    for teamCollectionID in dirlist:
+        teamID = teamCollectionID.split('_')[1]
+        if teamID not in rectify_status:
+            rectify_status[teamID] = []
+        make_orig_images(
+            basedir,
+            teamCollectionID,
+            narps.dirs.dirs['consensus'],
+            noise_team=teamCollectionID in noise_dirs,
+            flip_team=teamCollectionID in flip_dirs,
+            noise_sd=0.5 + 2*(teamCollectionID in highvar_dirs),
+            rectify_status=rectify_status[teamID],
+            verbose=verbose)
+
+
 if __name__ == "__main__":
     # team data (from neurovault) should be in
     # # <basedir>/orig
     # some data need to be renamed before using -
     # see rename.sh in individual dirs
 
-    # set an environment variable called NARPS_BASEDIR
-    # with location of base directory
-    if 'NARPS_BASEDIR' in os.environ:
+    # parse arguments
+    parser = argparse.ArgumentParser(
+        description='Process NARPS data')
+    parser.add_argument('-u', '--dataurl',
+                        help='URL to download data')
+    parser.add_argument('-b', '--basedir',
+                        help='base directory')
+    parser.add_argument('-s', '--simulate',
+                        action='store_true',
+                        help='use simulated data')
+    parser.add_argument('-t', '--test',
+                        action='store_true',
+                        help='use testing mode (no processing)')
+    args = parser.parse_args()
+
+    # set up base directory
+    if args.basedir is not None:
+        basedir = args.basedir
+    elif 'NARPS_BASEDIR' in os.environ:
         basedir = os.environ['NARPS_BASEDIR']
+        print("using basedir specified in NARPS_BASEDIR")
     else:
         basedir = '/data'
+        print("using default basedir:", basedir)
 
-    overwrite = False
+    # set up simulation if specified
+    if args.simulate:
+        print('using simulated data')
+
+        # load main class from real analysis
+        narps_orig = Narps(basedir, overwrite=False)
+
+        # create simulated data
+        # setup main class from original data
+        narps = Narps(basedir)
+        narps.load_data()
+
+        # Load full metadata and put into narps structure
+        narps.metadata = pandas.read_csv(
+            os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
+
+        basedir = setup_simulated_data(narps, verbose=False)
+
+        make_orig_image_sets(narps, basedir)
+
+        # doublecheck basedir name
+        assert basedir.find('_simulated') > -1
 
     # setup main class
-    narps = Narps(basedir, overwrite=overwrite)
 
-    print('getting binarized/thresholded orig maps')
-    narps.get_binarized_thresh_masks()
+    narps = Narps(basedir)
 
-    print("getting resampled images...")
-    narps.get_resampled_images()
+    assert len(narps.complete_image_sets) > 0
 
-    print("creating concatenated thresholded images...")
-    narps.create_concat_images(datatype='resampled',
-                               imgtypes=['thresh'])
+    if args.test:
+        print('testing mode, exiting after setup')
 
-    print("checking image values...")
-    image_metadata_df = narps.check_image_values()
+    else:  # run all modules
 
-    print("creating rectified images...")
-    narps.create_rectified_images()
+        print('getting binarized/thresholded orig maps')
+        narps.get_binarized_thresh_masks()
 
-    print('Creating overlap images for thresholded maps...')
-    narps.create_thresh_overlap_images()
+        print("getting resampled images...")
+        narps.get_resampled_images()
 
-    print('converting to z-scores')
-    narps.convert_to_zscores()
+        print("creating concatenated thresholded images...")
+        narps.create_concat_images(datatype='resampled',
+                                   imgtypes=['thresh'])
 
-    print("creating concatenated zstat images...")
-    narps.create_concat_images(datatype='zstat',
-                               imgtypes=['unthresh'])
+        print("checking image values...")
+        image_metadata_df = narps.check_image_values()
 
-    print("computing image stats...")
-    narps.compute_image_stats()
+        print("creating rectified images...")
+        narps.create_rectified_images()
 
-    print('estimating image smoothness')
-    smoothness_df = narps.estimate_smoothness()
+        print('Creating overlap images for thresholded maps...')
+        narps.create_thresh_overlap_images()
 
-    # save directory structure
-    narps.write_data()
+        print('converting to z-scores')
+        narps.convert_to_zscores()
+
+        print("creating concatenated zstat images...")
+        narps.create_concat_images(datatype='zstat',
+                                   imgtypes=['unthresh'])
+
+        print("computing image stats...")
+        narps.compute_image_stats()
+
+        print('estimating image smoothness')
+        smoothness_df = narps.estimate_smoothness()
+
+        # save directory structure
+        narps.write_data()
