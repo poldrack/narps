@@ -1,0 +1,92 @@
+{smcl}
+{com}{sf}{ul off}{res}
+
+Spearman Correlations: Final Holdings vs. Team Result
+------------------------------------------------------------
+Hypothesis #1
+  rho = 0.5779, p = 0.0000
+
+Hypothesis #2
+  rho = 0.5574, p = 0.0000
+
+Hypothesis #3
+  rho = 0.5771, p = 0.0000
+
+Hypothesis #4
+  rho = 0.6390, p = 0.0000
+
+Hypothesis #5
+  rho = 0.4693, p = 0.0000
+
+Hypothesis #6
+  rho = 0.7426, p = 0.0000
+
+Hypothesis #7
+  rho = 0.2306, p = 0.1035
+
+Hypothesis #8
+  rho = 0.3737, p = 0.0069
+
+Hypothesis #9
+  rho = 0.3121, p = 0.0204
+
+
+
+Wilcoxon Tests: Final Holdings Consistent with Team Result
+------------------------------------------------------------
+Hypothesis #1
+  consistent: 0.714, z = 3.402, p = 0.001
+  fundamental value:               37.14%
+  avg. holdings if consistent:      1.037
+  avg. holdings if inconsistent:    5.611
+
+Hypothesis #2
+  consistent: 0.684, z = 2.782, p = 0.005
+  fundamental value:               21.43%
+  avg. holdings if consistent:     -6.900
+  avg. holdings if inconsistent:   21.143
+
+Hypothesis #3
+  consistent: 0.700, z = 2.828, p = 0.005
+  fundamental value:               22.86%
+  avg. holdings if consistent:     -8.027
+  avg. holdings if inconsistent:   25.800
+
+Hypothesis #4
+  consistent: 0.800, z = 4.243, p = 0.000
+  fundamental value:               32.86%
+  avg. holdings if consistent:      0.026
+  avg. holdings if inconsistent:   13.107
+
+Hypothesis #5
+  consistent: 0.893, z = 6.813, p = 0.000
+  fundamental value:               84.29%
+  avg. holdings if consistent:     18.258
+  avg. holdings if inconsistent: -115.495
+
+Hypothesis #6
+  consistent: 0.739, z = 3.244, p = 0.001
+  fundamental value:               32.86%
+  avg. holdings if consistent:      1.582
+  avg. holdings if inconsistent:    7.314
+
+Hypothesis #7
+  consistent: 0.804, z = 4.341, p = 0.000
+  fundamental value:                5.71%
+  avg. holdings if consistent:    -14.631
+  avg. holdings if inconsistent:   34.608
+
+Hypothesis #8
+  consistent: 0.804, z = 4.341, p = 0.000
+  fundamental value:                5.71%
+  avg. holdings if consistent:     -8.289
+  avg. holdings if inconsistent:   24.234
+
+Hypothesis #9
+  consistent: 0.745, z = 3.641, p = 0.000
+  fundamental value:                5.71%
+  avg. holdings if consistent:    -11.606
+  avg. holdings if inconsistent:   23.545
+
+{smcl}
+{res}{sf}{ul off}

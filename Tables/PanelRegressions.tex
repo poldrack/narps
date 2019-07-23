@@ -1,0 +1,21 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{2}{S[table-format=1.3]}}
+\toprule
+                                        &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}\\
+                                        &\multicolumn{1}{c}{Absolute Error}&\multicolumn{1}{c}{Absolute Error}\\
+\midrule
+Time                                    &          0.000\sym{**}&          0.000\sym{**}\\
+                                        &        (0.000)        &        (0.000)        \\
+Team Members                            &         -0.222\sym{**}&         -0.288\sym{**}\\
+                                        &        (0.005)        &        (0.008)        \\
+Team Members $\times$ Time              &                       &          0.001\sym{**}\\
+                                        &                       &        (0.000)        \\
+Constant                                &          0.409\sym{**}&          0.442\sym{**}\\
+                                        &        (0.005)        &        (0.007)        \\
+\midrule
+$Adj.\ R^2$                             &\multicolumn{1}{S[table-format=1.3]}{0.338}        &\multicolumn{1}{S[table-format=1.3]}{0.347}        \\
+Observations                            &\multicolumn{1}{c}{4320}        &\multicolumn{1}{c}{4320}        \\
+\bottomrule
+\end{tabular}
+}
