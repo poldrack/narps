@@ -1,0 +1,188 @@
+teams,active,uid,gender,yearssincePhD,yearofbirth,country,continent,position,neuroimaging,decisionsciences,payment
+0,0,0FDMYU15,female,0,1987,New Zealand,Australia,PhD Candidate,7,3,
+0,0,3LN6SQ0E,male,0,1980,United States,North America,Other,9,7,
+0,0,3N5PS9K6,male,6,1974,Israel,Asia,Senior Lecturer,8,5,
+0,0,42VN23UZ,male,5,1982,New Zealand,Australia,PostDoc,7,3,
+0,0,6S3ZTPAR,male,3,1989,Israel,Asia,PhD Candidate,4,5,
+0,0,926IQYO8,female,4,1979,United States,North America,PostDoc,8,2,
+0,0,9AYQDDKK,male,2,1987,United States,North America,PostDoc,1,1,
+0,0,AIEVHSAI,male,0,1981,United States,North America,PostDoc,5,5,
+0,0,BMXU9JL0,female,3,1986,England,Europe,PostDoc,4,2,
+0,0,BRWOVLTJ,female,0,1988,United States,North America,PhD Candidate,7,6,
+0,0,D2S8B02R,male,2,1985,Germany,Europe,PostDoc,6,2,
+0,0,E3K3HT03,male,0,1984,United Kingdom,Europe,Other,1,10,
+0,0,GRZMAMW8,male,3,1981,United States,North America,Assistant Professor,7,10,
+0,0,HK3E43ZN,male,0,1992,United States,North America,Other,5,4,
+0,0,I3OD1AKU,female,0,1990,United States,North America,PhD Candidate,3,7,
+0,0,I8OKDRV2,male,0,1994,United States,North America,PhD Candidate,4,3,
+0,0,IRMK89H9,male,8,1980,Netherlands,Europe,Associate Professor,8,9,
+0,0,JVIHF2OE,female,7,1983,United Kingdom,Europe,Other,7,4,
+0,0,KE2XFUA2,male,18,1971,United Kingdom,Europe,Associate Professor,9,2,
+0,0,NKHR0JZO,male,6,1981,United States,North America,Assistant Professor,7,5,
+0,0,OJ1FDVRI,male,0,1987,United States,North America,PhD Candidate,7,6,
+0,0,OQKTG86M,male,5,1985,United States,North America,Other,9,5,
+0,0,PAFBCANO,male,9,1982,Netherlands,Europe,Senior Lecturer,10,5,
+0,0,RC9HJDLY,male,0,1988,Germany,Europe,PhD Candidate,7,6,
+0,0,U9Y24MA0,female,0,1995,Taiwan,Asia,Other,1,1,
+0,0,YVTGZDZ2,male,0,1995,Germany,Europe,Other,1,3,
+0,1,00LFTCUH,male,15,1974,United States,North America,Full Professor,5,9,6.654757618904114
+0,1,1V1VYW62,male,0,1992,France,Europe,PhD Candidate,5,6,18.40235662460327
+0,1,2JVEZQBI,male,0,1991,Austria,Europe,Other,1,1,200
+0,1,2U8NXHFY,male,6,1983,United States,North America,Assistant Professor,10,4,36.61757725477219
+0,1,364DM9BK,male,1,1987,United States,North America,PostDoc,8,5,19.56177148222923
+0,1,5PZZHA8S,female,0,1991,United States,North America,PhD Candidate,1,4,17.4355932623148
+0,1,5V8F6GKM,male,0,1995,United States,North America,PhD Candidate,6,3,14.33364248275757
+0,1,6V3Y1K5G,female,1,1978,Switzerland,Europe,PostDoc,8,9,17.30450005829334
+0,1,83PROBG5,male,8,1977,United States,North America,Assistant Professor,7,3,.4465142786502838
+0,1,894SMERP,male,2,1990,United Kingdom,Europe,PostDoc,8,6,104.0508279800415
+0,1,8ULWSME4,male,22,1969,Norway,Europe,Full Professor,6,3,11.08672165870667
+0,1,A96TLPDJ,male,1,1989,United States,North America,Assistant Professor,5,3,17.62752199172974
+0,1,AAGIC15M,male,0,1993,Denmark,Europe,PhD Candidate,1,6,13.5350866317749
+0,1,ABL13TE8,male,0,1992,United States,North America,PhD Candidate,5,6,12.23794269561768
+0,1,BA0YUVWQ,female,8,1980,United States,North America,Assistant Professor,6,5,20.0351784825325
+0,1,BLRDNJ4Q,male,1,1991,Belgium,Europe,PostDoc,7,3,24.37223599851131
+0,1,CA0FXXX5,male,7,1985,United States,North America,PostDoc,8,5,24.23674337938428
+0,1,D4IHJE9D,male,15,1975,United Kingdom,Europe,Associate Professor,7,10,28.70105862617493
+0,1,DG6FS9PS,male,5,1986,Sweden,Europe,Assistant Professor,1,8,6.006514310836792
+0,1,DHBRH9ZM,male,0,1992,United States,North America,PhD Candidate,8,3,82.662259499426
+0,1,DYW9BUWN,male,0,1992,France,Europe,PhD Candidate,6,6,12.96210762485862
+0,1,E3BL2V48,male,0,1992,United States,North America,PhD Candidate,4,6,200
+0,1,E6S8LAPB,male,1,1988,Spain,Europe,PostDoc,7,5,17.70795729756355
+0,1,EC6JRZIK,male,7,1982,United States,North America,Assistant Professor,8,6,54.48312902450562
+0,1,EU8JCEPT,male,12,1979,Brazil,Soth America,Associate Professor,5,3,180.3635921478271
+0,1,F06ZTWZI,male,9,1980,United Kingdom,Europe,Assistant Professor,6,8,181.9123940318823
+0,1,FZSDNX6M,male,12,1972,Taiwan,Asia,Assistant Professor,5,10,25.54462146759033
+0,1,G63TPB93,female,0,1991,Italy,Europe,PhD Candidate,7,5,35.75642800331116
+0,1,GXR63Y25,male,0,1980,United States,North America,Other,8,5,19.28224328160286
+0,1,I5MM4SP4,female,0,1990,Austria,Europe,PhD Candidate,6,1,14.87635777890682
+0,1,IR60FUG4,male,0,1986,Austria,Europe,PhD Candidate,2,7,34.54142212867737
+0,1,JI6K9ZCK,female,4,1988,United States,North America,PostDoc,8,7,33.78829228878021
+0,1,KHM6JTTQ,male,13,1978,Spain,Europe,Associate Professor,7,7,13.64783596992493
+0,1,L01GI8P4,male,3,1983,Germany,Europe,PostDoc,9,8,16.10480046272278
+0,1,LJ4L9U3A,male,4,1985,United Kingdom,Europe,PostDoc,8,8,38.55036519467831
+0,1,NF615CCR,male,2,1984,Germany,Europe,PostDoc,6,8,11.79065722227097
+0,1,OFQAMMWQ,female,4,1985,United States,North America,PostDoc,7,3,12.76659235358238
+0,1,OV6XZ01M,male,2,1975,United States,North America,PostDoc,7,2,19.52480727434158
+0,1,P8BW1VHY,female,5,1984,United States,North America,Assistant Professor,8,6,16.79090023040771
+0,1,R3Z3KKN9,male,0,1994,France,Europe,PhD Candidate,4,5,50.40746472775936
+0,1,RA4XN3BC,female,3,1989,United States,North America,PostDoc,8,8,45.89687144756317
+0,1,RG8NXWOZ,female,0,1992,Switzerland,Europe,PhD Candidate,6,7,27.33217174559832
+0,1,S32PZ1TC,female,4,1980,United Kingdom,Europe,PostDoc,8,2,60.23418712615967
+0,1,SKW3DNG0,male,0,1996,United Kingdom,Europe,PhD Candidate,3,1,15.12473654747009
+0,1,TDPUSV0F,male,0,1977,United Kingdom,Europe,PhD Candidate,4,2,8.606428384780884
+0,1,TL46PFWK,male,0,1991,Germany,Europe,PhD Candidate,6,6,16.15539284050465
+0,1,TM41ZSHI,male,10,1979,Spain,Europe,Assistant Professor,5,5,36.27690601348877
+0,1,TM62SE1G,male,1,1987,United States,North America,PostDoc,8,8,39.48166361451149
+0,1,UAA2SLBL,male,12,1980,Switzerland,Europe,Associate Professor,8,8,26.60128647089005
+0,1,UG9MPR9Z,female,1,1988,Brazil,Soth America,PostDoc,7,4,26.87597131729126
+0,1,UHD180K9,male,0,1989,Canada,North America,PhD Candidate,6,6,24.26271453499794
+0,1,URUAQGH3,male,0,1991,United States,North America,PhD Candidate,7,5,15.95262908935547
+0,1,V0JJDTMJ,male,3,1993,United Kingdom,Europe,PhD Candidate,3,2,48.31901264190674
+0,1,VEH4PKX3,female,0,1990,Austria,Europe,PhD Candidate,3,6,16.43630722165108
+0,1,VV2LJBKR,female,10,1980,United States,North America,Assistant Professor,9,4,113.3949422836304
+0,1,WASM5XE4,female,3,1989,England,Europe,PostDoc,6,5,3.716392934322357
+0,1,WFKSIG5N,male,9,1982,United States,North America,Assistant Professor,10,8,48.14614295959473
+0,1,WLT6VQ1M,female,2,1987,United States,North America,PostDoc,7,7,51.77243638038635
+0,1,WP5DYPCV,female,0,1990,Germany,Europe,PhD Candidate,4,3,157.8852844238281
+0,1,XKQGDLEU,male,14,1974,United States,North America,Full Professor,10,7,91.03977583348751
+0,1,Y8W2S5P6,male,0,1995,France,Europe,PhD Candidate,2,2,8.809279264271026
+0,1,Z92KUH4F,male,7,1985,United States,North America,PhD Candidate,6,6,60.10250738705508
+0,1,ZBKIBDAL,female,0,1988,Austria,Europe,PhD Candidate,3,7,73.15000557899475
+0,1,ZEMG9K2L,female,6,1979,Switzerland,Europe,PostDoc,7,6,20.71447092294693
+0,1,ZIAKNSK8,male,0,1990,United States,North America,PhD Candidate,5,3,146.8507788181305
+1,0,3YZRHBCJ,female,5,1988,United Kingdom,Europe,PostDoc,6,8,
+1,0,AV4QE5S4,male,1,1989,Brazil,Soth America,PostDoc,8,4,
+1,0,AWAO0KL9,female,0,1993,United States,North America,PhD Candidate,5,3,
+1,0,C5GDVGK0,male,15,1973,Canada,North America,Full Professor,6,5,
+1,0,CBWLOP91,female,0,1991,United Kingdom,Europe,PhD Candidate,7,3,
+1,0,HHMH4BR5,female,0,1985,United States,North America,PhD Candidate,6,3,
+1,0,IRDKYPME,female,5,1986,Belgium,Europe,PostDoc,8,7,
+1,0,K8GUY08K,male,2,1987,Germany,Europe,PostDoc,5,3,
+1,0,KW8RZ5JT,male,13,1978,Belgium,Europe,Associate Professor,8,2,
+1,0,M389NE8N,male,0,1988,Netherlands,Europe,PhD Candidate,6,1,
+1,0,SSO51XBQ,female,0,1993,United States,North America,PhD Candidate,6,3,
+1,0,XKCTSAFQ,female,0,1996,Canada,North America,Other,6,4,
+1,0,YW8PCBMQ,male,3,1977,Finland,Europe,Other,10,5,
+1,1,05Q690PJ,male,7,1984,United States,North America,Assistant Professor,8,5,40.59060749411583
+1,1,0DJXJQ03,male,0,1989,Spain,Europe,PhD Candidate,8,7,43.14296394586563
+1,1,0PA5AJZW,male,9,1982,Sweden,Europe,Assistant Professor,8,4,34.58510732650757
+1,1,1INW3TK4,male,0,1984,United States,North America,PhD Candidate,8,3,42.73751360177994
+1,1,1IVO6ORP,female,4,1987,Canada,North America,PostDoc,7,3,56.79344832897186
+1,1,24XSQU5H,female,2,1993,United States,North America,PhD Candidate,5,7,76.45276939868927
+1,1,2CR35P08,male,0,1995,United States,North America,Other,3,2,32.36609363555908
+1,1,33RVPAMN,male,5,1986,United States,North America,Assistant Professor,10,10,25.22158607840538
+1,1,388MW6UL,male,6,1986,Belgium,Europe,Assistant Professor,6,4,89.00151373259723
+1,1,4H0J0LU1,female,4,1983,Spain,Europe,PostDoc,7,3,48.88247871398926
+1,1,4SM8OPKC,male,3,1982,Belgium,Europe,PostDoc,8,5,57.60775484144688
+1,1,55VDZJNR,male,12,1978,Germany,Europe,PostDoc,9,7,47.48530578613281
+1,1,5FAFB4QZ,male,4,1986,United States,North America,Other,8,7,35.26971435546875
+1,1,69XEK8LQ,male,2,1987,Brazil,Soth America,PostDoc,7,7,40.8998429775238
+1,1,6O21BBUS,male,0,1991,United States,North America,PhD Candidate,3,3,44.99382019042969
+1,1,83IXFCIX,female,0,1990,United States,North America,PostDoc,2,8,67.79353427886963
+1,1,885QKCFS,male,0,1990,United States,North America,PhD Candidate,6,1,54.82479190826416
+1,1,888C2CN9,male,0,1988,United States,North America,PhD Candidate,3,1,29.75806999206543
+1,1,8LCYG10D,male,0,1991,United States,North America,PhD Candidate,2,2,12.58841514587402
+1,1,8TN3JNWP,male,3,1982,Germany,Europe,PostDoc,8,4,59.01553583145142
+1,1,8UMQ8DHM,female,0,1991,United States,North America,PhD Candidate,4,6,60.18602961301804
+1,1,90AR8Z38,male,8,1973,Australia,Australia,Senior Lecturer,7,3,42.81734085083008
+1,1,99W5WBXT,female,4,1993,United States,North America,PhD Candidate,3,1,66.68580593168736
+1,1,A80M330E,male,0,1983,Germany,Europe,Other,3,5,74.67835257641855
+1,1,AAXXAQ5M,male,6,1983,Italy,Europe,Other,7,1,28.8570990562439
+1,1,AIPPUTFH,male,5,1981,United States,North America,Other,7,2,74.75962760299444
+1,1,AOAUJA04,male,2,1985,France,Europe,PhD Candidate,6,2,31.57804951071739
+1,1,BSQKHZQE,male,8,1983,Australia,Australia,PostDoc,7,4,45.66937112808228
+1,1,CC5QAWVO,female,3,1983,United States,North America,PostDoc,3,1,67.84757995605469
+1,1,CN95SKJL,male,0,1991,Italy,Europe,PhD Candidate,7,3,38.4368439912796
+1,1,CYVH9I2G,male,1,1988,Austria,Europe,PostDoc,7,8,45.49867236614227
+1,1,DNKD6X99,male,5,1983,Australia,Australia,PostDoc,6,1,63.22709274291992
+1,1,F3SUBJWJ,male,7,1981,United States,North America,Assistant Professor,8,4,66.92711114883423
+1,1,F6ZXD1UJ,male,4,1982,Belgium,Europe,PostDoc,7,1,34.01791429519653
+1,1,G5V0GGP4,male,3,1986,Italy,Europe,Assistant Professor,8,3,49.2926367521286
+1,1,GB2NG08J,male,0,1989,Belgium,Europe,PhD Candidate,3,1,75.87891268730164
+1,1,GDXEMH9H,male,0,1990,United States,North America,PhD Candidate,5,1,49.03059959411621
+1,1,GV3ZO0KL,male,9,1981,United States,North America,Other,8,3,42.78230738639832
+1,1,IMCM6CSW,male,0,1987,Germany,Europe,PostDoc,8,7,56.86193323135376
+1,1,IT9KV39Y,male,5,1982,Taiwan,Asia,Assistant Professor,7,3,27.40705800056458
+1,1,JGRUV96H,female,27,1962,United States,North America,Full Professor,3,10,50.01977157592773
+1,1,K4RY6M01,male,0,1992,Netherlands,Europe,PhD Candidate,5,2,64.32273864746094
+1,1,K8X023I3,male,0,1990,United States,North America,PhD Candidate,4,1,43.27750682830811
+1,1,KBSQGAOR,male,18,1973,Austria,Europe,Full Professor,8,5,43.74548530578613
+1,1,L2K2AHDZ,female,15,1969,Germany,Europe,Associate Professor,8,5,39.81849205493927
+1,1,LN19530Z,female,3,1990,Germany,Europe,PhD Candidate,8,5,23.46645092964172
+1,1,LP4CNHKP,male,6,1985,United States,North America,Assistant Professor,5,3,54.05764293670654
+1,1,LQVXQAWJ,female,2,1987,United States,North America,PostDoc,6,7,46.96232676506042
+1,1,LRPGBCL8,male,0,1990,Canada,North America,PhD Candidate,7,1,41.66437938995659
+1,1,M6N6C2DK,male,2,1989,Belgium,Europe,PostDoc,7,4,48.31648448608757
+1,1,MWJ5YOGF,female,0,1991,Canada,North America,PhD Candidate,7,1,48.12497162818909
+1,1,O6NVI5GD,male,10,1971,United States,North America,Assistant Professor,5,6,51.2950553894043
+1,1,OICJDPWE,male,15,1974,United States,North America,Full Professor,9,9,76.59039902687073
+1,1,P6AOX4VW,male,9,1975,Germany,Europe,Senior Lecturer,7,4,97.61148507520556
+1,1,PKLOP81E,male,9,1979,Germany,Europe,Assistant Professor,9,5,42.49728012084961
+1,1,Q22T213X,male,9,1982,United States,North America,Assistant Professor,6,9,48.35968792438507
+1,1,QW96KSO3,male,1,1983,United States,North America,Assistant Professor,6,8,30.73611497879028
+1,1,R52UWQ99,female,1,1992,United States,North America,PhD Candidate,6,5,26.98849300295115
+1,1,RCO4BDT4,female,3,1986,Netherlands,Europe,Assistant Professor,6,6,27.28125035762787
+1,1,SGHP5NOH,male,0,1979,United States,North America,PhD Candidate,1,3,26.80312099307775
+1,1,SI0E2ZWJ,male,5,1983,Italy,Europe,Assistant Professor,9,5,33.19787120819092
+1,1,SYECG1J5,female,0,1993,Germany,Europe,PhD Candidate,7,2,64.39268107712269
+1,1,TEPVJ3NH,male,1,1988,United Kingdom,Europe,PostDoc,6,6,22.19794273376465
+1,1,TNY0I90N,female,8,1980,Canada,North America,Assistant Professor,10,2,30.30740028619766
+1,1,TR9240RA,male,2,1983,Canada,North America,PostDoc,7,5,36.42036445066333
+1,1,U93VJXEP,male,15,1975,France,Europe,Full Professor,5,1,17.89653563499451
+1,1,UI5OSPP3,male,0,1993,Italy,Europe,PhD Candidate,7,7,15.06083601713181
+1,1,V1F8P236,male,0,1994,United States,North America,PhD Candidate,6,6,39.21448588371277
+1,1,VK9IQ0M8,male,15,1975,Italy,Europe,Associate Professor,9,6,28.50878617167473
+1,1,VSNS90C6,male,20,1973,United States,North America,Full Professor,8,9,132.2326544672251
+1,1,VT6XJXXN,male,0,1987,United States,North America,PhD Candidate,6,6,55.52773523330688
+1,1,VUX5MZZI,male,0,1992,United States,North America,PhD Candidate,6,6,46.94435739517212
+1,1,W3QQGBED,male,2,1982,United States,North America,PostDoc,6,3,41.34977894133772
+1,1,X1BQVVDM,male,6,1978,United States,North America,Other,8,8,69.10235073789954
+1,1,XLIF9C38,female,1,1985,United States,North America,PostDoc,10,2,51.77120297960937
+1,1,XLW8525N,male,2,1991,Germany,Europe,PhD Candidate,6,3,65.93897128105164
+1,1,XOSQ3HI9,female,9,1981,Italy,Europe,Assistant Professor,7,3,59.64605448747898
+1,1,YMC8I53A,male,14,1977,United States,North America,Associate Professor,9,2,32.36275708675385
+1,1,Z65ZIWMT,male,2,1988,Netherlands,Europe,PostDoc,8,3,54.64743089675903
+1,1,ZFK1YIBJ,female,4,1985,Austria,Europe,PostDoc,7,9,45.6712437120259
+1,1,ZG3QR5WU,male,8,1983,Germany,Europe,Other,9,2,47.72221374511719
+1,1,ZQXZ4M26,male,0,1988,Germany,Europe,PhD Candidate,6,1,37.08857154846191
+1,1,ZYP9XYEN,male,3,1987,United States,North America,PostDoc,9,6,26.48654297739267
