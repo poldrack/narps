@@ -8,6 +8,7 @@ analysis method developed by T Nichols and J Mumford
 
 import os
 import sys
+import argparse
 import glob
 import numpy
 import nibabel
@@ -120,12 +121,25 @@ def mk_figures(narps, logfile, thresh=0.95):
 
 
 if __name__ == "__main__":
-    # set an environment variable called NARPS_BASEDIR
-    # with location of base directory
-    if 'NARPS_BASEDIR' in os.environ:
+    # parse arguments
+    parser = argparse.ArgumentParser(
+        description='Analyze NARPS data')
+    parser.add_argument('-b', '--basedir',
+                        help='base directory')
+    parser.add_argument('-d', '--detailed',
+                        action='store_true',
+                        help='generate detailed team-level figures')
+    args = parser.parse_args()
+
+    # set up base directory
+    if args.basedir is not None:
+        basedir = args.basedir
+    elif 'NARPS_BASEDIR' in os.environ:
         basedir = os.environ['NARPS_BASEDIR']
+        print("using basedir specified in NARPS_BASEDIR")
     else:
         basedir = '/data'
+        print("using default basedir:", basedir)
 
     # setup main class
     narps = Narps(basedir)
@@ -133,6 +147,8 @@ if __name__ == "__main__":
     narps.dirs.dirs['consensus'] = os.path.join(
         narps.dirs.dirs['output'],
         'consensus_analysis')
+    if not os.path.exists(narps.dirs.dirs['consensus']):
+        os.mkdir(narps.dirs.dirs['consensus'])
     narps.write_data()
 
     logfile = os.path.join(
@@ -142,8 +158,6 @@ if __name__ == "__main__":
         logfile, 'running ConsensusAnalysis',
         flush=True)
 
-    if not os.path.exists(narps.dirs.dirs['consensus']):
-        os.mkdir(narps.dirs.dirs['consensus'])
 
     run_ttests(narps, logfile)
     mk_figures(narps, logfile)
