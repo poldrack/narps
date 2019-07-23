@@ -1,0 +1,26 @@
+
+
+Spearman Correlations:
+------------------------------------------------------------
+Fundamental Value vs. Market Belief 'Non-Teams'
+  rho = 0.553, p = 0.122
+
+Fundamental Value vs. Market Belief 'Teams'
+  rho = 0.962, p = 0.000
+
+Market Belief 'Non-Teams' vs. Market Belief 'Teams'
+  rho = 0.500, p = 0.170
+
+
+
+Wilcoxon Signed-Rank Tests:
+------------------------------------------------------------
+Fundamental Value vs. Market Belief 'Non-Teams'
+  z = 2.547, p = 0.011
+
+Fundamental Value vs. Market Belief 'Teams'
+  z = 2.666, p = 0.008
+
+Market Belief 'Non-Teams' vs. Market Belief 'Teams'
+  z = 1.125, p = 0.260
+
