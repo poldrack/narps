@@ -158,6 +158,5 @@ if __name__ == "__main__":
         logfile, 'running ConsensusAnalysis',
         flush=True)
 
-
     run_ttests(narps, logfile)
     mk_figures(narps, logfile)
