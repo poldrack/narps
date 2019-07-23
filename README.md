@@ -6,4 +6,4 @@ This repository contains code related to the [Neuroimaging Analysis Replication 
 
 For analyses of the prediction market data, see the [PredictionMarketAnalyses](PredicitonMarketAnalyses) directory.
 
-For analyses of the imaging results, see the [ImageAnalysis](ImageAnalysis) directory.
+For analyses of the imaging results, see the [ImageAnalyses](ImageAnalyses) directory.
