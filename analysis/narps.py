@@ -922,7 +922,9 @@ class Narps(object):
                 'NV_collection_id': self.teams[teamID].NV_collection_id,
                 'jsonfile': self.teams[teamID].jsonfile}
         if save_data:
-            if not outfile:
+            if not os.path.exists(self.dirs.dirs['cached']):
+                os.mkdir(self.dirs.dirs['cached'])
+            if outfile is None:
                 outfile = os.path.join(self.dirs.dirs['cached'],
                                        'narps_prepare_maps.pkl')
             with open(outfile, 'wb') as f:
