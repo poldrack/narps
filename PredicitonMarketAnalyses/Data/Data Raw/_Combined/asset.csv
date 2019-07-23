@@ -1,0 +1,19 @@
+teams,hid,hypothesis,long_outstanding,short_outstanding,price
+Non-Team,1,"Positive Effect of Gains in VMPFC, Equal Indifference Group",842.12402,744.19897,.727
+Non-Team,2,"Positive Effect of Gains in VMPFC, Equal Range Group",722.92499,623.49103,.73000002
+Non-Team,3,"Positive Effect of Gains in Ventral Striatum, Equal Indifference Group",1216.278,1015.67,.88099998
+Non-Team,4,"Positive Effect of Gains in Ventral Striatum, Equal Range Group",934.742,734.06403,.88200003
+Non-Team,5,"Negative Effect of Losses in VMPFC, Equal Indifference Group",373.01901,294.75699,.68599999
+Non-Team,6,"Negative Effect of Losses in VMPFC, Equal Range Group",374.75,297.216,.685
+Non-Team,7,"Positive Effect of Losses in Amygdala, Equal Indifference Group",452.76401,427.36899,.56300002
+Non-Team,8,"Positive Effect of Losses in Amygdala, Equal Range Group",482.957,449.00601,.58399999
+Non-Team,9,"Greater Positive Effect of Losses in Amygdala, Equal Range vs. Equal Indifference",893.08002,902.50702,.47600001
+Team Members,1,"Positive Effect of Gains in VMPFC, Equal Indifference Group",1300.611,1152.959,.81400001
+Team Members,2,"Positive Effect of Gains in VMPFC, Equal Range Group",856.38501,744.91699,.75300002
+Team Members,3,"Positive Effect of Gains in Ventral Striatum, Equal Indifference Group",786.078,680.02502,.74299997
+Team Members,4,"Positive Effect of Gains in Ventral Striatum, Equal Range Group",617.20599,485.09201,.78899997
+Team Members,5,"Negative Effect of Losses in VMPFC, Equal Indifference Group",2593.9089,2294.564,.95200002
+Team Members,6,"Negative Effect of Losses in VMPFC, Equal Range Group",557.25,415.711,.80500001
+Team Members,7,"Positive Effect of Losses in Amygdala, Equal Indifference Group",393.60501,647.40997,.072999999
+Team Members,8,"Positive Effect of Losses in Amygdala, Equal Range Group",371.104,468.612,.27399999
+Team Members,9,"Greater Positive Effect of Losses in Amygdala, Equal Range vs. Equal Indifference",483.87701,630.11102,.18799999
