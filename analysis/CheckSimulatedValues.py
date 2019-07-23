@@ -35,9 +35,11 @@ for hyp in hypnums:
 
 try:
     assert numpy.array(list(cc.values())).min() > thresh
-    log_to_file(os.path.join(simdir, 'logs/simulated_data.log'),
+    log_to_file(
+        os.path.join(simdir, 'logs/simulated_data.log'),
         'SUCESSS: all hypotheses correlated > %0.2f' % thresh)
 except AssertionError:
-    log_to_file(os.path.join(simdir, 'logs/simulated_data.log'),
+    log_to_file(
+        os.path.join(simdir, 'logs/simulated_data.log'),
         'FAILURE')
     print(cc)
