@@ -642,7 +642,6 @@ if __name__ == "__main__":
     # Load full metadata and put into narps structure
     narps.metadata = pandas.read_csv(
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
-    lksjdf
 
     # create maps showing overlap of thresholded images
     mk_overlap_maps(narps)
