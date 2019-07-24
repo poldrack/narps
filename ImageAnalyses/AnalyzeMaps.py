@@ -31,7 +31,7 @@ from narps import NarpsDirs # noqa, flake8 issue
 # create some variables used throughout
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
-cluster_colors = ['r', 'g', 'b', 'y', 'k']
+cluster_colors = ['c', 'm', 'b', 'y', 'k']
 
 
 def mk_overlap_maps(narps, verbose=True):
@@ -302,8 +302,9 @@ def mk_correlation_maps_unthresh(
         md = narps.metadata.query(
             'varnum==%d' % hyp).set_index('teamID')
 
+        decision_colors = ['r', 'g']
         col_colors = [
-            cluster_colors[md.loc[teamID, 'Decision']]
+            decision_colors[md.loc[teamID, 'Decision']]
             for teamID in labels
             ]
 
@@ -361,6 +362,7 @@ def analyze_clusters(
         dataset='zstat',
         corr_type='spearman',
         thresh=2.,
+        vmax=5.,
         rand_thresh=0.2):
     """
     Use dendrogram computed by seaborn clustermap to identify clusters,
@@ -455,6 +457,7 @@ def analyze_clusters(
             nilearn.plotting.plot_stat_map(
                 mean_img,
                 threshold=thresh,
+                vmax=vmax,
                 display_mode="z",
                 colorbar=True,
                 title='hyp%d - cluster%d (fwhm=%0.2f, pYes = %0.2f)' % (
@@ -639,6 +642,7 @@ if __name__ == "__main__":
     # Load full metadata and put into narps structure
     narps.metadata = pandas.read_csv(
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
+    lksjdf
 
     # create maps showing overlap of thresholded images
     mk_overlap_maps(narps)
