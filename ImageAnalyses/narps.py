@@ -109,10 +109,14 @@ class NarpsDirs(object):
         if data_url is None:
             self.data_url = DATA_URL
 
-        dirs_to_add = ['output', 'templates', 'metadata',
+        dirs_to_add = ['output', 'metadata',
                        'cached', 'figures', 'logs', 'orig']
         for d in dirs_to_add:
             self.dirs[d] = os.path.join(self.dirs['base'], d)
+
+        self.dirs['templates'] = os.path.join(
+            os.environ['FSLDIR'],
+            'data/standard')
 
         # autogenerate all of the directories
         # except for the orig dir
