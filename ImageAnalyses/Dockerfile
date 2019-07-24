@@ -39,7 +39,7 @@ RUN wget -O- http://neuro.debian.net/lists/stretch.us-nh.full |  tee /etc/apt/so
 # ala https://github.com/inversepath/usbarmory-debian-base_image/issues/9
 RUN mkdir ~/.gnupg
 RUN echo "disable-ipv6" >> ~/.gnupg/dirmngr.confRUN apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --allow-unauthenticated fsl-core=5.0.9-5~nd90+1 \ 
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --allow-unauthenticated fsl-core=5.0.9-5~nd90+1 fsl-mni152-templates=5.0.7-2 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
