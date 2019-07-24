@@ -7,3 +7,4 @@
 .cache
 R_libraries.R
 __pycache__
+info.json
