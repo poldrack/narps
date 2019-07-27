@@ -262,6 +262,8 @@ def mk_correlation_maps_unthresh(
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
             dataset=dataset)
+        # make sure order is correct
+        assert labels == narps.complete_image_sets
 
         # compute correlation of all datasets with mean
         if 'mean_corr' not in locals():
@@ -571,6 +573,9 @@ def get_thresh_similarity(narps, dataset='resampled'):
             narps.dirs.dirs['output'],
             imgtype='thresh',
             dataset=dataset)
+        # make sure order is correct
+        assert labels == narps.complete_image_sets
+
         jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
         jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
         df = pandas.DataFrame(jacsim, index=labels, columns=labels)
