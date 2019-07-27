@@ -154,7 +154,7 @@ class NarpsDirs(object):
         self.full_mask_img = os.path.join(self.dirs['templates'],
                                           'MNI152_all_voxels.nii.gz')
 
-    def get_output_dir(self, dirID):
+    def get_output_dir(self, dirID, base='output'):
         """get the directory path for a particular ID. if it doesn't
         exist then create it and save to the dirs list
         dir names always match the dir ID exactly
@@ -163,7 +163,7 @@ class NarpsDirs(object):
             return(self.dirs[dirID])
         else:
             self.dirs[dirID] = os.path.join(
-                self.dirs['output'],
+                self.dirs[base],
                 dirID
             )
             if not os.path.exists(self.dirs[dirID]):
