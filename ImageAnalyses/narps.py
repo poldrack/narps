@@ -275,16 +275,15 @@ class NarpsTeam(object):
 
         for hyp in self.images['thresh']['orig']:
             img = self.images['thresh']['orig'][hyp]
-            self.images['thresh']['thresh_mask_orig'][hyp] = os.path.join(
+            maskimg = os.path.join(
                     self.dirs.dirs['thresh_mask_orig'],
                     self.datadir_label,
                     os.path.basename(img))
+            self.images['thresh']['thresh_mask_orig'][hyp] = maskimg
             if not os.path.exists(os.path.dirname(
-                    self.images['thresh']['thresh_mask_orig'][hyp])):
-                os.mkdir(os.path.dirname(
-                    self.images['thresh']['thresh_mask_orig'][hyp]))
-            if overwrite or not os.path.exists(
-                    self.images['thresh']['thresh_mask_orig'][hyp]):
+                    maskimg)):
+                os.mkdir(os.path.dirname(maskimg))
+            if overwrite or not os.path.exists(maskimg):
 
                 # load the image and threshold/binarize it
                 threshimg = nibabel.load(img)
@@ -301,12 +300,10 @@ class NarpsTeam(object):
                 # as original
                 bin_img = nibabel.Nifti1Image(threshdata_bin,
                                               affine=threshimg.affine)
-                bin_img.to_filename(
-                    self.images['thresh']['thresh_mask_orig'][hyp])
+                bin_img.to_filename(maskimg)
             else:
                 # if it already exists, just use existing
-                bin_img = nibabel.load(
-                    self.images['thresh']['thresh_mask_orig'][hyp])
+                bin_img = nibabel.load(maskimg)
                 if self.verbose:
                     print('using existing binary mask for', self.teamID)
                 threshdata_bin = bin_img.get_data()
