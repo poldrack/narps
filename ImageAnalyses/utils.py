@@ -33,7 +33,7 @@ def log_to_file(fname, s, flush=False,
     if flush and os.path.exists(fname):
         os.remove(fname)
     # add spacing before line
-    for h in rnage(headspace):
+    for h in range(headspace):
         s = os.linesep + s
     with open(fname, 'a+') as f:
         if not isinstance(s, str):
