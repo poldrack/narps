@@ -162,13 +162,13 @@ class NarpsDirs(object):
         if dirID in self.dirs:
             return(self.dirs[dirID])
         else:
-            self.dirs.dirs[dirID] = os.path.join(
+            self.dirs[dirID] = os.path.join(
                 self.dirs['output'],
                 dirID
             )
-            if not os.path.exists(self.dirs.dirs[dirID]):
-                os.mkdir(self.dirs.dirs[dirID])
-        return(self.dirs.dirs[dirID])
+            if not os.path.exists(self.dirs[dirID]):
+                os.mkdir(self.dirs[dirID])
+        return(self.dirs[dirID])
 
     def get_orig_data(self):
         """
