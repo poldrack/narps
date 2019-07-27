@@ -141,10 +141,9 @@ def plot_individual_maps(
     else:
         threshold = 1e-5
 
-    outdir = os.path.join(narps.dirs.dirs['figures'],
-                          'team_maps_%s' % imgtype)
-    if not os.path.exists(outdir):
-        os.mkdir(outdir)
+    outdir = narps.dirs.get_output_dir(
+        'team_maps_%s' % imgtype,
+        base='figures')
 
     nnz = []
     nonzero_volume = []
@@ -253,11 +252,7 @@ def mk_correlation_maps_unthresh(
     dendrograms = {}
     membership = {}
     cc_unthresh = {}
-    output_dir = os.path.join(
-        narps.dirs.dirs['output'],
-        'correlation_unthresh')
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+    output_dir = narps.dirs.get_output_dir('correlation_unthresh')
 
     for i, hyp in enumerate(hypnums):
         print('creating correlation map for hypothesis', hyp)
@@ -566,11 +561,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
         logfile,
         stringify_dict(func_args))
 
-    output_dir = os.path.join(
-        narps.dirs.dirs['output'],
-        'jaccard_thresh')
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+    output_dir = narps.dirs.get_output_dir('jaccard_thresh')
 
     for hyp in hypnums:
         print('creating Jaccard map for hypothesis', hyp)
