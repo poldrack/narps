@@ -27,18 +27,23 @@ def stringify_dict(d):
 
 def log_to_file(fname, s, flush=False,
                 add_timestamp=True,
-                also_print=True):
+                also_print=True,
+                headspace=0):
     """ save string to log file"""
     if flush and os.path.exists(fname):
         os.remove(fname)
+    # add spacing before line
+    for h in rnage(headspace):
+        s = os.linesep + s
     with open(fname, 'a+') as f:
         if not isinstance(s, str):
             s = str(s)
         if also_print:
             print(s)
-        f.write(s+'\n')
+        f.write(s + os.linesep)
         if flush and add_timestamp:
-            f.write(datetime.isoformat(datetime.now())+'\n\n')
+            f.write(datetime.isoformat(
+                datetime.now()) + 2 * os.linesep)
 
 
 def get_masked_data(hyp, mask_img, output_dir,
