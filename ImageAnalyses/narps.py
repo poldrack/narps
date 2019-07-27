@@ -592,6 +592,9 @@ class Narps(object):
         if overwrite is None:
             overwrite = self.overwrite
         output_dir = self.dirs.get_output_dir('overlap_binarized_thresh')
+        concat_dir = self.dirs.get_output_dir(
+            '%s_concat_%s' % (imgtype, datatype))
+
         for hyp in range(1, 10):
             outfile = os.path.join(
                 output_dir,
@@ -601,7 +604,7 @@ class Narps(object):
                     print('%s - hypo %d: creating overlap file' % (
                         imgtype, hyp))
                 concat_file = os.path.join(
-                    self.dirs.dirs['concat_thresh'],
+                    concat_dir,
                     'hypo%d.nii.gz' % hyp)
                 concat_img = nibabel.load(concat_file)
                 concat_data = concat_img.get_data()
