@@ -424,8 +424,7 @@ class Narps(object):
         """
         # make full image mask (all voxels)
         mi = nibabel.load(self.dirs.MNI_mask)
-        d = mi.get_data()
-        d = numpy.ones(d.shape)
+        d = numpy.ones(mi.shape)
         full_mask = nibabel.Nifti1Image(d, affine=mi.affine)
         full_mask.to_filename(self.dirs.full_mask_img)
 
