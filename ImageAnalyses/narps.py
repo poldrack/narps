@@ -174,7 +174,10 @@ class NarpsDirs(object):
         """
         download original data from repository
         """
-        log_to_file(self.logfile, '\n\nget_orig_data')
+        log_to_file(
+            self.logfile,
+            'get_orig_data',
+            headspace=2)
         log_to_file(self.logfile, 'DATA_URL: %s' % DATA_URL)
         MAX_TRIES = 5
 
@@ -470,8 +473,9 @@ class Narps(object):
         create binarized thresholded maps for each team
         """
         log_to_file(
-            self.dirs.logfile, '\n\n%s' %
-            sys._getframe().f_code.co_name)
+            self.dirs.logfile,
+            sys._getframe().f_code.co_name,
+            headspace=2)
         for teamID in self.complete_image_sets:
             self.teams[teamID].create_binarized_thresh_masks()
 
@@ -480,8 +484,9 @@ class Narps(object):
         resample all images into FSL MNI space
         """
         log_to_file(
-            self.dirs.logfile, '\n\n%s' %
-            sys._getframe().f_code.co_name)
+            self.dirs.logfile,
+            sys._getframe().f_code.co_name,
+            headspace=2)
         if overwrite is None:
             overwrite = self.overwrite
         for teamID in self.complete_image_sets:
@@ -492,8 +497,9 @@ class Narps(object):
         get # of nonzero and NA voxels for each image
         """
         log_to_file(
-            self.dirs.logfile, '\n\n%s' %
-            sys._getframe().f_code.co_name)
+            self.dirs.logfile,
+            sys._getframe().f_code.co_name,
+            headspace=2)
         if overwrite is None:
             overwrite = self.overwrite
         image_metadata_file = os.path.join(
@@ -528,8 +534,9 @@ class Narps(object):
         ordered by self.complete_image_sets
         """
         log_to_file(
-            self.dirs.logfile, '\n\n%s' %
-            sys._getframe().f_code.co_name)
+            self.dirs.logfile,
+            sys._getframe().f_code.co_name,
+            headspace=2)
         func_args = inspect.getargvalues(
             inspect.currentframe()).locals
         log_to_file(
@@ -579,8 +586,9 @@ class Narps(object):
         create overlap maps for thresholded images
         """
         log_to_file(
-            self.dirs.logfile, '\n\n%s' %
-            sys._getframe().f_code.co_name)
+            self.dirs.logfile,
+            sys._getframe().f_code.co_name,
+            headspace=2)
         func_args = inspect.getargvalues(
             inspect.currentframe()).locals
         log_to_file(
@@ -630,8 +638,9 @@ class Narps(object):
         present positive evidence for each contrast
         """
         log_to_file(
-            self.dirs.logfile, '\n\n%s' %
-            sys._getframe().f_code.co_name)
+            self.dirs.logfile,
+            sys._getframe().f_code.co_name,
+            headspace=2)
         func_args = inspect.getargvalues(
             inspect.currentframe()).locals
         log_to_file(
@@ -706,15 +715,16 @@ class Narps(object):
             with open(os.path.join(self.dirs.dirs['metadata'],
                                    'rectified_images_list.txt'), 'w') as f:
                 for l in self.rectified_list:
-                    f.write('%s\t%s\n' % (l[0], l[1]))
+                    f.write('%s\t%s%s' % (l[0], l[1], os.linesep))
 
     def compute_image_stats(self, datatype='zstat', overwrite=None):
         """
         compute std and range on statistical images
         """
         log_to_file(
-            self.dirs.logfile, '\n\n%s' %
-            sys._getframe().f_code.co_name)
+            self.dirs.logfile,
+            sys._getframe().f_code.co_name,
+            headspace=2)
         func_args = inspect.getargvalues(
             inspect.currentframe()).locals
         log_to_file(
@@ -776,8 +786,9 @@ class Narps(object):
         - use metadata supplied by teams to determine image type
         """
         log_to_file(
-            self.dirs.logfile, '\n\n%s' %
-            sys._getframe().f_code.co_name)
+            self.dirs.logfile,
+            sys._getframe().f_code.co_name,
+            headspace=2)
         func_args = inspect.getargvalues(
             inspect.currentframe()).locals
         log_to_file(
@@ -865,8 +876,9 @@ class Narps(object):
         estimate smoothness of Z maps using FSL's smoothness estimation
         """
         log_to_file(
-            self.dirs.logfile, '\n\n%s' %
-            sys._getframe().f_code.co_name)
+            self.dirs.logfile,
+            sys._getframe().f_code.co_name,
+            headspace=2)
         func_args = inspect.getargvalues(
             inspect.currentframe()).locals
         log_to_file(
