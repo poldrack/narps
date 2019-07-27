@@ -129,12 +129,10 @@ class NarpsDirs(object):
         log_to_file(self.logfile, 'Running Narps main class', flush=True)
 
         output_dirs = ['resampled', 'rectified', 'zstat',
-                       'thresh_mask_orig', 'concat_thresh']
+                       'thresh_mask_orig']
 
         for o in output_dirs:
-            self.dirs[o] = os.path.join(self.dirs['output'], o)
-            if not os.path.exists(self.dirs[o]):
-                os.mkdir(self.dirs[o])
+            self.get_output_dir(o)
 
         # if raw data don't exist, download them
         if self.force_download and os.path.exists(self.dirs['orig']):
@@ -170,6 +168,8 @@ class NarpsDirs(object):
             )
             if not os.path.exists(self.dirs.dirs[dirID]):
                 os.mkdir(self.dirs.dirs[dirID])
+        return(self.dirs.dirs[dirID])
+
     def get_orig_data(self):
         """
         download original data from repository
@@ -321,6 +321,8 @@ class NarpsTeam(object):
         data_dirname = {'thresh': 'thresh_mask_orig',
                         'unthresh': 'orig'}
 
+        resampled_dir = self.dirs.get_output_dir('resampled')
+
         for hyp in hypotheses:
             for imgtype in self.images:
                 infile = os.path.join(
@@ -328,7 +330,7 @@ class NarpsTeam(object):
                     self.datadir_label,
                     'hypo%d_%s.nii.gz' % (hyp, imgtype))
                 outfile = os.path.join(
-                    self.dirs.dirs['resampled'],
+                    resampled_dir,
                     self.datadir_label,
                     'hypo%d_%s.nii.gz' % (hyp, imgtype))
                 self.images[imgtype]['resampled'][hyp] = outfile
@@ -540,15 +542,12 @@ class Narps(object):
         if overwrite is None:
             overwrite = self.overwrite
         for imgtype in imgtypes:
-            self.dirs.dirs['concat_%s' % imgtype] = os.path.join(
-                self.dirs.dirs['output'],
+            concat_dir = self.dirs.get_output_dir(
                 '%s_concat_%s' % (imgtype, datatype))
             for hyp in range(1, 10):
                 outfile = os.path.join(
-                    self.dirs.dirs['concat_%s' % imgtype],
+                    concat_dir,
                     'hypo%d.nii.gz' % hyp)
-                if not os.path.exists(os.path.dirname(outfile)):
-                    os.mkdir(os.path.dirname(outfile))
                 if not os.path.exists(outfile) or overwrite:
                     if self.verbose:
                         print('%s - hypo %d: creating concat file' % (
@@ -575,8 +574,8 @@ class Narps(object):
                             imgtype, hyp))
         return(self.all_maps)
 
-    def create_thresh_overlap_images(self, datatype='resampled',
-                                     overwrite=None, thresh=1e-5):
+    def create_mean_thresholded_images(self, datatype='resampled',
+                                       overwrite=None, thresh=1e-5):
         """
         create overlap maps for thresholded images
         """
@@ -592,14 +591,11 @@ class Narps(object):
         imgtype = 'thresh'
         if overwrite is None:
             overwrite = self.overwrite
-        self.dirs.dirs['overlap_binarized_thresh'] = os.path.join(
-            self.dirs.dirs['output'], 'overlap_binarized_thresh')
+        output_dir = self.dirs.get_output_dir('overlap_binarized_thresh')
         for hyp in range(1, 10):
             outfile = os.path.join(
-                self.dirs.dirs['overlap_binarized_thresh'],
+                output_dir,
                 'hypo%d.nii.gz' % hyp)
-            if not os.path.exists(os.path.dirname(outfile)):
-                os.mkdir(os.path.dirname(outfile))
             if not os.path.exists(outfile) or overwrite:
                 if self.verbose:
                     print('%s - hypo %d: creating overlap file' % (
@@ -725,31 +721,28 @@ class Narps(object):
 
         if overwrite is None:
             overwrite = self.overwrite
+
+        # set up directories
+        unthresh_concat_dir = self.dirs.get_output_dir(
+            'unthresh_concat_%s' % datatype)
+        unthresh_range_dir = self.dirs.get_output_dir(
+            'unthresh_range_%s' % datatype)
+        unthresh_std_dir = self.dirs.get_output_dir(
+            'unthresh_std_%s' % datatype)
+
         for hyp in range(1, 10):
 
             unthresh_file = os.path.join(
-                self.dirs.dirs['output'],
-                'unthresh_concat_%s/hypo%d.nii.gz' % (datatype, hyp))
+                unthresh_concat_dir,
+                'hypo%d.nii.gz' % hyp)
 
             range_outfile = os.path.join(
-                self.dirs.dirs['output'],
-                'unthresh_range_%s/hypo%d.nii.gz' % (datatype, hyp))
-            if not os.path.exists(os.path.join(
-                self.dirs.dirs['output'],
-                    'unthresh_range_%s' % datatype)):
-                os.mkdir(os.path.join(
-                    self.dirs.dirs['output'],
-                    'unthresh_range_%s' % datatype))
+                unthresh_range_dir,
+                'hypo%d.nii.gz' % hyp)
 
             std_outfile = os.path.join(
-                self.dirs.dirs['output'],
-                'unthresh_std_%s/hypo%d.nii.gz' % (datatype, hyp))
-            if not os.path.exists(os.path.join(
-                    self.dirs.dirs['output'],
-                    'unthresh_std_%s' % datatype)):
-                os.mkdir(os.path.join(
-                    self.dirs.dirs['output'],
-                    'unthresh_std_%s' % datatype))
+                unthresh_std_dir,
+                'hypo%d.nii.gz' % hyp)
 
             if not os.path.exists(range_outfile) \
                     or not os.path.exists(std_outfile) \
@@ -757,12 +750,16 @@ class Narps(object):
                 unthresh_img = nibabel.load(unthresh_file)
                 unthresh_data = unthresh_img.get_data()
                 concat_data = numpy.nan_to_num(unthresh_data)
+
+                # compute range
                 datarange = numpy.max(concat_data, axis=3) \
                     - numpy.min(concat_data, axis=3)
                 range_img = nibabel.Nifti1Image(
                     datarange,
                     affine=unthresh_img.affine)
                 range_img.to_filename(range_outfile)
+
+                # compute standard deviation
                 datastd = numpy.std(concat_data, axis=3)
                 std_img = nibabel.Nifti1Image(
                     datastd,
@@ -1274,8 +1271,8 @@ if __name__ == "__main__":
         print("creating rectified images...")
         narps.create_rectified_images()
 
-        print('Creating overlap images for thresholded maps...')
-        narps.create_thresh_overlap_images()
+        print('Creating overlap(mean) images for thresholded maps...')
+        narps.create_mean_thresholded_images()
 
         print('converting to z-scores')
         narps.convert_to_zscores()
