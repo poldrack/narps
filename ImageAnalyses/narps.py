@@ -120,9 +120,8 @@ class NarpsDirs(object):
 
         # autogenerate all of the directories
         # except for the orig dir
-        dirs_to_make = list(set(dirs_to_add).difference(['orig']))
-        for d in dirs_to_make:
-            if not os.path.exists(self.dirs[d]):
+        for d in dirs_to_add:
+            if d != 'orig' and not os.path.exists(self.dirs[d]):
                 os.mkdir(self.dirs[d])
 
         self.logfile = os.path.join(self.dirs['logs'], 'narps.txt')
