@@ -369,7 +369,7 @@ class NarpsTeam(object):
             else:
                 if self.verbose:
                     print('using existing resampled image for',
-                            self.teamID)
+                          self.teamID)
 
 
 class Narps(object):
