@@ -54,7 +54,7 @@ def test_narps_create_rectified_images(narps):
 
 
 def test_narps_create_thresh_overlap_images(narps):
-    narps.create_thresh_overlap_images()
+    narps.create_mean_thresholded_images()
 
 
 def test_narps_convert_to_zscores(narps):

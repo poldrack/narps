@@ -5,3 +5,6 @@
 .pytest_cache
 .ipynb_checkpoints
 .cache
+R_libraries.R
+__pycache__
+info.json

@@ -27,18 +27,23 @@ def stringify_dict(d):
 
 def log_to_file(fname, s, flush=False,
                 add_timestamp=True,
-                also_print=True):
+                also_print=True,
+                headspace=0):
     """ save string to log file"""
     if flush and os.path.exists(fname):
         os.remove(fname)
+    if not isinstance(s, str):
+        s = str(s)
+    # add spacing before line
+    if headspace > 0:
+        s = os.linesep*headspace + s
     with open(fname, 'a+') as f:
-        if not isinstance(s, str):
-            s = str(s)
         if also_print:
             print(s)
-        f.write(s+'\n')
+        f.write(s + os.linesep)
         if flush and add_timestamp:
-            f.write(datetime.isoformat(datetime.now())+'\n\n')
+            f.write(datetime.isoformat(
+                datetime.now()) + 2 * os.linesep)
 
 
 def get_masked_data(hyp, mask_img, output_dir,
@@ -64,6 +69,35 @@ def get_masked_data(hyp, mask_img, output_dir,
         maskdata = (maskdata > 1e-4).astype('float')
     labels = [os.path.basename(os.path.dirname(i)).split('_')[1]
               for i in hmaps]
+    return(maskdata, labels)
+
+
+# load concatenated data - this is meant to replace
+# get_masked_data()
+def get_concat_data(hyp, mask_img, output_dir,
+                    imgtype='unthresh', dataset='zstat'):
+    """
+    load data from within mask
+    """
+
+    concat_file = os.path.join(
+        output_dir,
+        '%s_concat_%s' % (imgtype, dataset),
+        'hypo%d.nii.gz' % hyp)
+    assert os.path.exists(concat_file)
+
+    labelfile = concat_file.replace('.nii.gz', '.labels')
+    assert os.path.exists(labelfile)
+    labels = []
+    with open(labelfile, 'r') as f:
+        for l in f.readlines():
+            l_s = l.strip().split()
+            labels.append(l_s[0])
+    masker = nilearn.input_data.NiftiMasker(mask_img=mask_img)
+    maskdata = masker.fit_transform(concat_file)  # combined_data
+    maskdata = numpy.nan_to_num(maskdata)
+    if imgtype == 'thresh':
+        maskdata = (maskdata > 1e-4).astype('float')
     return(maskdata, labels)
 
 

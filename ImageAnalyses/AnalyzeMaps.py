@@ -24,14 +24,14 @@ import seaborn
 import scipy.cluster
 import scipy.stats
 from scipy.spatial.distance import pdist, squareform
-from utils import get_masked_data, log_to_file, stringify_dict
+from utils import get_concat_data, log_to_file, stringify_dict
 from narps import Narps, hypotheses, hypnums
 from narps import NarpsDirs # noqa, flake8 issue
 
 # create some variables used throughout
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
-cluster_colors = ['r', 'g', 'b', 'y', 'k']
+cluster_colors = ['c', 'm', 'b', 'y', 'k']
 
 
 def mk_overlap_maps(narps, verbose=True):
@@ -141,10 +141,9 @@ def plot_individual_maps(
     else:
         threshold = 1e-5
 
-    outdir = os.path.join(narps.dirs.dirs['figures'],
-                          'team_maps_%s' % imgtype)
-    if not os.path.exists(outdir):
-        os.mkdir(outdir)
+    outdir = narps.dirs.get_output_dir(
+        'team_maps_%s' % imgtype,
+        base='figures')
 
     nnz = []
     nonzero_volume = []
@@ -175,7 +174,6 @@ def plot_individual_maps(
             hyp = int(os.path.basename(
                 m).split('_')[0].replace('hypo', ''))
             if hyp not in hypnums:
-                print('skipping', hyp)
                 continue
             img = nibabel.load(m)
             dims = img.header.get_data_shape()
@@ -253,16 +251,12 @@ def mk_correlation_maps_unthresh(
     dendrograms = {}
     membership = {}
     cc_unthresh = {}
-    output_dir = os.path.join(
-        narps.dirs.dirs['output'],
-        'correlation_unthresh')
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+    output_dir = narps.dirs.get_output_dir('correlation_unthresh')
 
     for i, hyp in enumerate(hypnums):
         print('creating correlation map for hypothesis', hyp)
         membership[str(hyp)] = {}
-        maskdata, labels = get_masked_data(
+        maskdata, labels = get_concat_data(
             hyp,
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
@@ -302,8 +296,9 @@ def mk_correlation_maps_unthresh(
         md = narps.metadata.query(
             'varnum==%d' % hyp).set_index('teamID')
 
+        decision_colors = ['r', 'g']
         col_colors = [
-            cluster_colors[md.loc[teamID, 'Decision']]
+            decision_colors[md.loc[teamID, 'Decision']]
             for teamID in labels
             ]
 
@@ -361,6 +356,7 @@ def analyze_clusters(
         dataset='zstat',
         corr_type='spearman',
         thresh=2.,
+        vmax=5.,
         rand_thresh=0.2):
     """
     Use dendrogram computed by seaborn clustermap to identify clusters,
@@ -375,6 +371,7 @@ def analyze_clusters(
 
     func_args = inspect.getargvalues(
         inspect.currentframe()).locals
+    # remove these to keep logs more tractable
     del func_args['membership']
     del func_args['dendrograms']
     func_name = sys._getframe().f_code.co_name
@@ -455,6 +452,7 @@ def analyze_clusters(
             nilearn.plotting.plot_stat_map(
                 mean_img,
                 threshold=thresh,
+                vmax=vmax,
                 display_mode="z",
                 colorbar=True,
                 title='hyp%d - cluster%d (fwhm=%0.2f, pYes = %0.2f)' % (
@@ -563,20 +561,17 @@ def get_thresh_similarity(narps, dataset='resampled'):
         logfile,
         stringify_dict(func_args))
 
-    output_dir = os.path.join(
-        narps.dirs.dirs['output'],
-        'jaccard_thresh')
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+    output_dir = narps.dirs.get_output_dir('jaccard_thresh')
 
     for hyp in hypnums:
         print('creating Jaccard map for hypothesis', hyp)
-        maskdata, labels = get_masked_data(
+        maskdata, labels = get_concat_data(
             hyp,
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
             imgtype='thresh',
             dataset=dataset)
+
         jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
         jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
         df = pandas.DataFrame(jacsim, index=labels, columns=labels)

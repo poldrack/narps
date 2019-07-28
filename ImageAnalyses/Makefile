@@ -42,19 +42,19 @@ run-PrepareMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR guard-DATA_URL
 	docker run -e "DATA_URL=$(DATA_URL)" -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/narps.py"
 
 run-PrepareMetadata: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/PrepareMetadata.py
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/PrepareMetadata.py"
 
 run-AnalyzeMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/AnalyzeMaps.py
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/AnalyzeMaps.py" 
 
 run-ConsensusAnalysis: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/ConsensusAnalysis.py
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/ConsensusAnalysis.py"
 
 run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR get-R-packages
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data")'
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data/figures")'
 
 run-MakeFigures: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/MakeSupplementaryFigure1.py
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/MakeSupplementaryFigure1.py"
 
 # commands to run simulated data analyses via docker
 
@@ -77,7 +77,7 @@ run-ConsensusAnalysis-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 
 
 run-AnalyzeDecisions-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR get-R-packages
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data")'
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data/figures")'
 
 run-MakeFigures-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/MakeSupplementaryFigure1.py
@@ -121,5 +121,5 @@ run-ConsensusAnalysis-local:
 	python ConsensusAnalysis.py
 
 run-AnalyzeDecisions-local: get-R-packages
-	 Rscript -e 'library(rmarkdown); rmarkdown::render("DecisionAnalysis.Rmd", "html_document")'
+	 Rscript -e 'library(rmarkdown); rmarkdown::render("DecisionAnalysis.Rmd", "html_document", output_dir = "$(NARPS_BASEDIR)/figures")'
 
