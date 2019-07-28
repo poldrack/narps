@@ -251,7 +251,9 @@ class NarpsTeam(object):
         """
         find orig images
         """
-        self.has_all_images = True
+        self.has_all_images = {
+            'thresh': True,
+            'unthresh': True}
         for hyp in hypotheses:
             for imgtype in self.images:
                 imgfile = os.path.join(
@@ -261,7 +263,7 @@ class NarpsTeam(object):
                     self.images[imgtype]['orig'][hyp] = imgfile
                 else:
                     self.images[imgtype]['orig'][hyp] = None
-                    self.has_all_images = False
+                    self.has_all_images[imgtype] = False
 
     def create_binarized_thresh_masks(self, thresh=1e-6,
                                       overwrite=False,
@@ -310,7 +312,8 @@ class NarpsTeam(object):
             # get number of suprathreshold voxels
             self.n_mask_vox[hyp] = numpy.sum(threshdata_bin)
 
-    def get_resampled_images(self, overwrite=False, replace_na=False):
+    def get_resampled_images(self, imgtype,
+                             overwrite=False, replace_na=False):
         """
         resample images into common space using nilearn
         """
@@ -324,50 +327,49 @@ class NarpsTeam(object):
         resampled_dir = self.dirs.get_output_dir('resampled')
 
         for hyp in hypotheses:
-            for imgtype in self.images:
-                infile = os.path.join(
-                    self.dirs.dirs[data_dirname[imgtype]],
-                    self.datadir_label,
-                    'hypo%d_%s.nii.gz' % (hyp, imgtype))
-                outfile = os.path.join(
-                    resampled_dir,
-                    self.datadir_label,
-                    'hypo%d_%s.nii.gz' % (hyp, imgtype))
-                self.images[imgtype]['resampled'][hyp] = outfile
-                if not os.path.exists(os.path.dirname(outfile)):
-                    os.mkdir(os.path.dirname(outfile))
-                if not os.path.exists(outfile) or overwrite:
-                    if self.verbose:
-                        print("resampling", infile)
+            infile = os.path.join(
+                self.dirs.dirs[data_dirname[imgtype]],
+                self.datadir_label,
+                'hypo%d_%s.nii.gz' % (hyp, imgtype))
+            outfile = os.path.join(
+                resampled_dir,
+                self.datadir_label,
+                'hypo%d_%s.nii.gz' % (hyp, imgtype))
+            self.images[imgtype]['resampled'][hyp] = outfile
+            if not os.path.exists(os.path.dirname(outfile)):
+                os.mkdir(os.path.dirname(outfile))
+            if not os.path.exists(outfile) or overwrite:
+                if self.verbose:
+                    print("resampling", infile)
 
-                    # create resampled file
+                # create resampled file
 
-                    # ignore nilearn warnings
-                    # these occur on some of the unthresholded images
-                    # that contains NaN values
-                    # we probably don't want to set those to zero
-                    # because those would enter into interpolation
-                    # and then would be treated as real zeros later
-                    # rather than "missing data" which is the usual
-                    # intention
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore")
-                        resampled = nilearn.image.resample_to_img(
-                            infile,
-                            self.dirs.MNI_template,
-                            interpolation=interp_type[imgtype])
+                # ignore nilearn warnings
+                # these occur on some of the unthresholded images
+                # that contains NaN values
+                # we probably don't want to set those to zero
+                # because those would enter into interpolation
+                # and then would be treated as real zeros later
+                # rather than "missing data" which is the usual
+                # intention
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    resampled = nilearn.image.resample_to_img(
+                        infile,
+                        self.dirs.MNI_template,
+                        interpolation=interp_type[imgtype])
 
-                    if imgtype == 'thresh':
-                        resampled = nilearn.image.math_img(
-                            'img>0.5',
-                            img=resampled)
+                if imgtype == 'thresh':
+                    resampled = nilearn.image.math_img(
+                        'img>0.5',
+                        img=resampled)
 
-                    resampled.to_filename(outfile)
+                resampled.to_filename(outfile)
 
-                else:
-                    if self.verbose:
-                        print('using existing resampled image for',
-                              self.teamID)
+            else:
+                if self.verbose:
+                    print('using existing resampled image for',
+                            self.teamID)
 
 
 class Narps(object):
@@ -394,12 +396,13 @@ class Narps(object):
         self.input_dirs = self.get_input_dirs(self.dirs)
 
         # check images for each team
-        self.complete_image_sets = None
+        self.complete_image_sets = {}
         self.get_orig_images(self.dirs)
-        log_to_file(
-            self.dirs.logfile,
-            'found %d teams with complete original datasets' % len(
-                self.complete_image_sets))
+        for imgtype in ['thresh', 'unthresh']:
+            log_to_file(
+                self.dirs.logfile,
+                'found %d teams with complete original %s datasets' % (
+                    imgtype, len(self.complete_image_sets[imgtype])))
 
         # set up metadata
         if metadata_file is None:
@@ -457,13 +460,18 @@ class Narps(object):
         """
         load orig images
         """
-        self.complete_image_sets = []
+        self.complete_image_sets = {
+            'thresh': [],
+            'unthresh': []}
         for teamID in self.teams:
             self.teams[teamID].get_orig_images()
-            if self.teams[teamID].has_all_images:
-                self.complete_image_sets.append(teamID)
+            for imgtype in self.images:
+                if self.teams[teamID].has_all_images[imgtype]:
+                    self.complete_image_sets[imgtype].append(teamID)
+
         # sort the teams - this is the order that will be used
-        self.complete_image_sets.sort()
+        for imgtype in self.images:
+            self.complete_image_sets[imgtype].sort()
 
     def get_binarized_thresh_masks(self):
         """
@@ -473,7 +481,7 @@ class Narps(object):
             self.dirs.logfile,
             sys._getframe().f_code.co_name,
             headspace=2)
-        for teamID in self.complete_image_sets:
+        for teamID in self.complete_image_sets['thresh']:
             self.teams[teamID].create_binarized_thresh_masks()
 
     def get_resampled_images(self, overwrite=None):
@@ -486,8 +494,9 @@ class Narps(object):
             headspace=2)
         if overwrite is None:
             overwrite = self.overwrite
-        for teamID in self.complete_image_sets:
-            self.teams[teamID].get_resampled_images()
+        for imgtype in ['thresh', 'unthresh']:
+            for teamID in self.complete_image_sets[imgtype]:
+                self.teams[teamID].get_resampled_images(imgtype=imgtype)
 
     def check_image_values(self, overwrite=None):
         """
@@ -508,7 +517,7 @@ class Narps(object):
         # otherwise load from scractch
         image_metadata = []
         masker = nilearn.input_data.NiftiMasker(mask_img=self.dirs.MNI_mask)
-        for teamID in self.complete_image_sets:
+        for teamID in self.complete_image_sets['thresh']:
             for hyp in self.teams[teamID].images['thresh']['resampled']:
                 threshfile = self.teams[teamID].images[
                     'thresh']['resampled'][hyp]
@@ -556,7 +565,7 @@ class Narps(object):
                         print('%s - hypo %d: creating concat file' % (
                             imgtype, hyp))
                     concat_teams = [
-                        teamID for teamID in self.complete_image_sets
+                        teamID for teamID in self.complete_image_sets[imgtype]
                         if os.path.exists(
                             self.teams[teamID].images[imgtype][datatype][hyp])]
                     self.all_maps[imgtype][datatype] = [
@@ -650,7 +659,7 @@ class Narps(object):
         map_metadata = get_map_metadata(map_metadata_file)
         if overwrite is None:
             overwrite = self.overwrite
-        for teamID in self.complete_image_sets:
+        for teamID in self.complete_image_sets['unthresh']:
             for hyp in range(1, 10):
                 if hyp in [5, 6]:
                     mdstring = map_metadata.query(
@@ -808,7 +817,7 @@ class Narps(object):
         unthresh_stat_type = unthresh_stat_type.merge(
             n_participants, left_index=True, right_index=True)
 
-        for teamID in self.complete_image_sets:
+        for teamID in self.complete_image_sets['unthresh']:
             if teamID not in unthresh_stat_type.index:
                 print('no map metadata for', teamID)
                 continue
@@ -895,7 +904,7 @@ class Narps(object):
         # use nipype's interface to the FSL smoothest command
         est = SmoothEstimate()
         smoothness = []
-        for teamID in self.complete_image_sets:
+        for teamID in self.complete_image_sets['unthresh']:
             for hyp in range(1, 10):
                 if hyp not in self.teams[teamID].images['unthresh'][imgtype]:
                     # fill missing data with nan
@@ -940,7 +949,7 @@ class Narps(object):
         info['teamlist'] = self.complete_image_sets
         info['teams'] = {}
 
-        for teamID in self.complete_image_sets:
+        for teamID in self.complete_image_sets['thresh']:
             info['teams'][teamID] = {
                 'images': self.teams[teamID].images,
                 'image_json': self.teams[teamID].image_json,
@@ -971,7 +980,7 @@ class Narps(object):
 
         self.dirs = info['dirs']
         self.complete_image_sets = info['teamlist']
-        for teamID in self.complete_image_sets:
+        for teamID in self.complete_image_sets['thresh']:
             self.teams[teamID] = NarpsTeam(
                 teamID,
                 info['teams'][teamID]['NV_collection_id'],
@@ -1259,7 +1268,7 @@ if __name__ == "__main__":
 
     narps = Narps(basedir)
 
-    assert len(narps.complete_image_sets) > 0
+    assert len(narps.complete_image_sets['thresh']) > 0
 
     if args.test:
         print('testing mode, exiting after setup')
