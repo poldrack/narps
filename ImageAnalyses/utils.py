@@ -72,6 +72,35 @@ def get_masked_data(hyp, mask_img, output_dir,
     return(maskdata, labels)
 
 
+# load concatenated data - this is meant to replace
+# get_masked_data()
+def get_concat_data(hyp, mask_img, output_dir,
+                    imgtype='unthresh', dataset='zstat'):
+    """
+    load data from within mask
+    """
+
+    concat_file = os.path.join(
+        output_dir,
+        '%s_concat_%s' % (imgtype, dataset),
+        'hypo%d.nii.gz' % hyp)
+    assert os.path.exists(concat_file)
+
+    labelfile = concat_file.replace('.nii.gz', '.labels')
+    assert os.path.exists(labelfile)
+    labels = []
+    with open(labelfile, 'r') as f:
+        for l in f.readlines():
+            l_s = l.strip().split()
+            labels.append(l_s[0])
+    masker = nilearn.input_data.NiftiMasker(mask_img=mask_img)
+    maskdata = masker.fit_transform(concat_file)  # combined_data
+    maskdata = numpy.nan_to_num(maskdata)
+    if imgtype == 'thresh':
+        maskdata = (maskdata > 1e-4).astype('float')
+    return(maskdata, labels)
+
+
 def get_metadata(metadata_file,
                  index_var='teamID'):
     """ get team metadata"""
