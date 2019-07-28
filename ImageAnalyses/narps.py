@@ -402,7 +402,7 @@ class Narps(object):
             log_to_file(
                 self.dirs.logfile,
                 'found %d teams with complete original %s datasets' % (
-                    imgtype, len(self.complete_image_sets[imgtype])))
+                    len(self.complete_image_sets[imgtype]), imgtype))
 
         # set up metadata
         if metadata_file is None:
