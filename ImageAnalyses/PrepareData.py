@@ -28,12 +28,14 @@ def get_download_dir(basedir, overwrite=True):
         os.mkdir(download_dir)
     return(download_dir)
 
+
 def fix_trailing_slashes(s):
     """ remove abritrary number of trailing slashes"""
     s = s.strip()  # first remove spaces
     while s[-1] == '/':
         s = s.strip('/')
     return(s)
+
 
 def get_collection_ids(infile='collection_teamID_updated.xlsx',
                        verbose=True):
@@ -125,6 +127,7 @@ def check_downloads(completed_downloads):
             print(filenames)
     return(missing_files)
 
+
 def log_data(download_dir,
              logfile, verbose=True):
     """record manifest and file hashes"""
@@ -133,10 +136,10 @@ def log_data(download_dir,
     for root, dirs, files in os.walk(download_dir):
         path = root.split(os.sep)
         for file in files:
-            if file.find('.nii.gz')<0:
+            if file.find('.nii.gz') < 0:
                 # skip non-nifti files
                 continue
-            fname=os.path.join(root, file)
+            fname = os.path.join(root, file)
             filehash = hashlib.md5(open(fname, 'rb').read()).hexdigest()
             short_fname = os.path.join('/'.join(path[-2:]), file)
             imgfiles[short_fname] = filehash
@@ -145,6 +148,7 @@ def log_data(download_dir,
             log_to_file(
                 logfile,
                 '%s %s' % (short_fname, filehash))
+
 
 def fix_names(collectionIDs, download_dir):
     pass
@@ -216,4 +220,4 @@ if __name__ == "__main__":
         download_dir,
         logfile)
 
-    #fix_names(collectionIDs, download_dir)
+    # fix_names(collectionIDs, download_dir)
