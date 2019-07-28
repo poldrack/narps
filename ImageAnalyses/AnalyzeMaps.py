@@ -371,6 +371,7 @@ def analyze_clusters(
 
     func_args = inspect.getargvalues(
         inspect.currentframe()).locals
+    # remove these to keep logs more tractable
     del func_args['membership']
     del func_args['dendrograms']
     func_name = sys._getframe().f_code.co_name
