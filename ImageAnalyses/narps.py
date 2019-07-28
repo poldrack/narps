@@ -1232,10 +1232,16 @@ if __name__ == "__main__":
     parser.add_argument('-u', '--dataurl',
                         help='URL to download data')
     parser.add_argument('-b', '--basedir',
-                        help='base directory')
+                        help=('base directory. '
+                              'If not set, defaults to '
+                              'env variable NARPS_BASEDIR - '
+                              'that that env var is unset then'
+                              'defaults to /data'))
     parser.add_argument('-s', '--simulate',
                         action='store_true',
-                        help='use simulated data')
+                        help=('use simulated data - '
+                              'requires that full analysis '
+                              'has already been run'))
     parser.add_argument('-t', '--test',
                         action='store_true',
                         help='use testing mode (no processing)')
