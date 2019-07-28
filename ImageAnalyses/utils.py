@@ -32,11 +32,12 @@ def log_to_file(fname, s, flush=False,
     """ save string to log file"""
     if flush and os.path.exists(fname):
         os.remove(fname)
+    if not isinstance(s, str):
+        s = str(s)
     # add spacing before line
-    s = os.linesep*headspace + s
+    if headspace > 0:
+        s = os.linesep*headspace + s
     with open(fname, 'a+') as f:
-        if not isinstance(s, str):
-            s = str(s)
         if also_print:
             print(s)
         f.write(s + os.linesep)
