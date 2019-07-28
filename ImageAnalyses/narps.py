@@ -465,12 +465,12 @@ class Narps(object):
             'unthresh': []}
         for teamID in self.teams:
             self.teams[teamID].get_orig_images()
-            for imgtype in self.images:
+            for imgtype in self.teams[teamID].images:
                 if self.teams[teamID].has_all_images[imgtype]:
                     self.complete_image_sets[imgtype].append(teamID)
 
         # sort the teams - this is the order that will be used
-        for imgtype in self.images:
+        for imgtype in self.teams[teamID].images:
             self.complete_image_sets[imgtype].sort()
 
     def get_binarized_thresh_masks(self):
