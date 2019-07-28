@@ -24,7 +24,7 @@ import seaborn
 import scipy.cluster
 import scipy.stats
 from scipy.spatial.distance import pdist, squareform
-from utils import get_masked_data, log_to_file, stringify_dict
+from utils import get_concat_data, log_to_file, stringify_dict
 from narps import Narps, hypotheses, hypnums
 from narps import NarpsDirs # noqa, flake8 issue
 
@@ -174,7 +174,6 @@ def plot_individual_maps(
             hyp = int(os.path.basename(
                 m).split('_')[0].replace('hypo', ''))
             if hyp not in hypnums:
-                print('skipping', hyp)
                 continue
             img = nibabel.load(m)
             dims = img.header.get_data_shape()
@@ -257,13 +256,11 @@ def mk_correlation_maps_unthresh(
     for i, hyp in enumerate(hypnums):
         print('creating correlation map for hypothesis', hyp)
         membership[str(hyp)] = {}
-        maskdata, labels = get_masked_data(
+        maskdata, labels = get_concat_data(
             hyp,
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
             dataset=dataset)
-        # make sure order is correct
-        assert labels == narps.complete_image_sets['unthresh']
 
         # compute correlation of all datasets with mean
         if 'mean_corr' not in locals():
@@ -567,14 +564,12 @@ def get_thresh_similarity(narps, dataset='resampled'):
 
     for hyp in hypnums:
         print('creating Jaccard map for hypothesis', hyp)
-        maskdata, labels = get_masked_data(
+        maskdata, labels = get_concat_data(
             hyp,
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
             imgtype='thresh',
             dataset=dataset)
-        # make sure order is correct
-        assert labels == narps.complete_image_sets['unthresh']
 
         jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
         jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
