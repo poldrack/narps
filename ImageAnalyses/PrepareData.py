@@ -133,7 +133,7 @@ def log_data(download_dir,
     """record manifest and file hashes"""
     imgfiles = {}
     # traverse root directory, and list directories as dirs and files as files
-    for root, dirs, files in os.walk(download_dir):
+    for root, _, files in os.walk(download_dir):
         path = root.split(os.sep)
         for file in files:
             if file.find('.nii.gz') < 0:
