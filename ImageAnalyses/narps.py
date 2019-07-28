@@ -560,6 +560,8 @@ class Narps(object):
                 outfile = os.path.join(
                     concat_dir,
                     'hypo%d.nii.gz' % hyp)
+                if self.verbose:
+                    print(outfile)
                 if not os.path.exists(outfile) or overwrite:
                     if self.verbose:
                         print('%s - hypo %d: creating concat file' % (
@@ -580,6 +582,15 @@ class Narps(object):
                         self.all_maps[imgtype][datatype])
                     concat_img = masker.inverse_transform(concat_data)
                     concat_img.to_filename(outfile)
+
+                    # save team ID and files to a label file for provenance
+                    labelfile = outfile.replace('.nii.gz', '.labels')
+                    with open(labelfile, 'w') as f:
+                        for i, team in enumerate(concat_teams):
+                            f.write('%s\t%s%s' % (
+                                team,
+                                self.all_maps[imgtype][datatype][i],
+                                os.linesep))
                 else:
                     if self.verbose:
                         print('%s - hypo %d: using existing file' % (
