@@ -538,7 +538,7 @@ class Narps(object):
         """
         create images concatenated across teams
         ordered by self.complete_image_sets
-        create_voxel_map: will create a map showing 
+        create_voxel_map: will create a map showing
         proportion of nonzero teams at each voxel
         """
         log_to_file(
