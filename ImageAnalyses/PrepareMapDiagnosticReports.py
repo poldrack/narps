@@ -34,6 +34,7 @@ def create_team_reports(narps, logfile):
             narps,
             collectionID,
             logfile)
+        print(diagdata)
         if diagnostic_results is None:
             diagnostic_results = diagdata
         else:
@@ -49,13 +50,14 @@ def create_team_report(narps, collectionID, logfile,
                        thresh_dataset='resampled',
                        verbose=True,
                        mean_thresh=1,
-                       std_thresh=2):
+                       std_thresh=2,
+                       voxelmap_thresh=0.9):
     diagnostic_data = pandas.DataFrame({
         'collectionID': collectionID,
         'hyp': hypnums,
-        'meanZ': None,
-        'stdZ': None,
-        'n_over_thresh': None})
+        'meanZ': numpy.nan,
+        'stdZ': numpy.nan,
+        'p_map_voxels':numpy.nan})
 
     teamdir_unthresh = os.path.join(
         narps.dirs.dirs[unthresh_dataset],
@@ -83,7 +85,7 @@ def create_team_report(narps, collectionID, logfile,
         print('WARNING: hypothesis numbers may not be correct!')
 
     # load data and check them for deviations from Z distribution
-    check_values = False
+    check_values = True
     if check_values:
         masker = nilearn.input_data.NiftiMasker(
             mask_img=narps.dirs.MNI_mask)
@@ -157,10 +159,20 @@ def create_team_report(narps, collectionID, logfile,
         if not os.path.exists(unthreshfile):
             print('missing file for ', collectionID, hyp)
             continue
+        voxelmap = nibabel.load(
+            os.path.join(narps.dirs.dirs['output'],
+            'unthresh_concat_%s/hypo%d_voxelmap.nii.gz' %
+            (unthresh_dataset, hyp))
+        )
+        voxelmap_good = voxelmap.get_data() > voxelmap_thresh
         unthreshimg = nibabel.load(unthreshfile)
         unthreshdata = numpy.abs(unthreshimg.get_data())
         maskimg = nibabel.Nifti1Image((unthreshdata > 1e-6).astype('int'),
                                       affine=unthreshimg.affine)
+        diagnostic_data.loc[
+            diagnostic_data.hyp == hyp,
+            'p_map_voxels'] = numpy.mean(maskimg.get_data()[voxelmap_good])
+        
         nilearn.plotting.plot_stat_map(
             maskimg,
             display_mode="z",
