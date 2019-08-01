@@ -585,14 +585,14 @@ class Narps(object):
                     concat_img = masker.inverse_transform(concat_data)
                     concat_img.to_filename(outfile)
                     if create_voxel_map:
-                        nonzero_data = numpy.abs(concat_data) > 1e-6
-                        voxel_map = numpy.mean(nonzero_data, 3)
+                        concat_data = nibabel.load(outfile).get_data()
+                        voxel_map = numpy.mean(numpy.abs(concat_data) > 1e-6, 3)
                         voxel_img = nibabel.Nifti1Image(
-                            voxel_map, affine=concat_img.affine
-                        )
+                            voxel_map, affine=concat_img.affine)
                         mapfile = outfile.replace(
                             '.nii.gz', '_voxelmap.nii.gz'
                         )
+                        assert mapfile != outfile
                         voxel_img.to_filename(mapfile)
 
                     # save team ID and files to a label file for provenance
