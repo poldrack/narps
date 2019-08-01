@@ -14,10 +14,23 @@ import json
 from neurovault_collection_downloader import cli
 from utils import log_to_file
 
-# these are teams that used surface-based analysis so must be excluded
-# from map analyses
-TEAMS_TO_SKIP = ['1K0E', 'X1Z4']
+# these are teams that are excluded
+# from map analyses:
+# used surface-based analysis ('1K0E', 'X1Z4')
+# badly registered ( 'L1A8')
+TEAMS_TO_SKIP = ['1K0E', 'X1Z4', 'L1A8']
 
+# incorrect unthresh values (569K)
+# lots of deep voxels missing (5001_I07H)
+# lots of missing voxels, 
+#   masked using gray matter mask (4972_O03M)
+# missing voxels, looks artifactual (4947_X19V)
+# more than 10% of voxels empty (4994_0ED6)
+# more than 5% empty - don't remove these for now:
+# (4950_R5K7, 4988_98BT, 5637_46CD, 5649_1P0Y)
+
+TEAMS_TO_REMOVE_UNTHRESH = ['569K', 'O03M', 'I07H', 
+                            'X19V', '0ED6']
 
 def get_download_dir(basedir, overwrite=False):
     download_dir = os.path.join(basedir, 'neurovault_downloads')
@@ -178,6 +191,11 @@ def copy_renamed_files(collectionIDs, download_dir, logfile):
                 'tresh', 'thresh').replace(' ', '_')+'.nii.gz'
             newname = newname.replace(
                 'hypo_', 'hypo').replace('uthresh', 'unthresh')
+
+            # skip unthresh images if necessary
+            if newname.find('unthresh') > -1 and \
+                    teamID in TEAMS_TO_REMOVE_UNTHRESH:
+                continue
 
             if origname.find('sub') > -1 or \
                     not newname.find('thresh') > -1:  # skip sub files
