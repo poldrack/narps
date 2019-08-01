@@ -32,7 +32,7 @@ RUN pip install \
     wget==3.2 \
     hickle==3.4.5 
 
-RUN pip install git+https://github.com/poldrack/neurovault_collection_downloader.git@8fbec8e9b414588157873c970cf02a2d66e4da2f
+RUN pip install git+https://github.com/poldrack/neurovault_collection_downloader.git@512168d970445944364f501537cd0ccccd877ffd
 
 # install fsl
 RUN wget -O- http://neuro.debian.net/lists/stretch.us-nh.full |  tee /etc/apt/sources.list.d/neurodebian.sources.list
