@@ -75,9 +75,13 @@ def get_masked_data(hyp, mask_img, output_dir,
 # load concatenated data - this is meant to replace
 # get_masked_data()
 def get_concat_data(hyp, mask_img, output_dir,
-                    imgtype='unthresh', dataset='zstat'):
+                    imgtype='unthresh', dataset='zstat',
+                    vox_mask_thresh=None):
     """
     load data from within mask
+    if vox_mask_thresh is specified, then the relevant
+    file is loaded and only voxels with at least 
+    this proportion of teams present will be included
     """
 
     concat_file = os.path.join(
@@ -98,6 +102,13 @@ def get_concat_data(hyp, mask_img, output_dir,
     maskdata = numpy.nan_to_num(maskdata)
     if imgtype == 'thresh':
         maskdata = (maskdata > 1e-4).astype('float')
+    if vox_mask_thresh is not None:
+        assert vox_mask_thresh >= 0 and vox_mask_thresh <= 1
+        mask_file = concat_file.replace(
+            '.nii.gz', '_voxelmap.nii.gz'
+        )
+        voxmaskdata = masker.fit_transform(mask_file)
+        maskdata = maskdata[:, voxmaskdata[0, :] > vox_mask_thresh]
     return(maskdata, labels)
 
 
