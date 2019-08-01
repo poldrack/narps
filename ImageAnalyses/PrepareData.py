@@ -9,6 +9,8 @@ import argparse
 import glob
 import shutil
 import pandas
+import json
+
 from neurovault_collection_downloader import cli
 from utils import log_to_file
 
@@ -17,7 +19,7 @@ from utils import log_to_file
 TEAMS_TO_SKIP = ['1K0E', 'X1Z4']
 
 
-def get_download_dir(basedir, overwrite=True):
+def get_download_dir(basedir, overwrite=False):
     download_dir = os.path.join(basedir, 'neurovault_downloads')
     if overwrite:
         if os.path.exists(download_dir):
@@ -47,30 +49,23 @@ def get_collection_ids(infile='collection_teamID_updated.xlsx',
             if verbose:
                 print('skipping', teamID)
             continue
-        if not isinstance(teaminfo.loc[t, 'public link'], str):
-            public_link = None
-        else:
-            public_link = teaminfo.loc[t, 'public link']
-            public_link = fix_trailing_slashes(public_link)
 
-        private_link = teaminfo.loc[t, 'private link']
-        private_link = fix_trailing_slashes(private_link)
-        if public_link is not None:
-            collectionID[teamID] = os.path.basename(public_link)
-        else:
-            collectionID[teamID] = os.path.basename(private_link)
+        public_link = teaminfo.loc[t, 'new NV link']
+        public_link = fix_trailing_slashes(public_link)
+
+        collectionID[teamID] = os.path.basename(public_link)
         if verbose:
-            print(teamID, collectionID[teamID], private_link, public_link)
+            print(teamID, collectionID[teamID], public_link)
         assert len(collectionID[teamID]) > 3
 
     return(collectionID)
 
 
 def download_collections(collectionIDs, download_dir,
-                         verbose=True, overwrite=True):
+                         verbose=True, overwrite=False):
     teamIDs = list(collectionIDs.keys())
     teamIDs.sort()  # to maintain order
-    failed_downloads = []
+    failed_downloads = {}
     for teamID in teamIDs:
         if teamID in TEAMS_TO_SKIP:
             if verbose:
@@ -83,22 +78,18 @@ def download_collections(collectionIDs, download_dir,
                     print('fetching', teamID)
                 cli.fetch_collection(
                     collectionIDs[teamID],
-                    os.path.join(download_dir, teamID))
-
-                # clean out subject files
-                subfiles = glob.glob(os.path.join(
                     download_dir,
-                    teamID,
-                    'sub*'))
-                for s in subfiles:
-                    os.remove(s)
+                    '%s_%s' % (collectionIDs[teamID], teamID),
+                    exclude_tag=['sub', 'cope'])
+
             else:
                 if verbose:
                     print('using existing data for', teamID)
-        except:  # noqa - need to catch unknown exceptions here
-            if verbose:
-                print('download failed for', teamID)
-            failed_downloads.append(teamID)
+        except Exception as e:  # noqa - need to catch unknown exceptions here
+            print('download failed for', teamID)
+            print(e)
+            failed_downloads[teamID] = e
+
     return(failed_downloads)
 
 
@@ -108,9 +99,8 @@ def check_downloads(completed_downloads):
     """
 
     missing_files = {}
-    for c in completed_downloads:
-        datadir = glob.glob(os.path.join(c, '*'))[0]
-        teamID = os.path.basename(c)
+    for datadir in completed_downloads:
+        teamID = os.path.basename(datadir)
         files = glob.glob(os.path.join(datadir, '*'))
         print('%s: found %d files' % (teamID, len(files)))
         # check for necessary files:
@@ -150,8 +140,57 @@ def log_data(download_dir,
                 '%s %s' % (short_fname, filehash))
 
 
-def fix_names(collectionIDs, download_dir):
-    pass
+def copy_renamed_files(collectionIDs, download_dir, logfile):
+    """change file names based on info in images.json"""
+    # setup target directory
+    orig_dir = os.path.join(
+        os.path.dirname(download_dir),
+        'orig'
+    )
+    if not os.path.exists(orig_dir):
+        os.mkdir(orig_dir)
+
+    for teamID in collectionIDs:
+        collectionID = '%s_%s' % (
+                collectionIDs[teamID],
+                teamID)
+        collection_dir = os.path.join(
+            download_dir,
+            collectionID)
+        fixed_dir = os.path.join(
+            orig_dir,
+            collectionID)
+        if not os.path.exists(fixed_dir):
+            os.mkdir(fixed_dir)
+
+        jsonfile = os.path.join(
+            collection_dir,
+            'images.json')
+        if not os.path.exists(jsonfile):
+            print('no json file for ', collectionID)
+            continue
+        with open(jsonfile) as f:
+            image_info = json.load(f)
+        for img in image_info:
+            origname = os.path.basename(img['file'])
+            # fix various issues with names
+            newname = img['name'].replace(
+                'tresh', 'thresh').replace(' ', '_')+'.nii.gz'
+            newname = newname.replace(
+                'hypo_', 'hypo').replace('uthresh', 'unthresh')
+
+            if origname.find('sub') > -1 or \
+                    not newname.find('thresh') > -1:  # skip sub files
+                continue
+            else:
+                log_to_file(
+                    logfile,
+                    'copying %s/%s to %s/%s' % (
+                        collectionID, origname, collectionID, newname))
+                shutil.copy(
+                    os.path.join(collection_dir, origname),
+                    os.path.join(fixed_dir, newname))
+    return(orig_dir)
 
 
 if __name__ == "__main__":
@@ -178,6 +217,21 @@ if __name__ == "__main__":
         basedir = '/data'
         print("using default basedir:", basedir)
 
+    if not os.path.exists(basedir):
+        os.mkdir(basedir)
+
+    # set up logging
+    logfile = os.path.join(
+        basedir,
+        'logs/neurovault_download.log')
+    if not os.path.exists(os.path.dirname(logfile)):
+        os.mkdir(os.path.dirname(logfile))
+
+    log_to_file(
+        logfile,
+        'Getting data from neurovault',
+        flush=True)
+
     collectionIDs = get_collection_ids()
     print('found', len(collectionIDs), 'collections')
 
@@ -195,8 +249,22 @@ if __name__ == "__main__":
         if len(failed_downloads) > 0:
             print('failed downloads for %d teams' % len(failed_downloads))
             print(failed_downloads)
+            for f in failed_downloads:
+                log_to_file(
+                    logfile,
+                    '%s: %s' % (f, failed_downloads[f]))
 
-    completed_downloads = glob.glob(os.path.join(download_dir, '*'))
+    renaming_logfile = os.path.join(
+        basedir,
+        'logs/neurovault_renaming.log')
+    orig_dir = copy_renamed_files(
+        collectionIDs,
+        download_dir,
+        renaming_logfile)
+
+    completed_downloads = [
+        i for i in glob.glob(os.path.join(orig_dir, '*'))
+        if os.path.isdir(i)]
     print('found %d completed downloads' % len(completed_downloads))
 
     missing_files = check_downloads(completed_downloads)
@@ -204,20 +272,20 @@ if __name__ == "__main__":
     has_missing_files = [
         teamID for teamID in missing_files
         if len(missing_files[teamID]) > 0]
-    print('found %d teams with missing/misnamed files' % len(
-        has_missing_files))
-
-    # get manifest and hashes
-    logfile = os.path.join(
-        basedir,
-        'logs/MANIFEST.neurovault')
-
     log_to_file(
         logfile,
-        'Getting data from neurovault',
-        flush=True)
+        'found %d teams with missing/misnamed files:' % len(
+            has_missing_files))
+    log_to_file(
+        logfile,
+        ' '.join(has_missing_files))
+
+    if not os.path.exists(os.path.join(basedir, 'logs')):
+        os.mkdir(os.path.join(basedir, 'logs'))
+
+    manifest_file = os.path.join(
+        basedir,
+        'logs/MANIFEST.neurovault')
     log_data(
         download_dir,
-        logfile)
-
-    # fix_names(collectionIDs, download_dir)
+        manifest_file)
