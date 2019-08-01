@@ -108,7 +108,7 @@ def get_concat_data(hyp, mask_img, output_dir,
             '.nii.gz', '_voxelmap.nii.gz'
         )
         voxmaskdata = masker.fit_transform(mask_file)
-        maskdata = maskdata[:, voxmaskdata[0, :] > vox_mask_thresh]
+        maskdata = maskdata[:, voxmaskdata[0, :] >= vox_mask_thresh]
     return(maskdata, labels)
 
 
