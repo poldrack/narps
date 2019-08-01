@@ -120,6 +120,9 @@ def get_metadata(metadata_file,
     metadata['n_participants'] = [
         int(i.split('\n')[0]) if isinstance(i, str)
         else i for i in metadata['n_participants']]
+    metadata['NV_collection_string'] = [
+        os.path.basename(i.strip('/')) for i in
+        metadata['NV_collection_link']]
     return(metadata)
 
 
