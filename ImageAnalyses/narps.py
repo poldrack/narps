@@ -532,11 +532,14 @@ class Narps(object):
         return(image_metadata_df)
 
     def create_concat_images(self, datatype='resampled',
+                             create_voxel_map=False,
                              imgtypes=None,
                              overwrite=None):
         """
         create images concatenated across teams
         ordered by self.complete_image_sets
+        create_voxel_map: will create a map showing 
+        proportion of nonzero teams at each voxel
         """
         log_to_file(
             self.dirs.logfile,
@@ -581,6 +584,16 @@ class Narps(object):
                         self.all_maps[imgtype][datatype])
                     concat_img = masker.inverse_transform(concat_data)
                     concat_img.to_filename(outfile)
+                    if create_voxel_map:
+                        nonzero_data = numpy.abs(concat_data) > 1e-6
+                        voxel_map = numpy.mean(nonzero_data, 3)
+                        voxel_img = nibabel.Nifti1Image(
+                            voxel_map, affine=concat_img.affine
+                        )
+                        mapfile = outfile.replace(
+                            '.nii.gz', '_voxelmap.nii.gz'
+                        )
+                        voxel_img.to_filename(mapfile)
 
                     # save team ID and files to a label file for provenance
                     labelfile = outfile.replace('.nii.gz', '.labels')
@@ -1315,7 +1328,8 @@ if __name__ == "__main__":
 
         print("creating concatenated zstat images...")
         narps.create_concat_images(datatype='zstat',
-                                   imgtypes=['unthresh'])
+                                   imgtypes=['unthresh'],
+                                   create_voxel_map=True)
 
         print("computing image stats...")
         narps.compute_image_stats()
