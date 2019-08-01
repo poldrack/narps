@@ -109,12 +109,12 @@ class NarpsDirs(object):
         if data_url is None:
             self.data_url = DATA_URL
 
-        dirs_to_add = ['output', 'metadata',
+        dirs_to_add = ['output', 'metadata', 'templates',
                        'cached', 'figures', 'logs', 'orig']
         for d in dirs_to_add:
             self.dirs[d] = os.path.join(self.dirs['base'], d)
 
-        self.dirs['templates'] = os.path.join(
+        self.dirs['fsl_templates'] = os.path.join(
             os.environ['FSLDIR'],
             'data/standard')
 
@@ -142,11 +142,11 @@ class NarpsDirs(object):
 
         # make sure the necessary templates are present
         # these should be downloaded with the raw data
-        self.MNI_mask = os.path.join(self.dirs['templates'],
+        self.MNI_mask = os.path.join(self.dirs['fsl_templates'],
                                      'MNI152_T1_2mm_brain_mask.nii.gz')
         assert os.path.exists(self.MNI_mask)
 
-        self.MNI_template = os.path.join(self.dirs['templates'],
+        self.MNI_template = os.path.join(self.dirs['fsl_templates'],
                                          'MNI152_T1_2mm.nii.gz')
         assert os.path.exists(self.MNI_template)
 
@@ -407,7 +407,7 @@ class Narps(object):
         if metadata_file is None:
             self.metadata_file = os.path.join(
                 self.dirs.dirs['orig'],
-                'analysis_pipelines_SW.xlsx')
+                'analysis_pipelines_for_analysis.xlsx')
         else:
             self.metadata_file = metadata_file
 
