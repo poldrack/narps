@@ -51,14 +51,14 @@ narps_df <- read_csv(paste(basedir,
                            sep='/'))
 
 narps_df <- narps_df %>% 
-  mutate(package = recode_factor(TSc_SW,
+  mutate(package = recode_factor(analysis_SW,
                       SPM12 = "SPM",
                       SPM8 = "SPM",
                       SPM5 = "SPM",
                       nistats = "Other",
                       PALM = "Other",
                       randomise = "Other"),
-         testing = recode_factor(TSc_testing,
+         testing = recode_factor(testing,
                       Randomise = "Nonparam",
                       SnPM = "Nonparam",
                       TFCE = "Nonparam",
@@ -78,7 +78,7 @@ narps_df$varnum = as.factor(narps_df$varnum)
 Estimate correlation between reported smoothing kernel and estimated image smoothness.
 
 ```{r smoothCorr}
-cor(narps_df$fwhm,narps_df$TSc_smoothing,
+cor(narps_df$fwhm,narps_df$smoothing_coef,
     use='pairwise.complete',
     method='spearman')
 ```
@@ -221,7 +221,7 @@ print(delta_r2_testing)
 Full model using specified smoothing filter rather than estimated smoothness.
 
 ```{r kernelModel}
-m_hyp_full_tsc = glmer(Decision ~ varnum + TSc_smoothing + used_fmriprep_data + package + testing + (1|teamID),
+m_hyp_full_tsc = glmer(Decision ~ varnum + smoothing_coef + used_fmriprep_data + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
@@ -355,7 +355,7 @@ decisionSummary_smoothingkernel <- narps_df %>%
   drop_na(fwhm) %>%
   mutate(Decision_factor = as.factor(Decision)) %>%
   group_by(Decision_factor,varnum) %>%
-  summarize(meanAppliedFWHM = mean(TSc_smoothing),
+  summarize(meanAppliedFWHM = mean(smoothing_coef),
             numTeams = n()) 
 
 ggplot(decisionSummary_smoothingkernel,
