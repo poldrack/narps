@@ -220,6 +220,9 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--test',
                         action='store_true',
                         help='use testing mode (no processing)')
+    parser.add_argument('-l', '--leave_downloads',
+                        action='store_true',
+                        help='do not delete downloads')
     parser.add_argument('-s', '--skip_download',
                         action='store_true',
                         help='use existing data')
@@ -307,3 +310,6 @@ if __name__ == "__main__":
     log_data(
         download_dir,
         manifest_file)
+
+    if not args.leave_downloads:
+        shutil.rmtree(download_dir)
