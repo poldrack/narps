@@ -224,12 +224,15 @@ def mk_correlation_maps_unthresh(
         narps,
         corr_type='spearman',
         n_clusters=None,
-        dataset='zstat'):
+        dataset='zstat',
+        vox_mask_thresh=1.0):
     """
     Create correlation maps for unthresholded images
     These correlation matrices are clustered using Ward clustering,
     with the number of clusters for each hypotheses determined by
     visual examination.
+    vox_mask_thresh controls which voxels are analyzed in terms
+    of proportion of teams with signal in voxel.  defaults to 100%
     """
     func_args = inspect.getargvalues(
         inspect.currentframe()).locals
@@ -260,7 +263,8 @@ def mk_correlation_maps_unthresh(
             hyp,
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
-            dataset=dataset)
+            dataset=dataset,
+            vox_mask_thresh=vox_mask_thresh)
 
         # compute correlation of all datasets with mean
         if 'mean_corr' not in locals():
