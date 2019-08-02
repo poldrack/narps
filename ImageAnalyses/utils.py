@@ -80,7 +80,7 @@ def get_concat_data(hyp, mask_img, output_dir,
     """
     load data from within mask
     if vox_mask_thresh is specified, then the relevant
-    file is loaded and only voxels with at least 
+    file is loaded and only voxels with at least
     this proportion of teams present will be included
     """
 

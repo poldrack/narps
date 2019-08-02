@@ -586,7 +586,8 @@ class Narps(object):
                     concat_img.to_filename(outfile)
                     if create_voxel_map:
                         concat_data = nibabel.load(outfile).get_data()
-                        voxel_map = numpy.mean(numpy.abs(concat_data) > 1e-6, 3)
+                        voxel_map = numpy.mean(
+                            numpy.abs(concat_data) > 1e-6, 3)
                         voxel_img = nibabel.Nifti1Image(
                             voxel_map, affine=concat_img.affine)
                         mapfile = outfile.replace(

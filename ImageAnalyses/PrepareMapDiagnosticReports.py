@@ -57,7 +57,7 @@ def create_team_report(narps, collectionID, logfile,
         'hyp': hypnums,
         'meanZ': numpy.nan,
         'stdZ': numpy.nan,
-        'p_map_voxels':numpy.nan})
+        'p_map_voxels': numpy.nan})
 
     teamdir_unthresh = os.path.join(
         narps.dirs.dirs[unthresh_dataset],
@@ -160,9 +160,10 @@ def create_team_report(narps, collectionID, logfile,
             print('missing file for ', collectionID, hyp)
             continue
         voxelmap = nibabel.load(
-            os.path.join(narps.dirs.dirs['output'],
-            'unthresh_concat_%s/hypo%d_voxelmap.nii.gz' %
-            (unthresh_dataset, hyp))
+            os.path.join(
+                narps.dirs.dirs['output'],
+                'unthresh_concat_%s/hypo%d_voxelmap.nii.gz' %
+                (unthresh_dataset, hyp))
         )
         voxelmap_good = voxelmap.get_data() > voxelmap_thresh
         unthreshimg = nibabel.load(unthreshfile)
@@ -172,7 +173,7 @@ def create_team_report(narps, collectionID, logfile,
         diagnostic_data.loc[
             diagnostic_data.hyp == hyp,
             'p_map_voxels'] = numpy.mean(maskimg.get_data()[voxelmap_good])
-        
+
         nilearn.plotting.plot_stat_map(
             maskimg,
             display_mode="z",
