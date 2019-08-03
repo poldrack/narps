@@ -63,7 +63,8 @@ def test_narps_convert_to_zscores(narps):
 
 def test_narps_create_concat_images_unthresh(narps):
     narps.create_concat_images(datatype='zstat',
-                               imgtypes=['unthresh'])
+                               imgtypes=['unthresh'],
+                               create_voxel_map=True)
 
 
 def test_narps_compute_image_stats(narps):
