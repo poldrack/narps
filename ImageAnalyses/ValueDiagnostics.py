@@ -7,7 +7,6 @@ generate individual reports for data prepared using narps.py
 import os
 import matplotlib.pyplot as plt
 import numpy
-import nilearn.input_data
 import pandas
 import nibabel
 
@@ -57,16 +56,14 @@ def compare_thresh_unthresh_values(
         print(teamdir_unthresh)
         return(None)
 
-    masker = nilearn.input_data.NiftiMasker(
-        mask_img=dirs.MNI_mask)
-
     for hyp in hypnums:
         threshfile = os.path.join(
             teamdir_thresh, 'hypo%d_thresh.nii.gz' % hyp)
         if not os.path.exists(threshfile):
             print('no thresh hyp %d for %s' % (hyp, collectionID))
             continue
-        threshdata = masker.fit_transform(threshfile)
+        threshdata = nibabel.load(threshfile).get_data().flatten()
+        threshdata = numpy.nan_to_num(threshdata)
         n_thresh_vox = numpy.sum(threshdata > 0)
         diagnostic_data.loc[
             diagnostic_data.hyp == hyp,
@@ -85,7 +82,8 @@ def compare_thresh_unthresh_values(
         if not os.path.exists(unthreshfile):
             print('no unthresh hyp %d for %s' % (hyp, collectionID))
             continue
-        unthreshdata = masker.fit_transform(unthreshfile)
+        unthreshdata = nibabel.load(unthreshfile).get_data().flatten()
+        unthreshdata = numpy.nan_to_num(unthreshdata)
         inmask_unthreshdata = unthreshdata[threshdata > 0]
         min_val = numpy.min(inmask_unthreshdata)
         max_val = numpy.max(inmask_unthreshdata)
