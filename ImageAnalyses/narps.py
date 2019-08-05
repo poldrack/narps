@@ -37,6 +37,7 @@ import hashlib
 import inspect
 from utils import get_metadata, TtoZ, get_map_metadata,\
     log_to_file, stringify_dict, randn_from_shape
+from ValueDiagnostics import compare_thresh_unthresh_values
 
 # set up data url
 # this is necessary for now because the data are still private
@@ -85,36 +86,14 @@ hypotheses = {1: '+gain: equal indiff',
 
 hypnums = [1, 2, 5, 6, 7, 8, 9]
 
-# one team had thresholded maps that 
+# one team had thresholded maps that
 # had 0 for exceedence and 1 for null
 # so we flip those
 FLIP_THRESH_MAPS = {'27SS': [2, 5, 7]}
 
-def is_rectified(teamID, hyp, dirs,
-                 map_metadata_file=None):
-    """return whether this teamID/hyp
-    needs to be rectified"""
-    if map_metadata_file is None:
-        map_metadata_file = os.path.join(
-            dirs['orig'],
-            'narps_neurovault_images_details.csv')
-    map_metadata = get_map_metadata(map_metadata_file)
-    if hyp in [5, 6]:
-        mdstring = map_metadata.query(
-            'teamID == "%s"' % teamID
-            )['hyp%d_direction' % hyp].iloc[0]
-        rectify = mdstring.split()[0] == 'Negative'
-    elif hyp == 9 and teamID in ['R7D1']:
-        # manual fix for one team with reversed maps
-        rectify = True
-    else:  # just copy the other hypotheses directly
-        rectify = False
-    return(rectify)
-
 
 # separate class to store base directories,
 # since we need them in multiple places
-
 class NarpsDirs(object):
     """
     class defining directories for project
@@ -136,7 +115,8 @@ class NarpsDirs(object):
             self.data_url = DATA_URL
 
         dirs_to_add = ['output', 'metadata', 'templates',
-                       'cached', 'figures', 'logs', 'orig']
+                       'cached', 'figures', 'logs', 'orig',
+                       'image_diagnostics']
         for d in dirs_to_add:
             self.dirs[d] = os.path.join(self.dirs['base'], d)
 
@@ -272,6 +252,34 @@ class NarpsTeam(object):
         # populate the image data structure
         self.get_orig_images()
 
+        # check whether image needs to be rectified
+        logfile = os.path.join(
+            self.dirs.dirs['logs'],
+            'image_diagnostics.log')
+        collection_string = '%s_%s' % (self.NV_collection_id, self.teamID)
+        self.image_diagnostics_file = os.path.join(
+            self.dirs.dirs['image_diagnostics'],
+            '%s.csv' % collection_string
+        )
+        if not os.path.exists(self.image_diagnostics_file):
+            self.image_diagnostics = compare_thresh_unthresh_values(
+                dirs, collection_string, logfile,hypnums)
+            self.image_diagnostics.to_csv(self.image_diagnostics_file)
+        else:
+            self.image_diagnostics = pandas.read_csv(
+                self.image_diagnostics_file)
+        # create a dict with the rectified values
+        self.rectify = {}
+        for i in self.image_diagnostics.index:
+            self.rectify[
+                self.image_diagnostics.loc[
+                    i,'hyp']] = self.image_diagnostics.loc[
+                        i,'rectify']
+        # manual fixes to rectify status
+        if self.teamID == 'R7D1':
+            for hyp in [5, 6]:
+                self.rectify[hyp] = True
+
     def get_orig_images(self):
         """
         find orig images
@@ -329,11 +337,12 @@ class NarpsTeam(object):
                 # use the positive direction.
                 # we use a small number instead of zero to address
                 # numeric issues
-                if is_rectified(self.teamID, hyp, self.dirs.dirs):  # use negative
+                if is_rectified(self.teamID, hyp, self.dirs.dirs):
+                    # use negative
                     threshdata_bin[threshdata < -1*thresh] = 1
-                else:  # use positive
+                else:
+                    # use positive
                     threshdata_bin[threshdata > thresh] = 1
-
 
                 # save back to a nifti image with same geometry
                 # as original
@@ -694,7 +703,6 @@ class Narps(object):
                     print('%s - hypo %d: using existing file' % (
                         imgtype, hyp))
 
-        
     def create_rectified_images(self, map_metadata_file=None,
                                 overwrite=None):
         """
@@ -720,7 +728,7 @@ class Narps(object):
             overwrite = self.overwrite
         for teamID in self.complete_image_sets['unthresh']:
             for hyp in range(1, 10):
-                rectify = is_rectified(teamID, hyp, narps.dirs.dirs)
+                rectify = self.teams[teamID].rectify[hyp]
                 # load data from unthresh map within
                 # positive voxels of thresholded mask
                 unthresh_file = self.teams[
@@ -1188,23 +1196,14 @@ def make_orig_images(basedir,
 
 
 def get_teams_to_rectify(narps):
-    map_metadata_file = os.path.join(
-        narps.dirs.dirs['orig'],
-        'narps_neurovault_images_details.csv')
-    map_metadata = get_map_metadata(map_metadata_file)
     rectify_status = {}
-    # manual fix for one
-    rectify_status['R7D1'] = [5, 6]
     for teamID in narps.teams:
         for hyp in [5, 6]:
-            mdstring = map_metadata.query(
-                'teamID == "%s"' % teamID
-                )['hyp%d_direction' % hyp].iloc[0]
-            rectify = mdstring.split()[0] == 'Negative'
-            if rectify:
+            if narps.teams[teamID].rectify[hyp]:
                 if teamID not in rectify_status:
                     rectify_status[teamID] = []
-                rectify_status[teamID].append(hyp)
+                rectify_status[teamID].append(hyp)                
+                
     return(rectify_status)
 
 
