@@ -85,6 +85,10 @@ hypotheses = {1: '+gain: equal indiff',
 
 hypnums = [1, 2, 5, 6, 7, 8, 9]
 
+# one team had thresholded maps that 
+# had 0 for exceedence and 1 for null
+# so we flip those
+FLIP_THRESH_MAPS = {'27SS': [2, 5, 7]}
 
 def is_rectified(teamID, hyp, dirs,
                  map_metadata_file=None):
@@ -316,6 +320,10 @@ class NarpsTeam(object):
                 if replace_na:
                     threshdata = numpy.nan_to_num(threshdata)
                 threshdata_bin = numpy.zeros(threshdata.shape)
+                # fix teams with maps where 1 is null and zero is supra
+                if self.teamID in FLIP_THRESH_MAPS:
+                    if hyp in FLIP_THRESH_MAPS[self.teamID]:
+                        threshdata_bin = -1 * (threshdata_bin - 1)
                 # if the team reported using a negative contrast,
                 # then we use the negative direction, otherwise
                 # use the positive direction.
