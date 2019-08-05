@@ -21,6 +21,150 @@ cut_coords = [-24, -10, 4, 18, 32, 52, 64]
 bins = numpy.linspace(-5, 5)
 
 
+def compare_values_for_all_teams(narps, logfile):
+    diagnostic_results = None
+    origdir = narps.dirs.dirs['orig']
+    teamdirs = glob.glob(os.path.join(
+        origdir, '*'))
+    collectionIDs = [
+        os.path.basename(i) for i in teamdirs
+        if os.path.isdir(i)]
+    for collectionID in collectionIDs:
+        diagdata = compare_thresh_unthresh_values(
+            narps,
+            collectionID,
+            logfile)
+        print(diagdata)
+        if diagnostic_results is None:
+            diagnostic_results = diagdata
+        else:
+            diagnostic_results = pandas.concat(
+                [diagnostic_results, diagdata]
+            )
+
+    return(diagnostic_results)
+
+
+def compare_thresh_unthresh_values(narps, collectionID, logfile,
+                       unthresh_dataset='zstat',
+                       thresh_dataset='resampled',
+                       verbose=True,
+                       error_thresh=.05):
+    """examine unthresh values within thresholded map voxels
+    to check direction of maps
+    if more than error_thresh percent of voxels are
+    in opposite direction, then flag a problem
+    - we allow a few to bleed over due to interpolation"""
+
+    diagnostic_data = pandas.DataFrame({
+        'collectionID': collectionID,
+        'hyp': hypnums,
+        'rectify': False,
+        'problem': False,
+        'n_thresh_vox': numpy.nan,
+        'min_unthresh': numpy.nan,
+        'max_unthresh': numpy.nan,
+        'p_pos_unthresh': numpy.nan,
+        'p_neg_unthresh': numpy.nan})
+
+    teamdir_unthresh = os.path.join(
+        narps.dirs.dirs[unthresh_dataset],
+        collectionID
+    )
+    teamdir_thresh = os.path.join(
+        narps.dirs.dirs[thresh_dataset],
+        collectionID
+    )
+
+    if not os.path.exists(teamdir_unthresh):
+        print('no %s for %s' % (unthresh_dataset, collectionID))
+        return(None)
+    if not os.path.exists(teamdir_thresh):
+        print('no %s for %s' % (thresh_dataset, collectionID))
+        return(None)
+
+    masker = nilearn.input_data.NiftiMasker(
+        mask_img=narps.dirs.MNI_mask)
+
+    for hyp in hypnums:
+        threshfile = os.path.join(
+            teamdir_thresh, 'hypo%d_thresh.nii.gz' % hyp)
+        if not os.path.exists(threshfile):
+            print('no thresh hyp %d for %s' % (hyp, collectionID))
+            continue
+        threshdata = masker.fit_transform(threshfile)
+        n_thresh_vox = numpy.sum(threshdata > 0)
+        diagnostic_data.loc[
+            diagnostic_data.hyp == hyp,
+            'n_thresh_vox'] = n_thresh_vox
+
+        if n_thresh_vox == 0:
+            log_to_file(
+                logfile,
+                'WARN: %s %d - empty mask' % (
+                    collectionID, hyp
+                ))
+            continue
+
+        unthreshfile = os.path.join(
+            teamdir_thresh, 'hypo%d_unthresh.nii.gz' % hyp)
+        if not os.path.exists(unthreshfile):
+            print('no unthresh hyp %d for %s' % (hyp, collectionID))
+            continue
+        unthreshdata = masker.fit_transform(unthreshfile)
+        inmask_unthreshdata = unthreshdata[threshdata > 0]
+        min_val = numpy.min(inmask_unthreshdata)
+        max_val = numpy.max(inmask_unthreshdata)
+        if max_val < 0:  # need to rectify
+            diagnostic_data.loc[
+                diagnostic_data.hyp == hyp,
+                'rectify'] = True
+        diagnostic_data.loc[
+            diagnostic_data.hyp == hyp,
+            'min_unthresh'] = min_val
+        diagnostic_data.loc[
+            diagnostic_data.hyp == hyp,
+            'max_unthresh'] = max_val
+        p_pos_unthresh = numpy.mean(inmask_unthreshdata > 0)
+        p_neg_unthresh = numpy.mean(inmask_unthreshdata < 0)
+        diagnostic_data.loc[
+            diagnostic_data.hyp == hyp,
+            'p_pos_unthresh'] = p_pos_unthresh
+        diagnostic_data.loc[
+            diagnostic_data.hyp == hyp,
+            'p_neg_unthresh'] = p_neg_unthresh
+        min_p_direction = numpy.min([p_pos_unthresh,p_neg_unthresh])
+        if min_p_direction > error_thresh:
+            log_to_file(
+                logfile,
+                'WARN: %s hyp%d invalid in-mask values (%f, %f)' % (
+                    collectionID, hyp, p_neg_unthresh, p_pos_unthresh
+                ))
+            diagnostic_data.loc[
+                diagnostic_data.hyp == hyp,
+                'problem'] = True
+            # also load their orig thresh map and create a histogram
+            orig_threshfile = os.path.join(
+                narps.dirs.dirs['orig'],
+                collectionID,
+                'hypo%d_thresh.nii.gz' % hyp)
+            threshdata = nibabel.load(orig_threshfile).get_data()
+            threshdata = threshdata[numpy.abs(threshdata) > 1e-6]
+            plt.hist(threshdata, bins=50)
+            plt.savefig(
+                os.path.join(
+                    narps.dirs.dirs['diagnostics'],
+                    'thresh_hist_%s_%d.pdf' % (
+                        collectionID, hyp
+                    )
+                )
+            )
+            plt.close()
+           
+
+    return(diagnostic_data)
+
+
 def create_team_reports(narps, logfile):
     diagnostic_results = None
     origdir = narps.dirs.dirs['orig']
@@ -324,6 +468,9 @@ if __name__ == "__main__":
         description='Make diagnostic reports for each team')
     parser.add_argument('-b', '--basedir',
                         help='base directory')
+    parser.add_argument('-t', '--test',
+                        action='store_true',
+                        help='use testing mode (no processing)')
     args = parser.parse_args()
 
     # set up base directory
@@ -343,12 +490,22 @@ if __name__ == "__main__":
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
         'diagnostics.log')
-    log_to_file(
-        logfile,
-        'Running diagnostics',
-        flush=True)
-    diagnostic_results = create_team_reports(narps, logfile)
-    diagnostic_results.to_csv(os.path.join(
+
+    value_results = compare_values_for_all_teams(narps, logfile)
+    value_results.to_csv(os.path.join(
         narps.dirs.dirs['metadata'],
-        'image_diagnostics.csv'
+        'value_diagnostics.csv'
     ))
+
+
+    if not args.test:
+
+        log_to_file(
+            logfile,
+            'Running diagnostics',
+            flush=True)
+        diagnostic_results = create_team_reports(narps, logfile)
+        diagnostic_results.to_csv(os.path.join(
+            narps.dirs.dirs['metadata'],
+            'image_diagnostics.csv'
+        ))
