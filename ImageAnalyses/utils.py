@@ -13,28 +13,6 @@ import scipy.stats
 from datetime import datetime
 
 
-def is_rectified(teamID, hyp, dirs,
-                 map_metadata_file=None):
-    """return whether this teamID/hyp
-    needs to be rectified"""
-    if map_metadata_file is None:
-        map_metadata_file = os.path.join(
-            dirs['orig'],
-            'narps_neurovault_images_details.csv')
-    map_metadata = get_map_metadata(map_metadata_file)
-    if hyp in [5, 6]:
-        mdstring = map_metadata.query(
-            'teamID == "%s"' % teamID
-            )['hyp%d_direction' % hyp].iloc[0]
-        rectify = mdstring.split()[0] == 'Negative'
-    elif hyp == 9 and teamID in ['R7D1']:
-        # manual fix for one team with reversed maps
-        rectify = True
-    else:  # just copy the other hypotheses directly
-        rectify = False
-    return(rectify)
-
-
 def stringify_dict(d):
     """create a pretty version of arguments for printing"""
     if 'self' in d:
