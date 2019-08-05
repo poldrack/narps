@@ -11,14 +11,14 @@ import nilearn.input_data
 import pandas
 import nibabel
 
-from narps import Narps, hypnums # noqa
 from utils import log_to_file
 
 
 def compare_thresh_unthresh_values(
-        narps, collectionID, logfile,
-        unthresh_dataset='zstat',
-        thresh_dataset='resampled',
+        dirs, collectionID, logfile,
+        hypnums,
+        unthresh_dataset='orig',
+        thresh_dataset='orig',
         verbose=True,
         error_thresh=.05,
         create_histogram=False):
@@ -40,23 +40,25 @@ def compare_thresh_unthresh_values(
         'p_neg_unthresh': numpy.nan})
 
     teamdir_unthresh = os.path.join(
-        narps.dirs.dirs[unthresh_dataset],
+        dirs.dirs[unthresh_dataset],
         collectionID
     )
     teamdir_thresh = os.path.join(
-        narps.dirs.dirs[thresh_dataset],
+        dirs.dirs[thresh_dataset],
         collectionID
     )
 
     if not os.path.exists(teamdir_unthresh):
-        print('no %s for %s' % (unthresh_dataset, collectionID))
+        print('no unthresh %s for %s' % (unthresh_dataset, collectionID))
+        print(teamdir_unthresh)
         return(None)
     if not os.path.exists(teamdir_thresh):
-        print('no %s for %s' % (thresh_dataset, collectionID))
+        print('no thresh %s for %s' % (thresh_dataset, collectionID))
+        print(teamdir_unthresh)
         return(None)
 
     masker = nilearn.input_data.NiftiMasker(
-        mask_img=narps.dirs.MNI_mask)
+        mask_img=dirs.MNI_mask)
 
     for hyp in hypnums:
         threshfile = os.path.join(
@@ -118,7 +120,7 @@ def compare_thresh_unthresh_values(
             if create_histogram:
                 # also load their orig thresh map and create a histogram
                 orig_threshfile = os.path.join(
-                    narps.dirs.dirs['orig'],
+                    dirs.dirs['orig'],
                     collectionID,
                     'hypo%d_thresh.nii.gz' % hyp)
                 threshdata = nibabel.load(orig_threshfile).get_data()
@@ -126,7 +128,7 @@ def compare_thresh_unthresh_values(
                 plt.hist(threshdata, bins=50)
                 plt.savefig(
                     os.path.join(
-                        narps.dirs.dirs['diagnostics'],
+                        dirs.dirs['diagnostics'],
                         'thresh_hist_%s_%d.pdf' % (
                             collectionID, hyp
                         )
