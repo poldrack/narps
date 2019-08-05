@@ -86,6 +86,28 @@ hypotheses = {1: '+gain: equal indiff',
 hypnums = [1, 2, 5, 6, 7, 8, 9]
 
 
+def is_rectified(teamID, hyp, dirs,
+                 map_metadata_file=None):
+    """return whether this teamID/hyp
+    needs to be rectified"""
+    if map_metadata_file is None:
+        map_metadata_file = os.path.join(
+            dirs['orig'],
+            'narps_neurovault_images_details.csv')
+    map_metadata = get_map_metadata(map_metadata_file)
+    if hyp in [5, 6]:
+        mdstring = map_metadata.query(
+            'teamID == "%s"' % teamID
+            )['hyp%d_direction' % hyp].iloc[0]
+        rectify = mdstring.split()[0] == 'Negative'
+    elif hyp == 9 and teamID in ['R7D1']:
+        # manual fix for one team with reversed maps
+        rectify = True
+    else:  # just copy the other hypotheses directly
+        rectify = False
+    return(rectify)
+
+
 # separate class to store base directories,
 # since we need them in multiple places
 
@@ -294,9 +316,17 @@ class NarpsTeam(object):
                 if replace_na:
                     threshdata = numpy.nan_to_num(threshdata)
                 threshdata_bin = numpy.zeros(threshdata.shape)
-                # use a small number instead of zero to address
+                # if the team reported using a negative contrast,
+                # then we use the negative direction, otherwise
+                # use the positive direction.
+                # we use a small number instead of zero to address
                 # numeric issues
-                threshdata_bin[numpy.abs(threshdata) > thresh] = 1
+                if is_rectified(self.teamID, hyp, self.dirs.dirs):  # use negative
+                    threshdata_bin[threshdata < -1*thresh] = 1
+                else:  # use positive
+                    threshdata_bin[threshdata > thresh] = 1
+
+
                 # save back to a nifti image with same geometry
                 # as original
                 bin_img = nibabel.Nifti1Image(threshdata_bin,
@@ -656,6 +686,7 @@ class Narps(object):
                     print('%s - hypo %d: using existing file' % (
                         imgtype, hyp))
 
+        
     def create_rectified_images(self, map_metadata_file=None,
                                 overwrite=None):
         """
@@ -676,30 +707,12 @@ class Narps(object):
         log_to_file(
             self.dirs.logfile,
             stringify_dict(func_args))
-        if map_metadata_file is None:
-            map_metadata_file = os.path.join(
-                self.dirs.dirs['orig'],
-                'narps_neurovault_images_details.csv')
-        map_metadata = get_map_metadata(map_metadata_file)
+
         if overwrite is None:
             overwrite = self.overwrite
         for teamID in self.complete_image_sets['unthresh']:
             for hyp in range(1, 10):
-                if hyp in [5, 6]:
-                    mdstring = map_metadata.query(
-                        'teamID == "%s"' % teamID
-                        )['hyp%d_direction' % hyp].iloc[0]
-                    rectify = mdstring.split()[0] == 'Negative'
-                elif hyp == 9:
-                    # manual fix for one team with reversed maps
-                    if teamID in ['R7D1']:
-                        mdstring = map_metadata.query(
-                            'teamID == "%s"' % teamID)[
-                                'hyp%d_direction' % hyp].iloc[0]
-                        rectify = True
-                else:  # just copy the other hypotheses directly
-                    rectify = False
-
+                rectify = is_rectified(teamID, hyp, narps.dirs.dirs)
                 # load data from unthresh map within
                 # positive voxels of thresholded mask
                 unthresh_file = self.teams[
@@ -726,8 +739,6 @@ class Narps(object):
                     # if values were flipped for negative contrasts
                     if rectify:
                         print('rectifying hyp', hyp, 'for', teamID)
-                        print(mdstring)
-                        print('')
                         img = nibabel.load(unthresh_file)
                         img_rectified = nilearn.image.math_img(
                             'img*-1', img=img)
