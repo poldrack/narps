@@ -62,7 +62,7 @@ if __name__ == "__main__":
         print('using simulated data')
 
         # load main class from real analysis
-        narps_orig = Narps(basedir, 
+        narps_orig = Narps(basedir,
                            overwrite=False)
 
         # create simulated data
