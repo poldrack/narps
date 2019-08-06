@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 """
-generate individual reports for data prepared using narps.py
+compute image diagnostics for rectification
 """
 
 import os
@@ -15,7 +15,6 @@ from utils import log_to_file
 
 def compare_thresh_unthresh_values(
         dirs, collectionID, logfile,
-        hypnums,
         unthresh_dataset='orig',
         thresh_dataset='orig',
         verbose=True,
@@ -26,10 +25,10 @@ def compare_thresh_unthresh_values(
     if more than error_thresh percent of voxels are
     in opposite direction, then flag a problem
     - we allow a few to bleed over due to interpolation"""
-
+    hyps = [i for i in range(1, 10)]
     diagnostic_data = pandas.DataFrame({
         'collectionID': collectionID,
-        'hyp': hypnums,
+        'hyp': hyps,
         'rectify': False,
         'problem': False,
         'n_thresh_vox': numpy.nan,
@@ -56,7 +55,7 @@ def compare_thresh_unthresh_values(
         print(teamdir_unthresh)
         return(None)
 
-    for hyp in hypnums:
+    for hyp in hyps:
         threshfile = os.path.join(
             teamdir_thresh, 'hypo%d_thresh.nii.gz' % hyp)
         if not os.path.exists(threshfile):
@@ -84,6 +83,12 @@ def compare_thresh_unthresh_values(
             continue
         unthreshdata = nibabel.load(unthreshfile).get_data().flatten()
         unthreshdata = numpy.nan_to_num(unthreshdata)
+        if not unthreshdata.shape == threshdata.shape:
+            log_to_file(
+                logfile,
+                'ERROR: thresh/unthresh size mismatch for %s hyp%d' %
+                (collectionID, hyp))
+            continue
         inmask_unthreshdata = unthreshdata[threshdata > 0]
         min_val = numpy.min(inmask_unthreshdata)
         max_val = numpy.max(inmask_unthreshdata)
