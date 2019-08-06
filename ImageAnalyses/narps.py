@@ -321,7 +321,7 @@ class NarpsTeam(object):
                 # use the positive direction.
                 # we use a small number instead of zero to address
                 # numeric issues
-                if self.teamID.rectify[hyp]:
+                if self.rectify[hyp]:
                     # use negative
                     threshdata_bin[threshdata < -1*thresh] = 1
                 else:
