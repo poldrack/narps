@@ -106,7 +106,6 @@ m_hyp_nohyp = glmer(Decision ~ fwhm + used_fmriprep_data + package + testing + (
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
-cat('\ntesting effect of smoothing\n')
 
 anova_hyp<- anova(m_hyp_full,
                   m_hyp_nohyp,
@@ -125,8 +124,6 @@ m_hyp_nosmooth = glmer(Decision ~ varnum + used_fmriprep_data + package + testin
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
-
-cat('\ntesting effect of smoothing\n')
 
 anova_smoothing <- anova(m_hyp_full,
                          m_hyp_nosmooth,
@@ -147,8 +144,6 @@ m_hyp_noprep = glmer(Decision ~ varnum + fwhm + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
-cat('\ntesting effect of fmriprep\n')
-
 anova_fmriprep <- anova(m_hyp_full,
                         m_hyp_noprep,
                         test='Chisq')
@@ -169,7 +164,6 @@ m_hyp_nopackage = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + testing 
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb'))) 
-cat('\ntesting effect of package\n')
 
 anova_package <- anova(m_hyp_full,
                        m_hyp_nopackage,
@@ -192,7 +186,6 @@ m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package 
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))   
-cat('\ntesting effect of testing\n')
 
 anova_testing <- anova(m_hyp_full,
                        m_hyp_notesting,test='Chisq')
