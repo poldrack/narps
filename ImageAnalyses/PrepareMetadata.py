@@ -68,12 +68,13 @@ def prepare_metadata(narps, verbose=True):
 
     alldata_df['package'] = alldata_df['analysis_SW']
     for i in alldata_df.index:
-        if alldata_df.loc[i, 'package'].replace(';', ',').find(',')>-1:
+        if alldata_df.loc[i, 'package'].replace(
+                ';', ',').find(',') > -1:
             alldata_df.loc[i, 'package'] = 'Other'
         # not enough teams to adequately model these packages
         if alldata_df.loc[i, 'package'] in ['nistats']:
             alldata_df.loc[i, 'package'] = 'Other'
-            
+
     # save data for loading into R
     alldata_df.to_csv(os.path.join(
         narps.dirs.dirs['metadata'], 'all_metadata.csv'))
