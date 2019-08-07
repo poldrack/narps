@@ -20,17 +20,10 @@ from utils import log_to_file
 # badly registered ( 'L1A8')
 TEAMS_TO_SKIP = ['1K0E', 'X1Z4', 'L1A8']
 
-# incorrect unthresh values (569K)
-# lots of deep voxels missing (5001_I07H)
-# lots of missing voxels,
-#   masked using gray matter mask (4972_O03M)
-# missing voxels, looks artifactual (4947_X19V)
-# more than 10% of voxels empty (4994_0ED6)
-# more than 5% empty - don't remove these for now:
-# (4950_R5K7, 4988_98BT, 5637_46CD, 5649_1P0Y)
+# incorrect unthresh values (very small) (569K)
+# did not report t/z stats (16IN)
 
-TEAMS_TO_REMOVE_UNTHRESH = ['569K', 'O03M', 'I07H',
-                            'X19V', '0ED6']
+TEAMS_TO_REMOVE_UNTHRESH = ['569K', '16IN']
 
 
 def get_download_dir(basedir, overwrite=False):
@@ -191,7 +184,10 @@ def copy_renamed_files(collectionIDs, download_dir, logfile):
             newname = img['name'].replace(
                 'tresh', 'thresh').replace(' ', '_')+'.nii.gz'
             newname = newname.replace(
-                'hypo_', 'hypo').replace('uthresh', 'unthresh')
+                'hypo_', 'hypo').replace(
+                    'uthresh', 'unthresh').replace(
+                        '_LR', ''
+                    )
 
             # skip unthresh images if necessary
             if newname.find('unthresh') > -1 and \
