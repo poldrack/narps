@@ -23,4 +23,6 @@ jobs:
            command: |
               pip install coveralls
               coveralls
+      - store_artifacts:
+          path: /data
 
