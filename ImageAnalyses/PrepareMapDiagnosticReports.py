@@ -14,11 +14,13 @@ import nilearn.input_data
 import pandas
 import nibabel
 
-from narps import Narps, hypnums
+from narps import Narps
 from utils import get_masked_data, log_to_file
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
 bins = numpy.linspace(-5, 5)
+
+hypnums = [i for i in range(1, 10)]
 
 
 def create_team_reports(narps, logfile):
