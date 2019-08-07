@@ -88,11 +88,12 @@ class NarpsDirs(object):
     class defining directories for project
     """
     def __init__(self, basedir, dataurl=None,
-                 force_download=False):
+                 force_download=False, testing=False):
 
         # set up a dictionary to contain all of the
         # directories
         self.dirs = {}
+        self.testing = testing
 
         # check to make sure home of basedir exists
         assert os.path.exists(os.path.dirname(basedir))
@@ -119,7 +120,11 @@ class NarpsDirs(object):
                 os.mkdir(self.dirs[d])
 
         self.logfile = os.path.join(self.dirs['logs'], 'narps.txt')
-        log_to_file(self.logfile, 'Running Narps main class', flush=True)
+        if not self.testing:
+            log_to_file(
+                self.logfile,
+                'Running Narps main class',
+                flush=True)
 
         output_dirs = ['resampled', 'rectified', 'zstat',
                        'thresh_mask_orig']
@@ -254,16 +259,16 @@ class NarpsTeam(object):
             self.image_diagnostics = pandas.read_csv(
                 self.image_diagnostics_file)
         # create a dict with the rectified values
+        # use answers from spreasheet
         self.rectify = {}
         for i in self.image_diagnostics.index:
             self.rectify[
                 self.image_diagnostics.loc[
                     i, 'hyp']] = self.image_diagnostics.loc[
-                        i, 'rectify']
-        # manual fixes to rectify status
-        if self.teamID == 'R7D1':
-            for hyp in [5, 6]:
-                self.rectify[hyp] = True
+                        i, 'reverse_contrast']
+        # manual fixes to rectify status per spreadsheet answers
+        if self.teamID in ['R7D1', '46CD']:
+            self.rectify[9] = True
 
     def get_orig_images(self):
         """
@@ -407,13 +412,15 @@ class Narps(object):
     """
     def __init__(self, basedir, metadata_file=None,
                  verbose=False, overwrite=False,
-                 dataurl=None):
+                 dataurl=None, testing=False):
         self.basedir = basedir
-        self.dirs = NarpsDirs(basedir, dataurl=dataurl)
+        self.dirs = NarpsDirs(basedir, dataurl=dataurl,
+                              testing=testing)
         self.verbose = verbose
         self.teams = {}
         self.overwrite = overwrite
         self.started_at = datetime.datetime.now()
+        self.testing = testing
 
         # create the full mask image if it doesn't already exist
         if not os.path.exists(self.dirs.full_mask_img):
@@ -848,7 +855,8 @@ class Narps(object):
         if map_metadata_file is None:
             map_metadata_file = os.path.join(
                 self.dirs.dirs['orig'],
-                'narps_neurovault_images_details.csv')
+                'narps_neurovault_images_details_responses_corrected.csv')
+        print('using map_metadata_file:', map_metadata_file)
         unthresh_stat_type = get_map_metadata(map_metadata_file)
         metadata = get_metadata(self.metadata_file)
 
