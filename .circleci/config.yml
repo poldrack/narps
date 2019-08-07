@@ -25,6 +25,5 @@ jobs:
               pip install coveralls
               coveralls
       - store_artifacts:
-          path: /tmp/data
-          destination: results.tgz
+          path: /tmp/data/results.tgz
 
