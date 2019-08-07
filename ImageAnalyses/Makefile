@@ -24,7 +24,7 @@ current_dir = $(shell pwd)
 # testing functions
 
 test:
-	pytest -q narps.py
+	pytest -q tests.py
 
 check-style:
 	flake8 --show-source  | tee stylecheck.out
@@ -39,7 +39,7 @@ get-R-packages:
 run-all: run-PrepareMaps run-PrepareMetadata run-AnalyzeMaps run-AnalyzeDecisions run-ConsensusAnalysis
 
 run-PrepareMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR guard-DATA_URL
-	docker run -e "DATA_URL=$(DATA_URL)" -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/narps.py"
+	docker run -e "DATA_URL=$(DATA_URL)" -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/PreprocessMaps.py"
 
 run-PrepareMetadata: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/PrepareMetadata.py"
@@ -62,7 +62,7 @@ run-all-simulated: run-PrepareMaps-simulated run-PrepareMetadata-simulated run-A
 
 run-PrepareMaps-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR guard-DATA_URL
 	-mkdir $(NARPS_BASEDIR_SIMULATED)
-	docker run -e "DATA_URL=$(DATA_URL)" -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data -v $(NARPS_BASEDIR_SIMULATED):/data_simulated $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/narps.py -s"
+	docker run -e "DATA_URL=$(DATA_URL)" -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data -v $(NARPS_BASEDIR_SIMULATED):/data_simulated $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/PreprocessMaps.py -s"
 
 run-PrepareMetadata-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis python /analysis/PrepareMetadata.py
@@ -97,8 +97,9 @@ docker-upload: guard-DOCKER_USERNAME
 docker-build: guard-DOCKER_USERNAME
 	docker build -t $(DOCKER_USERNAME)/narps-analysis .
 
-shell: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	docker run -it --entrypoint=bash -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data -p 8888:8888 $(DOCKER_USERNAME)/narps-analysis 
+# add -p 8888:8888 for jupyter
+shell: guard-DOCKER_USERNAME guard-NARPS_BASEDIR guard-DATA_URL
+	docker run -e "DATA_URL=$(DATA_URL)" -it --entrypoint=bash -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis 
 
 # commands to run on local machine
 
@@ -109,7 +110,7 @@ install-R-packages:
 run-all-local: run-PrepareMaps-local run-PrepareMetadata-local run-AnalyzeMaps-local run-ConsensusAnalysis-local # run-AnalyzeDecisions-local
 
 run-PrepareMaps-local:
-	python narps.py
+	python PreprocessMaps.py
 
 run-PrepareMetadata-local:
 	python PrepareMetadata.py

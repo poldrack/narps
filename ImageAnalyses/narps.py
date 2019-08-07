@@ -13,7 +13,6 @@ needed for subsequent analyses
 
 """
 
-import argparse
 import numpy
 import pandas
 import nibabel
@@ -36,22 +35,13 @@ from urllib.error import HTTPError
 import hashlib
 import inspect
 from utils import get_metadata, TtoZ, get_map_metadata,\
-    log_to_file, stringify_dict, randn_from_shape
+    log_to_file, stringify_dict
+from ValueDiagnostics import compare_thresh_unthresh_values
 
-# set up data url
-# this is necessary for now because the data are still private
-# once the data are public we can share the info.json file
+# # set up data url - COMMENTING NOW, WILL REMOVE
+# # this is necessary for now because the data are still private
+# # once the data are public we can share the info.json file
 
-if 'DATA_URL' in os.environ:
-    DATA_URL = os.environ['DATA_URL']
-    print('reading data URL from environment')
-elif os.path.exists('info.json'):
-    info = json.load(open('info.json'))
-    DATA_URL = info['DATA_URL']
-    print('reading data URL from info.json')
-else:
-    DATA_URL = None
-    print('info.json no present - data downloading will be disabled')
 
 # Hypotheses:
 #
@@ -85,20 +75,25 @@ hypotheses = {1: '+gain: equal indiff',
 
 hypnums = [1, 2, 5, 6, 7, 8, 9]
 
+# one team had thresholded maps that
+# had 0 for exceedence and 1 for null
+# so we flip those
+FLIP_THRESH_MAPS = {'27SS': [2, 5, 7]}
+
 
 # separate class to store base directories,
 # since we need them in multiple places
-
 class NarpsDirs(object):
     """
     class defining directories for project
     """
-    def __init__(self, basedir, data_url=None,
-                 force_download=False):
+    def __init__(self, basedir, dataurl=None,
+                 force_download=False, testing=False):
 
         # set up a dictionary to contain all of the
         # directories
         self.dirs = {}
+        self.testing = testing
 
         # check to make sure home of basedir exists
         assert os.path.exists(os.path.dirname(basedir))
@@ -106,15 +101,15 @@ class NarpsDirs(object):
         if not os.path.exists(basedir):
             os.mkdir(basedir)
         self.force_download = force_download
-        if data_url is None:
-            self.data_url = DATA_URL
+        self.data_url = dataurl
 
-        dirs_to_add = ['output', 'metadata',
-                       'cached', 'figures', 'logs', 'orig']
+        dirs_to_add = ['output', 'metadata', 'templates',
+                       'cached', 'figures', 'logs', 'orig',
+                       'image_diagnostics']
         for d in dirs_to_add:
             self.dirs[d] = os.path.join(self.dirs['base'], d)
 
-        self.dirs['templates'] = os.path.join(
+        self.dirs['fsl_templates'] = os.path.join(
             os.environ['FSLDIR'],
             'data/standard')
 
@@ -125,7 +120,11 @@ class NarpsDirs(object):
                 os.mkdir(self.dirs[d])
 
         self.logfile = os.path.join(self.dirs['logs'], 'narps.txt')
-        log_to_file(self.logfile, 'Running Narps main class', flush=True)
+        if not self.testing:
+            log_to_file(
+                self.logfile,
+                'Running Narps main class',
+                flush=True)
 
         output_dirs = ['resampled', 'rectified', 'zstat',
                        'thresh_mask_orig']
@@ -142,11 +141,11 @@ class NarpsDirs(object):
 
         # make sure the necessary templates are present
         # these should be downloaded with the raw data
-        self.MNI_mask = os.path.join(self.dirs['templates'],
+        self.MNI_mask = os.path.join(self.dirs['fsl_templates'],
                                      'MNI152_T1_2mm_brain_mask.nii.gz')
         assert os.path.exists(self.MNI_mask)
 
-        self.MNI_template = os.path.join(self.dirs['templates'],
+        self.MNI_template = os.path.join(self.dirs['fsl_templates'],
                                          'MNI152_T1_2mm.nii.gz')
         assert os.path.exists(self.MNI_template)
 
@@ -177,13 +176,11 @@ class NarpsDirs(object):
             self.logfile,
             'get_orig_data',
             headspace=2)
-        log_to_file(self.logfile, 'DATA_URL: %s' % DATA_URL)
+        log_to_file(self.logfile, 'DATA_URL: %s' % self.data_url)
         MAX_TRIES = 5
 
         if self.data_url is None:
-            print('no URL for original data, cannot download')
-            print('should be specified in info.json')
-            return
+            raise Exception('no URL for original data, cannot download')
 
         print('orig data do not exist, downloading...')
         output_directory = self.dirs['base']
@@ -237,7 +234,6 @@ class NarpsTeam(object):
             self.images[imgtype] = {}
             for o in output_dirs[imgtype]:
                 self.images[imgtype][o] = {}
-        self.n_mask_vox = {}
         self.n_nan_inmask_values = {}
         self.n_zero_inmask_values = {}
         self.has_resampled = None
@@ -245,6 +241,34 @@ class NarpsTeam(object):
 
         # populate the image data structure
         self.get_orig_images()
+
+        # check whether image needs to be rectified
+        logfile = os.path.join(
+            self.dirs.dirs['logs'],
+            'image_diagnostics.log')
+        collection_string = '%s_%s' % (self.NV_collection_id, self.teamID)
+        self.image_diagnostics_file = os.path.join(
+            self.dirs.dirs['image_diagnostics'],
+            '%s.csv' % collection_string
+        )
+        if not os.path.exists(self.image_diagnostics_file):
+            self.image_diagnostics = compare_thresh_unthresh_values(
+                dirs, collection_string, logfile)
+            self.image_diagnostics.to_csv(self.image_diagnostics_file)
+        else:
+            self.image_diagnostics = pandas.read_csv(
+                self.image_diagnostics_file)
+        # create a dict with the rectified values
+        # use answers from spreasheet
+        self.rectify = {}
+        for i in self.image_diagnostics.index:
+            self.rectify[
+                self.image_diagnostics.loc[
+                    i, 'hyp']] = self.image_diagnostics.loc[
+                        i, 'reverse_contrast']
+        # manual fixes to rectify status per spreadsheet answers
+        if self.teamID in ['R7D1', '46CD']:
+            self.rectify[9] = True
 
     def get_orig_images(self):
         """
@@ -285,7 +309,6 @@ class NarpsTeam(object):
                     maskimg)):
                 os.mkdir(os.path.dirname(maskimg))
             if overwrite or not os.path.exists(maskimg):
-
                 # load the image and threshold/binarize it
                 threshimg = nibabel.load(img)
                 threshdata = threshimg.get_data()
@@ -294,9 +317,22 @@ class NarpsTeam(object):
                 if replace_na:
                     threshdata = numpy.nan_to_num(threshdata)
                 threshdata_bin = numpy.zeros(threshdata.shape)
-                # use a small number instead of zero to address
+                # fix teams with maps where 1 is null and zero is supra
+                if self.teamID in FLIP_THRESH_MAPS:
+                    if hyp in FLIP_THRESH_MAPS[self.teamID]:
+                        threshdata_bin = -1 * (threshdata_bin - 1)
+                # if the team reported using a negative contrast,
+                # then we use the negative direction, otherwise
+                # use the positive direction.
+                # we use a small number instead of zero to address
                 # numeric issues
-                threshdata_bin[numpy.abs(threshdata) > thresh] = 1
+                if self.rectify[hyp]:
+                    # use negative
+                    threshdata_bin[threshdata < -1*thresh] = 1
+                else:
+                    # use positive
+                    threshdata_bin[threshdata > thresh] = 1
+
                 # save back to a nifti image with same geometry
                 # as original
                 bin_img = nibabel.Nifti1Image(threshdata_bin,
@@ -304,12 +340,11 @@ class NarpsTeam(object):
                 bin_img.to_filename(maskimg)
             else:
                 # if it already exists, just use existing
-                bin_img = nibabel.load(maskimg)
-                if self.verbose:
-                    print('using existing binary mask for', self.teamID)
-                threshdata_bin = bin_img.get_data()
-            # get number of suprathreshold voxels
-            self.n_mask_vox[hyp] = numpy.sum(threshdata_bin)
+                if not os.path.exists(maskimg):
+                    bin_img = nibabel.load(maskimg)
+                    if self.verbose:
+                        print('copying existing binary mask for',
+                              self.teamID)
 
     def get_resampled_images(self, imgtype,
                              overwrite=False, replace_na=False):
@@ -376,13 +411,16 @@ class Narps(object):
     main class for NARPS analysis
     """
     def __init__(self, basedir, metadata_file=None,
-                 verbose=False, overwrite=False):
+                 verbose=False, overwrite=False,
+                 dataurl=None, testing=False):
         self.basedir = basedir
-        self.dirs = NarpsDirs(basedir)
+        self.dirs = NarpsDirs(basedir, dataurl=dataurl,
+                              testing=testing)
         self.verbose = verbose
         self.teams = {}
         self.overwrite = overwrite
         self.started_at = datetime.datetime.now()
+        self.testing = testing
 
         # create the full mask image if it doesn't already exist
         if not os.path.exists(self.dirs.full_mask_img):
@@ -407,7 +445,7 @@ class Narps(object):
         if metadata_file is None:
             self.metadata_file = os.path.join(
                 self.dirs.dirs['orig'],
-                'analysis_pipelines_SW.xlsx')
+                'analysis_pipelines_for_analysis.xlsx')
         else:
             self.metadata_file = metadata_file
 
@@ -532,11 +570,14 @@ class Narps(object):
         return(image_metadata_df)
 
     def create_concat_images(self, datatype='resampled',
+                             create_voxel_map=False,
                              imgtypes=None,
                              overwrite=None):
         """
         create images concatenated across teams
         ordered by self.complete_image_sets
+        create_voxel_map: will create a map showing
+        proportion of nonzero teams at each voxel
         """
         log_to_file(
             self.dirs.logfile,
@@ -581,6 +622,17 @@ class Narps(object):
                         self.all_maps[imgtype][datatype])
                     concat_img = masker.inverse_transform(concat_data)
                     concat_img.to_filename(outfile)
+                    if create_voxel_map:
+                        concat_data = nibabel.load(outfile).get_data()
+                        voxel_map = numpy.mean(
+                            numpy.abs(concat_data) > 1e-6, 3)
+                        voxel_img = nibabel.Nifti1Image(
+                            voxel_map, affine=concat_img.affine)
+                        mapfile = outfile.replace(
+                            '.nii.gz', '_voxelmap.nii.gz'
+                        )
+                        assert mapfile != outfile
+                        voxel_img.to_filename(mapfile)
 
                     # save team ID and files to a label file for provenance
                     labelfile = outfile.replace('.nii.gz', '.labels')
@@ -662,30 +714,19 @@ class Narps(object):
         log_to_file(
             self.dirs.logfile,
             stringify_dict(func_args))
-        if map_metadata_file is None:
-            map_metadata_file = os.path.join(
-                self.dirs.dirs['orig'],
-                'narps_neurovault_images_details.csv')
-        map_metadata = get_map_metadata(map_metadata_file)
+
         if overwrite is None:
             overwrite = self.overwrite
         for teamID in self.complete_image_sets['unthresh']:
+            if not hasattr(self.teams[teamID], 'rectify'):
+                print('no rectification data for %s, skipping' % teamID)
+                continue
             for hyp in range(1, 10):
-                if hyp in [5, 6]:
-                    mdstring = map_metadata.query(
-                        'teamID == "%s"' % teamID
-                        )['hyp%d_direction' % hyp].iloc[0]
-                    rectify = mdstring.split()[0] == 'Negative'
-                elif hyp == 9:
-                    # manual fix for one team with reversed maps
-                    if teamID in ['R7D1']:
-                        mdstring = map_metadata.query(
-                            'teamID == "%s"' % teamID)[
-                                'hyp%d_direction' % hyp].iloc[0]
-                        rectify = True
-                else:  # just copy the other hypotheses directly
-                    rectify = False
-
+                if hyp not in self.teams[teamID].rectify:
+                    print('no rectification data for %s hyp%d, skipping' % (
+                        teamID, hyp))
+                    continue
+                rectify = self.teams[teamID].rectify[hyp]
                 # load data from unthresh map within
                 # positive voxels of thresholded mask
                 unthresh_file = self.teams[
@@ -712,8 +753,6 @@ class Narps(object):
                     # if values were flipped for negative contrasts
                     if rectify:
                         print('rectifying hyp', hyp, 'for', teamID)
-                        print(mdstring)
-                        print('')
                         img = nibabel.load(unthresh_file)
                         img_rectified = nilearn.image.math_img(
                             'img*-1', img=img)
@@ -816,7 +855,8 @@ class Narps(object):
         if map_metadata_file is None:
             map_metadata_file = os.path.join(
                 self.dirs.dirs['orig'],
-                'narps_neurovault_images_details.csv')
+                'narps_neurovault_images_details_responses_corrected.csv')
+        print('using map_metadata_file:', map_metadata_file)
         unthresh_stat_type = get_map_metadata(map_metadata_file)
         metadata = get_metadata(self.metadata_file)
 
@@ -1004,324 +1044,3 @@ class Narps(object):
                 'teams'][teamID]['image_json']
             self.teams[teamID].input_dir = info[
                 'teams'][teamID]['input_dir']
-
-
-# functions for simulated data
-def setup_simulated_data(
-        narps,
-        verbose=False,
-        overwrite=False):
-    """create directories for simulated data"""
-
-    # consensus analysis must exist
-    assert os.path.exists(narps.dirs.dirs['consensus'])
-
-    basedir = narps.basedir + '_simulated'
-    if verbose:
-        print("writing files to new directory:", basedir)
-    if not os.path.exists(os.path.join(basedir, 'logs')):
-        os.makedirs(os.path.join(basedir, 'logs'))
-
-    log_to_file(os.path.join(basedir, 'logs/simulated_data.log'),
-                'Creating simulated dataset', flush=True)
-    # copy data from orig/templates
-    origdir = narps.dirs.dirs['orig']
-    new_origdir = os.path.join(basedir, 'orig')
-    templatedir = narps.dirs.dirs['templates']
-    if verbose:
-        print('using basedir:', basedir)
-    if os.path.exists(basedir) and overwrite:
-        shutil.rmtree(basedir)
-    if not os.path.exists(basedir):
-        os.mkdir(basedir)
-    if not os.path.exists(new_origdir) or overwrite:
-        if verbose:
-            print('copying template data to new basedir')
-        shutil.copytree(
-            templatedir,
-            os.path.join(basedir, 'templates'))
-        if not os.path.exists(new_origdir):
-            os.mkdir(new_origdir)
-        # copy metadata files from orig
-        for f in glob.glob(os.path.join(
-                origdir, '*.*')):
-            if os.path.isfile(f):
-                if verbose:
-                    print('copying', f, 'to', new_origdir)
-                shutil.copy(f, new_origdir)
-    else:
-        print('using existing new basedir')
-
-    return(basedir)
-
-
-def make_orig_images(basedir,
-                     teamCollectionID,
-                     consensus_dir,
-                     noise_sd=.5,
-                     thresh=2.,
-                     noise_team=None,
-                     flip_team=None,
-                     rectify_status=None,
-                     verbose=False):
-    """
-    for a particular team and hypothesis,
-    generate the images
-    NOTE: flip_teams are teams whose data will be
-    flipped but will not be rectified
-    - included to simulate flipping errors
-    We also flip those teams/hyps that will be rectified
-    """
-    if rectify_status is None:
-        rectify_status = []
-    if noise_team is None:
-        noise_team = False
-    if flip_team is None:
-        flip_team = False
-
-    if verbose:
-        print('make_orig_images:', teamCollectionID)
-
-    teamdir = os.path.join(basedir, 'orig/%s' % teamCollectionID)
-    if not os.path.exists(teamdir):
-        os.mkdir(teamdir)
-    if verbose:
-        print('teamdir', teamdir)
-
-    for hyp in range(1, 10):
-        # deal with missing hypotheses in consensus
-        if hyp in [3, 4]:
-            hyp_orig = hyp - 2
-        else:
-            hyp_orig = hyp
-
-        outfile = {'thresh': os.path.join(
-            teamdir, 'hypo%d_thresh.nii.gz' % hyp),
-            'unthresh': os.path.join(
-            teamdir, 'hypo%d_unthresh.nii.gz' % hyp)}
-
-        # get t image from consensus map
-        baseimgfile = os.path.join(
-            consensus_dir,
-            'hypo%d_t.nii.gz' % hyp_orig)
-        if verbose:
-            print("baseimg:", baseimgfile)
-        assert os.path.exists(baseimgfile)
-
-        # load template data
-        baseimg = nibabel.load(baseimgfile)
-        baseimgdata = baseimg.get_data()
-        newimgdata = baseimgdata.copy()
-
-        if noise_team:
-            # threshold to get in-mask voxels
-            baseimgvox = numpy.abs(baseimgdata) > 0
-            # fill in-mask voxels with N(0,std) Gaussian noise
-            # where std is based on the original image
-            newimgdata = randn_from_shape(
-                baseimgdata.shape)*numpy.std(baseimgdata)
-            # clear out-of-mask voxels
-            newimgdata = newimgdata * baseimgvox
-        else:
-            newimgdata = newimgdata + randn_from_shape(
-                newimgdata.shape)*noise_sd
-
-        flip_sign = False
-        if flip_team:
-            flip_sign = True
-        if hyp in rectify_status:
-            flip_sign = True
-
-        if flip_sign:
-            if verbose:
-                print('flipping', teamCollectionID, hyp)
-            # flip sign of data
-            newimgdata = newimgdata * -1
-
-        # save image
-        newimg = nibabel.Nifti1Image(
-            newimgdata,
-            affine=baseimg.affine)
-        if verbose:
-            print('saving', outfile['unthresh'])
-        newimg.to_filename(outfile['unthresh'])
-        threshdata = (newimgdata > thresh).astype('int')
-        newimg = nibabel.Nifti1Image(
-            threshdata,
-            affine=baseimg.affine)
-        if verbose:
-            print('saving', outfile['thresh'])
-        newimg.to_filename(outfile['thresh'])
-
-
-def get_teams_to_rectify(narps):
-    map_metadata_file = os.path.join(
-        narps.dirs.dirs['orig'],
-        'narps_neurovault_images_details.csv')
-    map_metadata = get_map_metadata(map_metadata_file)
-    rectify_status = {}
-    # manual fix for one
-    rectify_status['R7D1'] = [5, 6]
-    for teamID in narps.teams:
-        for hyp in [5, 6]:
-            mdstring = map_metadata.query(
-                'teamID == "%s"' % teamID
-                )['hyp%d_direction' % hyp].iloc[0]
-            rectify = mdstring.split()[0] == 'Negative'
-            if rectify:
-                if teamID not in rectify_status:
-                    rectify_status[teamID] = []
-                rectify_status[teamID].append(hyp)
-    return(rectify_status)
-
-
-def make_orig_image_sets(narps, basedir, verbose=False):
-    """for each team in orig,
-    make a set of orig_simulated images
-    """
-    dirlist = [os.path.basename(i)
-               for i in glob.glob(os.path.join(
-                   narps.basedir,
-                   'orig/*_*')) if os.path.isdir(i)]
-    if verbose:
-        print('found %d team dirs' % len(dirlist))
-
-    # for teams that are to be rectified, we should
-    # also flip their data
-    rectify_status = get_teams_to_rectify(narps)
-
-    # arbitrarily assign some teams to be flipped or noise
-    logfile = os.path.join(basedir, 'logs/simulated_data.log')
-    flip_dirs = dirlist[0:4]
-    flip_teams = [i.split('_')[1] for i in flip_dirs]
-    log_to_file(logfile,
-                'flipped teams: %s' % ' '.join(flip_teams))
-    noise_dirs = dirlist[5:9]
-    noise_teams = [i.split('_')[1] for i in noise_dirs]
-    log_to_file(logfile,
-                'noise teams: %s' % ' '.join(noise_teams))
-    highvar_dirs = dirlist[9:21]
-    highvar_teams = [i.split('_')[1] for i in highvar_dirs]
-    log_to_file(logfile,
-                'high variance teams: %s' % ' '.join(highvar_teams))
-
-    for teamCollectionID in dirlist:
-        teamID = teamCollectionID.split('_')[1]
-        if teamID not in rectify_status:
-            rectify_status[teamID] = []
-        make_orig_images(
-            basedir,
-            teamCollectionID,
-            narps.dirs.dirs['consensus'],
-            noise_team=teamCollectionID in noise_dirs,
-            flip_team=teamCollectionID in flip_dirs,
-            noise_sd=0.5 + 2*(teamCollectionID in highvar_dirs),
-            rectify_status=rectify_status[teamID],
-            verbose=verbose)
-
-
-if __name__ == "__main__":
-    # team data (from neurovault) should be in
-    # # <basedir>/orig
-    # some data need to be renamed before using -
-    # see rename.sh in individual dirs
-
-    # parse arguments
-    parser = argparse.ArgumentParser(
-        description='Process NARPS data')
-    parser.add_argument('-u', '--dataurl',
-                        help='URL to download data')
-    parser.add_argument('-b', '--basedir',
-                        help=('base directory. '
-                              'If not set, defaults to '
-                              'env variable NARPS_BASEDIR - '
-                              'that that env var is unset then'
-                              'defaults to /data'))
-    parser.add_argument('-s', '--simulate',
-                        action='store_true',
-                        help=('use simulated data - '
-                              'requires that full analysis '
-                              'has already been run'))
-    parser.add_argument('-t', '--test',
-                        action='store_true',
-                        help='use testing mode (no processing)')
-    args = parser.parse_args()
-
-    # set up base directory
-    if args.basedir is not None:
-        basedir = args.basedir
-    elif 'NARPS_BASEDIR' in os.environ:
-        basedir = os.environ['NARPS_BASEDIR']
-        print("using basedir specified in NARPS_BASEDIR")
-    else:
-        basedir = '/data'
-        print("using default basedir:", basedir)
-
-    # set up simulation if specified
-    if args.simulate:
-        print('using simulated data')
-
-        # load main class from real analysis
-        narps_orig = Narps(basedir, overwrite=False)
-
-        # create simulated data
-        # setup main class from original data
-        narps = Narps(basedir)
-        narps.load_data()
-
-        # Load full metadata and put into narps structure
-        narps.metadata = pandas.read_csv(
-            os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
-
-        basedir = setup_simulated_data(narps, verbose=False)
-
-        make_orig_image_sets(narps, basedir)
-
-        # doublecheck basedir name
-        assert basedir.find('_simulated') > -1
-
-    # setup main class
-
-    narps = Narps(basedir)
-
-    assert len(narps.complete_image_sets['thresh']) > 0
-
-    if args.test:
-        print('testing mode, exiting after setup')
-
-    else:  # run all modules
-
-        print('getting binarized/thresholded orig maps')
-        narps.get_binarized_thresh_masks()
-
-        print("getting resampled images...")
-        narps.get_resampled_images()
-
-        print("creating concatenated thresholded images...")
-        narps.create_concat_images(datatype='resampled',
-                                   imgtypes=['thresh'])
-
-        print("checking image values...")
-        image_metadata_df = narps.check_image_values()
-
-        print("creating rectified images...")
-        narps.create_rectified_images()
-
-        print('Creating overlap(mean) images for thresholded maps...')
-        narps.create_mean_thresholded_images()
-
-        print('converting to z-scores')
-        narps.convert_to_zscores()
-
-        print("creating concatenated zstat images...")
-        narps.create_concat_images(datatype='zstat',
-                                   imgtypes=['unthresh'])
-
-        print("computing image stats...")
-        narps.compute_image_stats()
-
-        print('estimating image smoothness')
-        smoothness_df = narps.estimate_smoothness()
-
-        # save directory structure
-        narps.write_data()

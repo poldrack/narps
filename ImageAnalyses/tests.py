@@ -4,7 +4,8 @@
 import pytest
 import pandas
 import os
-from narps import Narps, setup_simulated_data,\
+from narps import Narps
+from SimulateData import setup_simulated_data,\
     make_orig_image_sets
 from AnalyzeMaps import mk_overlap_maps,\
     mk_range_maps, mk_std_maps,\
@@ -25,7 +26,8 @@ def basedir(tmpdir_factory):
 
 @pytest.fixture(scope="session")
 def narps(basedir):
-    narps = Narps(basedir)
+    dataurl = os.environ['DATA_URL']
+    narps = Narps(basedir, dataurl=dataurl)
     narps.write_data()
     return(narps)
 
@@ -63,7 +65,8 @@ def test_narps_convert_to_zscores(narps):
 
 def test_narps_create_concat_images_unthresh(narps):
     narps.create_concat_images(datatype='zstat',
-                               imgtypes=['unthresh'])
+                               imgtypes=['unthresh'],
+                               create_voxel_map=True)
 
 
 def test_narps_compute_image_stats(narps):

@@ -37,7 +37,7 @@ def prepare_metadata(narps):
 
     # recode variables to make analysis cleaner
     alldata_df['software'] = [
-        package_recoder(x) for x in alldata_df['TSc_SW']]
+        package_recoder(x) for x in alldata_df['analysis_SW']]
 
     # load smoothness data
     smoothness_df = pandas.read_csv(
@@ -47,7 +47,7 @@ def prepare_metadata(narps):
     print("found smoothness data for %d teams" %
           len(smoothness_df.teamID.unique()))
     print('missing smoothness data for:')
-    print(set(narps.complete_image_sets).difference(
+    print(set(narps.complete_image_sets['unthresh']).difference(
           set(smoothness_df.teamID.unique())))
 
     alldata_df = pandas.merge(
