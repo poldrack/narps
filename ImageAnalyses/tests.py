@@ -25,7 +25,7 @@ from MakeSupplementaryFigure1 import mk_supp_figure1,\
 
 
 @pytest.fixture(scope="session")
-def narps(basedir):
+def narps():
     dataurl = os.environ['DATA_URL']
     basedir = '/tmp/data'
     if not os.path.exists(basedir):
