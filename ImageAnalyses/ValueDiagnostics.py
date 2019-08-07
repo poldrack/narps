@@ -10,7 +10,7 @@ import numpy
 import pandas
 import nibabel
 
-from utils import log_to_file
+from utils import log_to_file, get_map_metadata
 
 
 def compare_thresh_unthresh_values(
@@ -19,18 +19,22 @@ def compare_thresh_unthresh_values(
         thresh_dataset='orig',
         verbose=True,
         error_thresh=.05,
-        create_histogram=False):
+        create_histogram=False,
+        map_metadata_file=None):
     """examine unthresh values within thresholded map voxels
     to check direction of maps
     if more than error_thresh percent of voxels are
     in opposite direction, then flag a problem
     - we allow a few to bleed over due to interpolation"""
     hyps = [i for i in range(1, 10)]
+    teamID = collectionID.split('_')[1]
     diagnostic_data = pandas.DataFrame({
         'collectionID': collectionID,
+        'teamID': teamID,
         'hyp': hyps,
         'rectify': False,
-        'problem': False,
+        'problem': numpy.nan,
+        'reverse_contrast': False,
         'n_thresh_vox': numpy.nan,
         'min_unthresh': numpy.nan,
         'max_unthresh': numpy.nan,
@@ -56,6 +60,7 @@ def compare_thresh_unthresh_values(
         return(None)
 
     for hyp in hyps:
+        rectify = False
         threshfile = os.path.join(
             teamdir_thresh, 'hypo%d_thresh.nii.gz' % hyp)
         if not os.path.exists(threshfile):
@@ -93,6 +98,9 @@ def compare_thresh_unthresh_values(
         min_val = numpy.min(inmask_unthreshdata)
         max_val = numpy.max(inmask_unthreshdata)
         if max_val < 0:  # need to rectify
+            rectify = True
+            if verbose:
+                print('autorectify:', teamID, hyp)
             diagnostic_data.loc[
                 diagnostic_data.hyp == hyp,
                 'rectify'] = True
@@ -138,5 +146,34 @@ def compare_thresh_unthresh_values(
                     )
                 )
                 plt.close()
+
+        # also get info from metadata file about direction
+        # of contrasts
+        if map_metadata_file is None:
+            map_metadata_file = os.path.join(
+                dirs.dirs['orig'],
+                'narps_neurovault_images_details_responses_corrected.csv')
+        map_metadata = get_map_metadata(map_metadata_file)
+
+        reverse_contrast = False
+
+        if hyp in [5, 6]:
+            mdstring = map_metadata.query(
+                'teamID == "%s"' % teamID
+                )['hyp%d_direction' % hyp].iloc[0]
+            reverse_contrast = mdstring.split()[0] == 'Negative'
+            if verbose:
+                print('manual rectify:', teamID, hyp)
+        elif hyp == 9 and teamID in ['R7D1']:
+            # manual fix for one team with reversed maps
+            reverse_contrast = True
+        diagnostic_data.loc[
+            diagnostic_data.hyp == hyp,
+            'reverse_contrast'] = reverse_contrast
+        if reverse_contrast != rectify:
+            log_to_file(
+                logfile,
+                'WARN: %s %d rectification mismatch' %
+                (collectionID, hyp))
 
     return(diagnostic_data)
