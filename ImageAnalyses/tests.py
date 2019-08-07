@@ -16,12 +16,8 @@ from ConsensusAnalysis import run_ttests, mk_figures
 from MakeSupplementaryFigure1 import mk_supp_figure1,\
     get_all_metadata
 
-# use a session-scoped fixture to
-# save data for entire session
-# @pytest.fixture(scope="session")
-# def basedir(tmpdir_factory):
-#     fn = tmpdir_factory.mktemp("data")
-#     return fn
+# Use a fixed base dir so that we can
+# access the results as a circleci artifact
 
 
 @pytest.fixture(scope="session")
