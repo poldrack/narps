@@ -11,6 +11,11 @@ Analyze decisions across teams.
 
 use_checkpoint = TRUE
 
+s = Sys.info()
+if (s['sysname'] == 'Darwin'){
+  use_checkpoint = FALSE
+}
+
 if (use_checkpoint) {
   library(checkpoint)
   checkpointDir <- tempfile(pattern = "checkpoint")
@@ -37,6 +42,7 @@ if (basedir == ""){
    # use default
    basedir = "/data"
 }
+cat(sprintf('using basedir: %s', basedir))
 
 ```
 
@@ -51,23 +57,7 @@ narps_df <- read_csv(paste(basedir,
                            sep='/'))
 
 narps_df <- narps_df %>% 
-  mutate(package = recode_factor(analysis_SW,
-                      SPM12 = "SPM",
-                      SPM8 = "SPM",
-                      SPM5 = "SPM",
-                      nistats = "Other",
-                      PALM = "Other",
-                      randomise = "Other"),
-         testing = recode_factor(testing,
-                      Randomise = "Nonparam",
-                      SnPM = "Nonparam",
-                      TFCE = "Nonparam",
-                      ARI = "Other",
-                      BSR = "Other",
-                      ETAC = "Other",
-                      PALM = "Other",
-                      SnPM = "Other"),
-         Confidence = as.ordered(narps_df$Confidence)) 
+  mutate(Confidence = as.ordered(narps_df$Confidence))
 
 
 narps_df$testing[is.na(narps_df$testing)] <- "Other"
@@ -116,7 +106,6 @@ m_hyp_nohyp = glmer(Decision ~ fwhm + used_fmriprep_data + package + testing + (
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
-cat('\ntesting effect of smoothing\n')
 
 anova_hyp<- anova(m_hyp_full,
                   m_hyp_nohyp,
@@ -135,8 +124,6 @@ m_hyp_nosmooth = glmer(Decision ~ varnum + used_fmriprep_data + package + testin
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
-
-cat('\ntesting effect of smoothing\n')
 
 anova_smoothing <- anova(m_hyp_full,
                          m_hyp_nosmooth,
@@ -157,8 +144,6 @@ m_hyp_noprep = glmer(Decision ~ varnum + fwhm + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
-cat('\ntesting effect of fmriprep\n')
-
 anova_fmriprep <- anova(m_hyp_full,
                         m_hyp_noprep,
                         test='Chisq')
@@ -179,7 +164,6 @@ m_hyp_nopackage = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + testing 
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb'))) 
-cat('\ntesting effect of package\n')
 
 anova_package <- anova(m_hyp_full,
                        m_hyp_nopackage,
@@ -202,7 +186,6 @@ m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package 
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))   
-cat('\ntesting effect of testing\n')
 
 anova_testing <- anova(m_hyp_full,
                        m_hyp_notesting,test='Chisq')
@@ -508,7 +491,7 @@ df_SuppTable4[5,2:4] = c(anova_testing$`Chisq`[2],
 print(df_SuppTable4)
 
 write.table(df_SuppTable4,
-            file=paste(basedir,"SuppTable4.txt",sep='/'))
+            file=paste(basedir,"figures/SuppTable4.txt",sep='/'))
 
 tab_latex = print(xtable(df_SuppTable4, 
              type = "latex", 
@@ -525,13 +508,13 @@ latex_preamble=c('\\documentclass[11pt, oneside]{article}',
 '\\maketitle')
 
 if (TRUE) {
-fileConn<-file(paste(basedir,"SuppTable4.tex",sep='/'))
+fileConn<-file(paste(basedir,"figures/SuppTable4.tex",sep='/'))
 writeLines(c(latex_preamble,tab_latex,c('\\end{document}')), fileConn)
 #writeLines(tab_latex, fileConn)
 close(fileConn)
 
 # leave this out so that we don't have to install tex within docker
-#texi2dvi(paste(basedir,"SuppTable4.tex",sep='/'),
+#texi2dvi(paste(basedir,"figures/SuppTable4.tex",sep='/'),
 #         clean = TRUE)
 }
 

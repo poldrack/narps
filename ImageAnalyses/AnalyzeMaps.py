@@ -249,7 +249,7 @@ def mk_correlation_maps_unthresh(
         stringify_dict(func_args))
 
     if n_clusters is None:
-        n_clusters = {1: 4, 2: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 3}
+        n_clusters = {1: 3, 2: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3}
 
     dendrograms = {}
     membership = {}
