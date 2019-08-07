@@ -18,15 +18,18 @@ from MakeSupplementaryFigure1 import mk_supp_figure1,\
 
 # use a session-scoped fixture to
 # save data for entire session
-@pytest.fixture(scope="session")
-def basedir(tmpdir_factory):
-    fn = tmpdir_factory.mktemp("data")
-    return fn
+# @pytest.fixture(scope="session")
+# def basedir(tmpdir_factory):
+#     fn = tmpdir_factory.mktemp("data")
+#     return fn
 
 
 @pytest.fixture(scope="session")
 def narps(basedir):
     dataurl = os.environ['DATA_URL']
+    basedir = '/tmp/data'
+    if not os.path.exists(basedir):
+        os.mkdir(basedir)
     narps = Narps(basedir, dataurl=dataurl)
     narps.write_data()
     return(narps)
