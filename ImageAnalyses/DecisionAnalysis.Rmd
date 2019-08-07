@@ -498,7 +498,7 @@ df_SuppTable4[5,2:4] = c(anova_testing$`Chisq`[2],
 print(df_SuppTable4)
 
 write.table(df_SuppTable4,
-            file=paste(basedir,"SuppTable4.txt",sep='/'))
+            file=paste(basedir,"figures/SuppTable4.txt",sep='/'))
 
 tab_latex = print(xtable(df_SuppTable4, 
              type = "latex", 
@@ -515,13 +515,13 @@ latex_preamble=c('\\documentclass[11pt, oneside]{article}',
 '\\maketitle')
 
 if (TRUE) {
-fileConn<-file(paste(basedir,"SuppTable4.tex",sep='/'))
+fileConn<-file(paste(basedir,"figures/SuppTable4.tex",sep='/'))
 writeLines(c(latex_preamble,tab_latex,c('\\end{document}')), fileConn)
 #writeLines(tab_latex, fileConn)
 close(fileConn)
 
 # leave this out so that we don't have to install tex within docker
-#texi2dvi(paste(basedir,"SuppTable4.tex",sep='/'),
+#texi2dvi(paste(basedir,"figures/SuppTable4.tex",sep='/'),
 #         clean = TRUE)
 }
 
