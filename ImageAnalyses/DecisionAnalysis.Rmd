@@ -11,6 +11,11 @@ Analyze decisions across teams.
 
 use_checkpoint = TRUE
 
+s = Sys.info()
+if (s['sysname'] == 'Darwin'){
+  use_checkpoint = FALSE
+}
+
 if (use_checkpoint) {
   library(checkpoint)
   checkpointDir <- tempfile(pattern = "checkpoint")
@@ -37,6 +42,7 @@ if (basedir == ""){
    # use default
    basedir = "/data"
 }
+cat(sprintf('using basedir: %s', basedir))
 
 ```
 
@@ -51,23 +57,7 @@ narps_df <- read_csv(paste(basedir,
                            sep='/'))
 
 narps_df <- narps_df %>% 
-  mutate(package = recode_factor(analysis_SW,
-                      SPM12 = "SPM",
-                      SPM8 = "SPM",
-                      SPM5 = "SPM",
-                      nistats = "Other",
-                      PALM = "Other",
-                      randomise = "Other"),
-         testing = recode_factor(testing,
-                      Randomise = "Nonparam",
-                      SnPM = "Nonparam",
-                      TFCE = "Nonparam",
-                      ARI = "Other",
-                      BSR = "Other",
-                      ETAC = "Other",
-                      PALM = "Other",
-                      SnPM = "Other"),
-         Confidence = as.ordered(narps_df$Confidence)) 
+  mutate(Confidence = as.ordered(narps_df$Confidence))
 
 
 narps_df$testing[is.na(narps_df$testing)] <- "Other"

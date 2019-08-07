@@ -24,7 +24,7 @@ def package_recoder(p):
         return p
 
 
-def prepare_metadata(narps):
+def prepare_metadata(narps, verbose=True):
     # get original image and decision metadata
     alldata_df = get_merged_metadata_decisions(
         narps.metadata_file,
@@ -64,6 +64,16 @@ def prepare_metadata(narps):
 
     alldata_df['fwhm'] = [i**(1/3.)*2 for i in alldata_df.resels]
 
+    # recode analysis SW for statistical analysis
+
+    alldata_df['package'] = alldata_df['analysis_SW']
+    for i in alldata_df.index:
+        if alldata_df.loc[i, 'package'].replace(';', ',').find(',')>-1:
+            alldata_df.loc[i, 'package'] = 'Other'
+        # not enough teams to adequately model these packages
+        if alldata_df.loc[i, 'package'] in ['nistats']:
+            alldata_df.loc[i, 'package'] = 'Other'
+            
     # save data for loading into R
     alldata_df.to_csv(os.path.join(
         narps.dirs.dirs['metadata'], 'all_metadata.csv'))
