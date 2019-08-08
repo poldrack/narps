@@ -70,7 +70,7 @@ def make_orig_images(basedir,
                      noise_team=None,
                      flip_team=None,
                      rectify_status=None,
-                     verbose=False):
+                     verbose=True):
     """
     for a particular team and hypothesis,
     generate the images
@@ -80,7 +80,9 @@ def make_orig_images(basedir,
     We also flip those teams/hyps that will be rectified
     """
     if rectify_status is None:
-        rectify_status = []
+        rectify_status = {i: False for i in range(1, 10)}
+    if verbose:
+        print(teamCollectionID, rectify_status)
     if noise_team is None:
         noise_team = False
     if flip_team is None:
@@ -136,12 +138,14 @@ def make_orig_images(basedir,
         flip_sign = False
         if flip_team:
             flip_sign = True
-        if hyp in rectify_status:
+            if verbose:
+                print('flipping (flip_sign)', teamCollectionID, hyp)
+        if rectify_status[hyp]:
+            if verbose:
+                print('flipping (reverse_contrast)', teamCollectionID, hyp)
             flip_sign = True
 
         if flip_sign:
-            if verbose:
-                print('flipping', teamCollectionID, hyp)
             # flip sign of data
             newimgdata = newimgdata * -1
 
@@ -152,7 +156,12 @@ def make_orig_images(basedir,
         if verbose:
             print('saving', outfile['unthresh'])
         newimg.to_filename(outfile['unthresh'])
-        threshdata = (newimgdata > thresh).astype('int')
+        # for rectified images, make sure the thresh map
+        # will match the re-rectified unthresh map
+        if rectify_status[hyp]:
+            threshdata = (newimgdata < -1*thresh).astype('int')
+        else:
+            threshdata = (newimgdata > thresh).astype('int')
         newimg = nibabel.Nifti1Image(
             threshdata,
             affine=baseimg.affine)
@@ -161,57 +170,75 @@ def make_orig_images(basedir,
         newimg.to_filename(outfile['thresh'])
 
 
-def get_teams_to_rectify(narps):
-    rectify_status = {}
-    for teamID in narps.teams:
-        for hyp in [5, 6]:
-            if narps.teams[teamID].rectify[hyp]:
-                if teamID not in rectify_status:
-                    rectify_status[teamID] = []
-                rectify_status[teamID].append(hyp)
-    return(rectify_status)
-
-
-def make_orig_image_sets(narps, basedir, verbose=False):
+def make_orig_image_sets(narps, basedir, verbose=False,
+                         n_teams=24,
+                         n_flip_teams=0,
+                         n_noise_teams=0,
+                         n_highvar_teams=0,
+                         rectify_maps=True,
+                         testing=True):
     """for each team in orig,
     make a set of orig_simulated images
+    rectify_maps: if true, then flip the original
+    maps (which will be rectified again in the
+    main analysis)
     """
-    dirlist = [os.path.basename(i)
-               for i in glob.glob(os.path.join(
-                   narps.basedir,
-                   'orig/*_*')) if os.path.isdir(i)]
-    if verbose:
-        print('found %d team dirs' % len(dirlist))
+    if testing:
+        teams = ['0JO0']
+        n_teams = 1
+    else:
+        teams = narps.complete_image_sets['unthresh'][:n_teams]
+        teams.sort()
+    
 
-    # for teams that are to be rectified, we should
-    # also flip their data
-    rectify_status = get_teams_to_rectify(narps)
+    if verbose:
+        print('found %d team dirs' % len(teams))
+        print(teams)
 
     # arbitrarily assign some teams to be flipped or noise
     logfile = os.path.join(basedir, 'logs/simulated_data.log')
-    flip_dirs = dirlist[0:4]
-    flip_teams = [i.split('_')[1] for i in flip_dirs]
-    log_to_file(logfile,
-                'flipped teams: %s' % ' '.join(flip_teams))
-    noise_dirs = dirlist[5:9]
-    noise_teams = [i.split('_')[1] for i in noise_dirs]
-    log_to_file(logfile,
-                'noise teams: %s' % ' '.join(noise_teams))
-    highvar_dirs = dirlist[9:21]
-    highvar_teams = [i.split('_')[1] for i in highvar_dirs]
-    log_to_file(logfile,
-                'high variance teams: %s' % ' '.join(highvar_teams))
+    if n_flip_teams > 0:
+        flip_teams = [i for i in teams[0:n_flip_teams]]
+        log_to_file(logfile,
+                    'flipped teams: %s' % ' '.join(flip_teams))
+    else:
+        flip_teams = []
 
-    for teamCollectionID in dirlist:
-        teamID = teamCollectionID.split('_')[1]
-        if teamID not in rectify_status:
-            rectify_status[teamID] = []
+    if n_noise_teams > 0:
+        noise_teams = teams[
+            (n_flip_teams + 1):(n_flip_teams + n_noise_teams)]
+        log_to_file(logfile,
+                    'noise teams: %s' % ' '.join(noise_teams))
+    else:
+        noise_teams = []
+
+    if n_highvar_teams > 0:
+        highvar_teams = teams[
+            (n_flip_teams + n_noise_teams + 1):(
+                n_flip_teams + n_noise_teams + n_highvar_teams)]
+        log_to_file(logfile,
+                    'high variance teams: %s' % ' '.join(highvar_teams))
+    else:
+        highvar_teams = []
+
+    for teamID in teams:
+        if rectify_maps:
+            rectify_status = narps.teams[teamID].rectify
+        else:
+            rectify_status = None
+        print(rectify_status)
+        teamCollectionID = '%s_%s' % (
+            narps.teams[teamID].NV_collection_id, teamID
+        )
+        if verbose:
+            print('making simulated data for',
+                  teamID, teamCollectionID)
         make_orig_images(
             basedir,
             teamCollectionID,
             narps.dirs.dirs['consensus'],
-            noise_team=teamCollectionID in noise_dirs,
-            flip_team=teamCollectionID in flip_dirs,
-            noise_sd=0.5 + 2*(teamCollectionID in highvar_dirs),
-            rectify_status=rectify_status[teamID],
+            noise_team=teamID in noise_teams,
+            flip_team=teamID in flip_teams,
+            noise_sd=0.5 + 2*(teamID in highvar_teams),
+            rectify_status=rectify_status,
             verbose=verbose)
