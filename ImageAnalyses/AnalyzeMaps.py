@@ -264,7 +264,8 @@ def mk_correlation_maps_unthresh(
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
             dataset=dataset,
-            vox_mask_thresh=vox_mask_thresh)
+            vox_mask_thresh=vox_mask_thresh,
+            logfile=logfile)
 
         # compute correlation of all datasets with mean
         if 'mean_corr' not in locals():
