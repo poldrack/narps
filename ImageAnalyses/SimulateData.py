@@ -143,7 +143,6 @@ def make_orig_images(basedir,
             if verbose:
                 print('flipping (reverse_contrast)', teamCollectionID, hyp)
             newimgdata = newimgdata * -1
-           
 
         # save image
         newimg = nibabel.Nifti1Image(
