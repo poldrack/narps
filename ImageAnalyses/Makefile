@@ -72,7 +72,7 @@ run-AnalyzeMaps-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data_simulated -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/AnalyzeMaps.py"
 
 run-ConsensusAnalysis-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
-	# docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data -v $(NARPS_BASEDIR_SIMULATED):/data_simulated $(DOCKER_USERNAME)/narps-analysis python /analysis/ConsensusAnalysis.py
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data -v $(NARPS_BASEDIR_SIMULATED):/data_simulated $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/ConsensusAnalysis.py"
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data -v $(NARPS_BASEDIR_SIMULATED):/data_simulated $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/CheckSimulatedValues.py"
 
 
