@@ -459,7 +459,7 @@ Make supplementary table 5
 
 df_SuppTable4 <- data.frame(
   Effects = c('Hypothesis', 
-              'Smoothing', 
+              'Smoothness', 
               'Used fMRIprep data', 
               'Software package', 
               'Multiple testing correction')) %>%
