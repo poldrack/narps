@@ -79,10 +79,11 @@ if __name__ == "__main__":
         make_orig_image_sets(narps,
                              basedir,
                              verbose=True,
-                             n_flip_teams=0,
-                             n_noise_teams=0,
+                             n_teams=32,
+                             n_flip_teams=6,
+                             n_noise_teams=6,
                              n_highvar_teams=0,
-                             testing=True)
+                             testing=False)
 
         # doublecheck basedir name
         assert basedir.find('_simulated') > -1
