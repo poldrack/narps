@@ -135,19 +135,15 @@ def make_orig_images(basedir,
             newimgdata = newimgdata + randn_from_shape(
                 newimgdata.shape)*noise_sd
 
-        flip_sign = False
         if flip_team:
-            flip_sign = True
             if verbose:
                 print('flipping (flip_sign)', teamCollectionID, hyp)
+            newimgdata = newimgdata * -1
         if rectify_status[hyp]:
             if verbose:
                 print('flipping (reverse_contrast)', teamCollectionID, hyp)
-            flip_sign = True
-
-        if flip_sign:
-            # flip sign of data
             newimgdata = newimgdata * -1
+           
 
         # save image
         newimg = nibabel.Nifti1Image(
@@ -205,7 +201,7 @@ def make_orig_image_sets(narps, basedir, verbose=False,
 
     if n_noise_teams > 0:
         noise_teams = teams[
-            (n_flip_teams + 1):(n_flip_teams + n_noise_teams)]
+            (n_flip_teams + 1):(n_flip_teams + n_noise_teams + 1)]
         log_to_file(logfile,
                     'noise teams: %s' % ' '.join(noise_teams))
     else:
@@ -214,7 +210,7 @@ def make_orig_image_sets(narps, basedir, verbose=False,
     if n_highvar_teams > 0:
         highvar_teams = teams[
             (n_flip_teams + n_noise_teams + 1):(
-                n_flip_teams + n_noise_teams + n_highvar_teams)]
+                n_flip_teams + n_noise_teams + n_highvar_teams + 1)]
         log_to_file(logfile,
                     'high variance teams: %s' % ' '.join(highvar_teams))
     else:
