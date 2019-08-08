@@ -543,7 +543,8 @@ def plot_distance_from_mean(narps):
         median_distance_high.shape[0])
 
 
-def get_thresh_similarity(narps, dataset='resampled'):
+def get_thresh_similarity(narps, dataset='resampled',
+                          vox_mask_thresh=1.0):
     """
     For each pair of thresholded images, compute the similarity
     of the thresholded/binarized maps using the Jaccard coefficient.
@@ -575,6 +576,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
             imgtype='thresh',
+            vox_mask_thresh=vox_mask_thresh,
             dataset=dataset)
 
         jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
