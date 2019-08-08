@@ -13,7 +13,7 @@ jobs:
            command: |
              pip install -U pytest pytest-cov
              source /etc/fsl/5.0/fsl.sh; pytest --cov=./ImageAnalyses-q ImageAnalyses/tests.py
-             cd /tmp/data; tar zcvf results.tgz ./figures ./logs
+             cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs
       - run:
            name: static analysis and style check using flake8
            command: |
