@@ -76,7 +76,8 @@ def get_masked_data(hyp, mask_img, output_dir,
 # get_masked_data()
 def get_concat_data(hyp, mask_img, output_dir,
                     imgtype='unthresh', dataset='zstat',
-                    vox_mask_thresh=None):
+                    vox_mask_thresh=None,
+                    logfile=None):
     """
     load data from within mask
     if vox_mask_thresh is specified, then the relevant
@@ -109,6 +110,12 @@ def get_concat_data(hyp, mask_img, output_dir,
         )
         voxmaskdata = masker.fit_transform(mask_file)
         maskdata = maskdata[:, voxmaskdata[0, :] >= vox_mask_thresh]
+        if logfile is not None:
+            log_to_file(
+                logfile,
+                'number of nonzero voxels (%s %s): %d' %
+                (imgtype, dataset,
+                 numpy.sum(voxmaskdata[0, :] >= vox_mask_thresh)))
     return(maskdata, labels)
 
 
