@@ -189,7 +189,6 @@ def make_orig_image_sets(narps, basedir, verbose=False,
     else:
         teams = narps.complete_image_sets['unthresh'][:n_teams]
         teams.sort()
-    
 
     if verbose:
         print('found %d team dirs' % len(teams))
