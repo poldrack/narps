@@ -259,14 +259,14 @@ class NarpsTeam(object):
             self.image_diagnostics = pandas.read_csv(
                 self.image_diagnostics_file)
         # create a dict with the rectified values
-        # use answers from spreasheet
+        # use answers from spreadsheet
         self.rectify = {}
         for i in self.image_diagnostics.index:
             self.rectify[
                 self.image_diagnostics.loc[
                     i, 'hyp']] = self.image_diagnostics.loc[
                         i, 'reverse_contrast']
-        # manual fixes to rectify status per spreadsheet answers
+        # manual fixes to rectify status per spreadsheet answers for hyp 9
         if self.teamID in ['R7D1', '46CD']:
             self.rectify[9] = True
 
