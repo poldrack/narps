@@ -36,22 +36,24 @@ library(multcomp)
 library(multcompView)
 library(optimx)
 library(xtable)
+library(psych)
 
 basedir = Sys.getenv('NARPS_BASEDIR')
 if (basedir == ""){
    # use default
    basedir = "/data"
 }
-cat(sprintf('using basedir: %s', basedir))
 
 ```
 
-### Data setup 
+## Data setup 
 
 Load the data and clean up some variables.  Requires metadata that is created by PrepareMetadata.ipynb
 
 ```{r loadData}
 # load and clean up data
+cat(sprintf('using basedir: %s', basedir))
+
 narps_df <- read_csv(paste(basedir,
                            'metadata/all_metadata.csv',
                            sep='/'))
@@ -73,11 +75,21 @@ cor(narps_df$fwhm,narps_df$smoothing_coef,
     method='spearman')
 ```
 
+## Check independent variables
 
-### Models
+```{r vis_model}
 
+df_for_vis <- narps_df %>% 
+  drop_na(fwhm,used_fmriprep_data,package,testing) %>%
+  dplyr::select(c(fwhm,used_fmriprep_data,package,testing,smoothing_coef))
 
-First run mixed models across full dataset to assess overall effects on hypothesis acceptance. We use nlminb as the optimizer because the model failed to converge using the standard optimizer in lmer.
+pairs.panels(df_for_vis)
+
+```
+
+## Models
+
+First run mixed model across full dataset to assess overall effects on hypothesis acceptance. We use nlminb as the optimizer because the model failed to converge using the standard optimizer in lmer.
 
 ```{r fullModel}
 hyp_df = narps_df %>% drop_na(fwhm,
@@ -97,9 +109,11 @@ r.squaredGLMM(m_hyp_full)
 
 ```
 
-#### Model comparisons
+### Model comparisons
 
-Model without hypothesis
+Estimate a set of models leaving out each variable of interest, so that we can then use model comparison to estimate the effect sizes.  This is particularly necessary for the factor variables since they are not represented by a single variable in the model.
+
+#### Model without hypothesis
 
 ```{r hypModel}
 m_hyp_nohyp = glmer(Decision ~ fwhm + used_fmriprep_data + package + testing + (1|teamID),
@@ -117,7 +131,7 @@ delta_r2_hyp <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nohyp)
 print(delta_r2_hyp)
 ```
 
-Model without smoothing
+#### Model without smoothing
 
 ```{r nosmoothModel}
 m_hyp_nosmooth = glmer(Decision ~ varnum + used_fmriprep_data + package + testing + (1|teamID),
@@ -137,7 +151,7 @@ delta_r2_smoothing <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nosmooth)
 print(delta_r2_smoothing)
 ```
 
-Model without fmriprep
+#### Model without fmriprep
 
 ```{r noprepModel}
 m_hyp_noprep = glmer(Decision ~ varnum + fwhm + package + testing + (1|teamID),
@@ -156,6 +170,8 @@ delta_r2_fmriprep <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_noprep)
 
 print(delta_r2_fmriprep)
 ```
+
+#### Model without software package
 
 ```{r nopackageModel}
 
@@ -180,6 +196,8 @@ delta_r2_package <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nopackage)
 print(delta_r2_package)
 ```
 
+#### Model without testing method
+
 ```{r notestingModel}
   
 m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package + (1|teamID),
@@ -201,6 +219,8 @@ delta_r2_testing <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_notesting)
 print(delta_r2_testing)
 ```
 
+#### Applied vs. estimated smoothness
+
 Full model using specified smoothing filter rather than estimated smoothness.
 
 ```{r kernelModel}
@@ -212,6 +232,88 @@ summary(m_hyp_full_tsc)
 
 ```
 
+
+### Separate analyses for each variable of interest
+
+#### Hypothesis 
+
+```{r varnum_only}
+m_hyp_varnum = glmer(Decision ~ varnum + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+
+summary_varnum <- summary(m_hyp_varnum)
+print(summary_varnum)
+
+```
+
+#### Estimated smoothness
+
+```{r fwhm_only}
+m_hyp_fwhm = glmer(Decision ~ fwhm + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+
+summary_fwhm <- summary(m_hyp_fwhm)
+print(summary_fwhm)
+
+```
+
+#### Applied smoothing kernel
+
+```{r kernel_only}
+m_hyp_kernel = glmer(Decision ~ smoothing_coef + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+
+summary_kernel <- summary(m_hyp_kernel)
+print(summary_kernel)
+
+```
+
+#### fMRIprep
+
+```{r fmriprep_only}
+m_hyp_fmriprep = glmer(Decision ~ used_fmriprep_data + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+
+summary_fmriprep <- summary(m_hyp_fmriprep)
+print(summary_fmriprep)
+
+```
+
+#### Package
+
+```{r package_only}
+m_hyp_package = glmer(Decision ~ package  + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+
+summary_package <- summary(m_hyp_package)
+print(summary_package)
+
+```
+
+#### Testing
+
+```{r testing_only}
+m_hyp_testing = glmer(Decision ~ testing + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+
+summary_testing <- summary(m_hyp_testing)
+print(summary_testing)
+
+```
+
+### Separate analyses for each hypothesis
 
 For each hypothesis, we ask whether decisions are associated with fwhm and use of fmriprep.  None of these survive Bonferroni correction.
 
@@ -263,7 +365,6 @@ runModels = function(hyp){
 ```
 
 
-
 ```{r runAllModels}
 all_pvals = c()
 for (hyp in 1:9){
@@ -272,82 +373,6 @@ for (hyp in 1:9){
 }
 
 ```
-
-### Plot the data
-
-#### decision vs. software package
-
-```{r plotSoftware}
-decisionSummary_package <- narps_df %>%
-  drop_na(package) %>%
-  group_by(package,varnum) %>%
-  summarize(meanAccept = mean(Decision),
-            numTeams = n()) 
-
-ggplot(decisionSummary_package,
-       aes(varnum,meanAccept,color=package,group=package)) +
-  geom_line(aes(size=numTeams))
-
-```
-
-
-#### decision vs. use of fMRIprep
-
-```{r plotfMRIPrep}
-decisionSummary_fmriprep <- narps_df %>%
-  drop_na(used_fmriprep_data) %>%
-  group_by(used_fmriprep_data,varnum) %>%
-  summarize(meanAccept = mean(Decision),
-            numTeams = n()) 
-
-ggplot(decisionSummary_fmriprep,
-       aes(varnum,meanAccept,
-           color=used_fmriprep_data, 
-           group=used_fmriprep_data)) + 
-  geom_line()
-
-```
-
-
-#### decision vs. Effects of smoothing
-
-First we examine the effect of actual image smoothness, estimated using FSL.
-
-```{r plotEstimatedSmoothness}
-decisionSummary_smoothing <- narps_df %>%
-  drop_na(fwhm) %>%
-  mutate(Decision_factor = as.factor(Decision)) %>%
-  group_by(Decision_factor,varnum) %>%
-  summarize(meanFWHM = mean(fwhm),
-            numTeams = n()) 
-
-ggplot(decisionSummary_smoothing,
-       aes(varnum,meanFWHM,
-           color=Decision_factor,
-           group=Decision_factor)) +
-  geom_line() 
-  
-
-```
-
-
-effect of the applied smoothing kernel.
-
-```{r plotAppliedSmoothing}
-decisionSummary_smoothingkernel <- narps_df %>%
-  drop_na(fwhm) %>%
-  mutate(Decision_factor = as.factor(Decision)) %>%
-  group_by(Decision_factor,varnum) %>%
-  summarize(meanAppliedFWHM = mean(smoothing_coef),
-            numTeams = n()) 
-
-ggplot(decisionSummary_smoothingkernel,
-       aes(varnum,meanAppliedFWHM,
-           color=Decision_factor)) +
-  geom_line() 
-
-```
-
 
 ### Examine effects of various factors on pattern distance
 
@@ -364,7 +389,7 @@ merged_df = join(patterndist_df,narps_df %>%
 
 ### fit model
 
-```{r r2z}
+```{r r2z, echo=FALSE}
 r2z = function(r){
     # fisher transform
     z=0.5*log((1.0+r)/(1.0-r))
@@ -372,7 +397,6 @@ r2z = function(r){
     return(z)
 }
 ```
-
 
 ```{r fitPatternDistanceModel}
 
@@ -394,8 +418,6 @@ print(s)
 dist_hyp_nosmooth <- lm(z_mean_distance ~ used_fmriprep_data + package + testing,
             data = merged_df)
 
-cat('\ntesting effect of smoothing\n')
-
 anova(dist_hyp_full,
       dist_hyp_nosmooth,
       test='Chisq')
@@ -408,7 +430,6 @@ s$r.squared - summary(dist_hyp_nosmooth)$r.squared
 ```{r fitNoPrepDistanceModel}
 dist_hyp_noprep = lm(z_mean_distance ~ fwhm + package + testing,
             data = merged_df)
-cat('\ntesting effect of fmriprep\n')
 
 anova(dist_hyp_full,
       dist_hyp_noprep,
@@ -422,11 +443,11 @@ s$r.squared - summary(dist_hyp_noprep)$r.squared
 ```{r fitNoHypDistanceModel}
 dist_hyp_nopackage = lm(z_mean_distance ~ used_fmriprep_data + fwhm + testing,
             data = merged_df) 
-cat('\ntesting effect of package\n')
 
 anova(dist_hyp_full,
       dist_hyp_nopackage,
       test='Chisq')
+
 s$r.squared - summary(dist_hyp_nopackage)$r.squared
 leastsquare = emmeans(dist_hyp_full,'package')
 multcomp::cld(leastsquare, 
@@ -438,15 +459,16 @@ multcomp::cld(leastsquare,
 ```{r fitNoTestingDistanceModel}
 dist_hyp_notesting = lm(z_mean_distance ~ used_fmriprep_data + fwhm + package,
             data = merged_df)   
-cat('\ntesting effect of testing\n')
 
 anova(dist_hyp_full,
       dist_hyp_notesting,
       test='Chisq')
+
 s$r.squared - summary(dist_hyp_notesting)$r.squared
 
 leastsquare = emmeans(dist_hyp_full,
                       'testing')
+
 multcomp::cld(leastsquare, 
     level=.05)
 
