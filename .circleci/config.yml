@@ -17,6 +17,7 @@ jobs:
       - run:
            name: run R script test
            command: |
+             cat /analysis/*.Rmd | grep library >| /analysis/R_libraries.R
              Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/tmp/data/figures")' 
       - run:
            name: static analysis and style check using flake8
