@@ -584,6 +584,19 @@ def get_thresh_similarity(narps, dataset='resampled'):
 
         jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
         jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
+        median_jacsim = numpy.median(
+            jacsim[numpy.triu_indices_from(jacsim, 1)])
+        log_to_file(
+            logfile,
+            'mean jaccaard similarity (with zeros): %f' %
+            median_jacsim)
+        median_jacsim_nonzero = numpy.median(
+            jacsim_nonzero[numpy.triu_indices_from(jacsim_nonzero, 1)])
+        log_to_file(
+                logfile,
+                'mean jaccaard similarity (nonzero): %f' %
+                median_jacsim_nonzero)
+
         df = pandas.DataFrame(jacsim, index=labels, columns=labels)
         df.to_csv(os.path.join(
             narps.dirs.dirs['metadata'],
