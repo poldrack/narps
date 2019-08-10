@@ -113,8 +113,8 @@ def get_concat_data(hyp, mask_img, output_dir,
         if logfile is not None:
             log_to_file(
                 logfile,
-                'number of nonzero voxels (%s %s): %d' %
-                (imgtype, dataset,
+                'hyp %d: number of nonzero voxels (%s %s): %d' %
+                (hyp, imgtype, dataset,
                  numpy.sum(voxmaskdata[0, :] >= vox_mask_thresh)))
     return(maskdata, labels)
 
