@@ -38,6 +38,7 @@ def cluster_image_correlation(basedir):
     # make heatmap
     plt.figure(figsize=(18, 12))
     seaborn.heatmap(cc_df, annot=True)
+    plt.tight_layout()
     plt.savefig(os.path.join(basedir, 'figures/cluster_correlation.pdf'))
 
     # load original Tom et al. maps and compare to each cluster map
@@ -58,6 +59,7 @@ def cluster_image_correlation(basedir):
     seaborn.heatmap(tom_corr_df, annot=True)
     plt.xlabel('Tom et al. contrasts')
     plt.ylabel('NARPS contrasts')
+    plt.tight_layout()
     plt.savefig(os.path.join(basedir, 'figures/tom_correlation.pdf'))
 
     # compare consensus results to Tom et al.
