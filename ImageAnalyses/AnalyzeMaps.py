@@ -412,9 +412,10 @@ def analyze_clusters(
         mean_smoothing[str(hyp)] = {}
         mean_decision[str(hyp)] = {}
         for j, cl in enumerate(clusters):
-            log_to_file(logfile,
+            log_to_file(
+                logfile,
                 'hyp %d cluster %d (%s)' % (
-                hyp, cl, cluster_colors[j-1]))
+                    hyp, cl, cluster_colors[j-1]))
             # get all images for this cluster and average them
             member_maps = []
             member_smoothing = []
@@ -455,11 +456,11 @@ def analyze_clusters(
             mean_img = masker.inverse_transform(meandata)
             mean_filename = os.path.join(
                 narps.dirs.dirs['output'],
-                '/cluster_maps/hyp%d_cluster%d_mean.nii.gz' % (hyp, cl)
+                'cluster_maps/hyp%d_cluster%d_mean.nii.gz' % (hyp, cl)
             )
             if not os.path.exists(os.path.dirname(mean_filename)):
                 os.mkdir(os.path.dirname(mean_filename))
-            mean_img.to_filename()
+            mean_img.to_filename(mean_filename)
             nilearn.plotting.plot_stat_map(
                 mean_img,
                 threshold=thresh,
