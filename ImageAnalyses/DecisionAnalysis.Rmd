@@ -77,6 +77,8 @@ cor(narps_df$fwhm,narps_df$smoothing_coef,
 
 ## Check independent variables
 
+Note that the correlations are not interpretable for the factorial variables - the plot is shown simply to provide some insight into the relationships between the different variables and their distributions.
+
 ```{r vis_model}
 
 df_for_vis <- narps_df %>% 
@@ -96,6 +98,10 @@ hyp_df = narps_df %>% drop_na(fwhm,
                               used_fmriprep_data,
                               package,
                               testing)
+hyp_df <- hyp_df %>%  mutate(
+    package = factor(package, c('SPM', 'FSL', 'AFNI', 'Other')),
+    testing = factor(testing),
+    used_fmriprep_data = factor(used_fmriprep_data))
 
 m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + testing + (1|teamID),
             data = hyp_df,family=binomial,
@@ -108,6 +114,20 @@ print(summary_full_model)
 r.squaredGLMM(m_hyp_full)
 
 ```
+
+Get odds ratios for factorial variables.
+
+```{r}
+# from https://stackoverflow.com/questions/26417005/odds-ratio-and-confidence-intervals-from-glmer-output
+odds_ratios <- exp(fixef(m_hyp_full))
+# this uses the immensely faster but less accurate Wald method for confidence intervals
+cc <- confint(m_hyp_full,parm="beta_",method="Wald")  
+ctab <- cbind(est=odds_ratios,cc)
+write.table(df_SuppTable4,
+            file=paste(basedir,"figures/OddsRatios.txt",sep='/'))
+
+```
+
 
 ### Model comparisons
 
