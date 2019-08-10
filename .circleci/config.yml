@@ -15,6 +15,9 @@ jobs:
              source /etc/fsl/5.0/fsl.sh; pytest --cov=./ImageAnalyses-q ImageAnalyses/tests.py
              cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs
       - run:
+           name: run R script test
+           Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/tmp/data/figures")' 
+      - run:
            name: static analysis and style check using flake8
            command: |
              pip install -U flake8
