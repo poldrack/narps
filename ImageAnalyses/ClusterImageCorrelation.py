@@ -13,10 +13,7 @@ import seaborn
 import matplotlib.pyplot as plt
 
 
-if __name__ == "__main__":
-
-    basedir = os.environ['NARPS_BASEDIR']
-
+def cluster_image_correlation(basedir):
     # load cluster maps
     cluster_img_dir = os.path.join(
         basedir,
@@ -68,8 +65,6 @@ if __name__ == "__main__":
         basedir,
         'output/consensus_analysis/hypo[1,5]_t.nii.gz'))
     consensus_files.sort()
-    consensus_labels = [
-        os.path.basename(i).split('_mean')[0] for i in consensus_files]
     consensus_data = masker.fit_transform(consensus_files)
 
     consensus_tom_corr = numpy.zeros((
@@ -78,3 +73,9 @@ if __name__ == "__main__":
         for j in range(tom_data.shape[0]):
             consensus_tom_corr[i, j] = numpy.corrcoef(
                 consensus_data[i, :], tom_data[j, :])[0, 1]
+
+
+if __name__ == "__main__":
+
+    basedir = os.environ['NARPS_BASEDIR']
+    cluster_image_correlation(basedir)
