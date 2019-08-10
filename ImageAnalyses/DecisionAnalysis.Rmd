@@ -37,6 +37,7 @@ library(multcompView)
 library(optimx)
 library(xtable)
 library(psych)
+library(knitr)
 
 basedir = Sys.getenv('NARPS_BASEDIR')
 if (basedir == ""){
@@ -123,6 +124,7 @@ odds_ratios <- exp(fixef(m_hyp_full))
 # this uses the immensely faster but less accurate Wald method for confidence intervals
 cc <- confint(m_hyp_full,parm="beta_",method="Wald")  
 ctab <- cbind(est=odds_ratios,cc)
+kable(ctab)
 write.table(ctab,
             file=paste(basedir,"figures/OddsRatios.txt",sep='/'))
 
@@ -339,19 +341,14 @@ For each hypothesis, we ask whether decisions are associated with fwhm and use o
 
 ```{r runModelsFunction}
 
-runModels = function(hyp){
+runModels = function(hyp, data_df){
   pvals = c()
-  hyp_df = narps_df %>% 
-    filter(varnum==!!hyp) %>% drop_na(fwhm,
-                                      used_fmriprep_data,
-                                      package,
-                                      testing)
 
   m_hyp_full = bayesglm(Decision ~ fwhm + used_fmriprep_data + package + testing,
-                   data = hyp_df,family=binomial)
+                   data = data_df,family=binomial)
   
   m_hyp_nosmooth = bayesglm(Decision ~ used_fmriprep_data + package + testing,
-                   data = hyp_df,family=binomial)
+                   data = data_df,family=binomial)
   #cat('testing effect of smoothing\n')
   a = anova(m_hyp_full,
             m_hyp_nosmooth,
@@ -359,13 +356,13 @@ runModels = function(hyp){
   pvals = c(pvals,unlist(a)['Pr(>Chi)2'])
   
   m_hyp_noprep = bayesglm(Decision ~ fwhm + package + testing,
-                   data = hyp_df,family=binomial)
+                   data = data_df,family=binomial)
   #cat('testing effect of fmriprep\n')
   a=anova(m_hyp_full,m_hyp_noprep,test='Chisq')
   pvals = c(pvals,unlist(a)['Pr(>Chi)2'])
   
   m_hyp_nopackage = bayesglm(Decision ~ used_fmriprep_data + fwhm + testing,
-                   data = hyp_df,family=binomial)
+                   data = data_df,family=binomial)
   #cat('testing effect of package\n')
   a=anova(m_hyp_full,
           m_hyp_nopackage,
@@ -374,7 +371,7 @@ runModels = function(hyp){
   
   
   m_hyp_notesting = bayesglm(Decision ~ used_fmriprep_data + fwhm + package,
-                   data = hyp_df,family=binomial)
+                   data = data_df,family=binomial)
   #cat('testing effect of testing\n')
   a=anova(m_hyp_full,
           m_hyp_notesting,
@@ -388,7 +385,7 @@ runModels = function(hyp){
 ```{r runAllModels}
 all_pvals = c()
 for (hyp in 1:9){
-  pv = runModels(hyp)
+  pv = runModels(hyp, hyp_df)
   all_pvals = rbind(all_pvals,pv)
 }
 
@@ -530,7 +527,7 @@ df_SuppTable4[5,2:4] = c(anova_testing$`Chisq`[2],
                          delta_r2_testing[2,1]
                          )
 
-print(df_SuppTable4)
+kable(df_SuppTable4)
 
 write.table(df_SuppTable4,
             file=paste(basedir,"figures/SuppTable4.txt",sep='/'))
