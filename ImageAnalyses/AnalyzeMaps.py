@@ -483,7 +483,7 @@ def analyze_clusters(
     # save cluster metadata to data frame
     cluster_metadata_df = cluster_metadata_df.dropna()
     cluster_metadata_df.to_csv(os.path.join(
-        narps.dirs.dirs['output'],
+        narps.dirs.dirs['metadata'],
         'cluster_metadata_df.csv'))
 
     # compute clustering similarity across hypotheses
@@ -573,8 +573,6 @@ def get_thresh_similarity(narps, dataset='resampled'):
         logfile,
         stringify_dict(func_args))
 
-    output_dir = narps.dirs.get_output_dir('jaccard_thresh')
-
     for hyp in hypnums:
         print('creating Jaccard map for hypothesis', hyp)
         maskdata, labels = get_concat_data(
@@ -588,13 +586,15 @@ def get_thresh_similarity(narps, dataset='resampled'):
         jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
         df = pandas.DataFrame(jacsim, index=labels, columns=labels)
         df.to_csv(os.path.join(
-            output_dir, 'jacsim_thresh_hyp%d.csv' % hyp))
+            narps.dirs.dirs['metadata'],
+            'jacsim_thresh_hyp%d.csv' % hyp))
         df_nonzero = pandas.DataFrame(
             jacsim_nonzero,
             index=labels,
             columns=labels)
         df_nonzero.to_csv(os.path.join(
-            output_dir, 'jacsim_nonzero_thresh_hyp%d.csv' % hyp))
+            narps.dirs.dirs['metadata'],
+            'jacsim_nonzero_thresh_hyp%d.csv' % hyp))
         seaborn.clustermap(
             df,
             cmap='jet',
