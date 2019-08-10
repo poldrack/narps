@@ -17,6 +17,7 @@ jobs:
       - run:
            name: run R script test
            command: |
+             export BASEDIR="/tmp/data"
              cat /root/project/ImageAnalyses/*.Rmd | grep library >| /root/project/ImageAnalyses/R_libraries.R
              Rscript -e 'library(rmarkdown); rmarkdown::render("/root/project/ImageAnalyses/DecisionAnalysis.Rmd", "html_document", output_dir = "/tmp/data/figures")' 
       - run:
