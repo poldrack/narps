@@ -168,8 +168,6 @@ def compare_thresh_unthresh_values(
             mdstring = map_metadata.query(
                 'teamID == "%s"' % teamID
                 )['hyp%d_direction' % hyp].iloc[0]
-            if verbose:
-                print(teamID, hyp, mdstring)
             reverse_contrast = mdstring.split()[0] == 'Negative'
             if verbose:
                 print('manual rectify:', teamID, hyp)
