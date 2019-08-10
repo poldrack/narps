@@ -46,6 +46,7 @@ run-PrepareMetadata: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 
 run-AnalyzeMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/AnalyzeMaps.py" 
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/ClusterImageCorrelation.py"
 
 run-ConsensusAnalysis: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/ConsensusAnalysis.py"
@@ -117,6 +118,7 @@ run-PrepareMetadata-local:
 
 run-AnalyzeMaps-local:
 	python AnalyzeMaps.py
+	python ClusterImageCorrelation.py
 
 run-ConsensusAnalysis-local:
 	python ConsensusAnalysis.py
