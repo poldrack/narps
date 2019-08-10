@@ -18,7 +18,7 @@ jobs:
            command: |
              cat /root/project/ImageAnalyses/*.Rmd | grep library >| /root/project/ImageAnalyses/R_libraries.R
              export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(rmarkdown); rmarkdown::render("/root/project/ImageAnalyses/DecisionAnalysis.Rmd", "html_document", output_dir = "/tmp/data/figures")' 
-             cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs
+             cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs ./metadata
       - run:
            name: static analysis and style check using flake8
            command: |
