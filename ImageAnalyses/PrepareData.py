@@ -19,12 +19,14 @@ from utils import log_to_file
 # used surface-based analysis ('1K0E', 'X1Z4')
 # badly registered ( 'L1A8')
 # used SVC analysis which was not allowed ('VG39')
+# note that team 27TP is missing thresh files, so there
+# should be a total of 5 with missing thresh
 TEAMS_TO_SKIP = ['1K0E', 'X1Z4', 'L1A8', 'VG39']
 
-# incorrect unthresh values (very small) (569K)
+# incorrect unthresh values (very small) (5G9K)
 # did not report t/z stats (16IN)
 
-TEAMS_TO_REMOVE_UNTHRESH = ['569K', '16IN']
+TEAMS_TO_REMOVE_UNTHRESH = ['5G9K', '16IN']
 
 
 def get_download_dir(basedir, overwrite=False):
