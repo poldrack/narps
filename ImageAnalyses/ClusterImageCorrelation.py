@@ -36,7 +36,7 @@ def cluster_image_correlation(basedir):
     cc_df = pandas.DataFrame(cc, index=labels, columns=labels)
 
     # make heatmap
-    plt.figure(figsize=(18, 12))
+    plt.figure(figsize=(18, 14))
     seaborn.heatmap(cc_df, annot=True)
     plt.tight_layout()
     plt.savefig(os.path.join(basedir, 'figures/cluster_correlation.pdf'))

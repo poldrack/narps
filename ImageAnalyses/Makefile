@@ -46,10 +46,10 @@ run-PrepareMetadata: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 
 run-AnalyzeMaps: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/AnalyzeMaps.py" 
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/ClusterImageCorrelation.py"
 
 run-ConsensusAnalysis: guard-DOCKER_USERNAME guard-NARPS_BASEDIR 
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/ConsensusAnalysis.py"
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/ClusterImageCorrelation.py"
 
 run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR get-R-packages
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data/figures")'
