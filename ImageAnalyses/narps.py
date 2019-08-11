@@ -475,8 +475,9 @@ class Narps(object):
         """
 
         input_files = glob.glob(
-            os.path.join(dirs.dirs['orig'], '*/hypo1_thresh.nii.gz'))
+            os.path.join(dirs.dirs['orig'], '*/hypo1_*thresh.nii.gz'))
         input_dirs = [os.path.dirname(i) for i in input_files]
+        input_dirs = list(set(input_dirs))  # get unique dirs
 
         log_to_file(
             self.dirs.logfile,
