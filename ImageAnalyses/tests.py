@@ -15,6 +15,9 @@ from PrepareMetadata import prepare_metadata
 from ConsensusAnalysis import run_ttests, mk_figures
 from MakeSupplementaryFigure1 import mk_supp_figure1,\
     get_all_metadata
+from ClusterImageCorrelation import\
+    cluster_image_correlation
+from ThreshVoxelStatistics import get_thresh_voxel_stats
 
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
@@ -141,6 +144,16 @@ def test_consensus_analysis(narps):
 def test_mk_suppfigure1(narps):
     metadata = get_all_metadata(narps)
     mk_supp_figure1(narps, metadata)
+
+
+# compute cluster similarity
+def test_cluster_image_correlations(narps):
+    cluster_image_correlation(narps.basedir)
+
+
+# compute thresh statisics
+def test_get_thresh_voxel_stats(narps):
+    get_thresh_voxel_stats(narps.basedir)
 
 
 # simulated data analysis

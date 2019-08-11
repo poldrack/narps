@@ -13,7 +13,12 @@ jobs:
            command: |
              pip install -U pytest pytest-cov
              source /etc/fsl/5.0/fsl.sh; pytest --cov=./ImageAnalyses-q ImageAnalyses/tests.py
-             cd /tmp/data; tar zcvf results.tgz ./figures ./logs
+      - run:
+           name: run R script test
+           command: |
+             cat /root/project/ImageAnalyses/*.Rmd | grep library >| /root/project/ImageAnalyses/R_libraries.R
+             export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(rmarkdown); rmarkdown::render("/root/project/ImageAnalyses/DecisionAnalysis.Rmd", "html_document", output_dir = "/tmp/data/figures")' 
+             cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs ./metadata ./image_diagnostics ./output/unthresh_concat_zstat/hypo*_voxelmap.nii.gz
       - run:
            name: static analysis and style check using flake8
            command: |

@@ -71,13 +71,19 @@ if __name__ == "__main__":
         narps.load_data()
 
         # Load full metadata and put into narps structure
-        narps.load_metadata()
         narps.metadata = pandas.read_csv(
             os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
 
         basedir = setup_simulated_data(narps, verbose=False)
 
-        make_orig_image_sets(narps, basedir)
+        make_orig_image_sets(narps,
+                             basedir,
+                             verbose=True,
+                             n_teams=32,
+                             n_flip_teams=6,
+                             n_noise_teams=6,
+                             n_highvar_teams=0,
+                             testing=False)
 
         # doublecheck basedir name
         assert basedir.find('_simulated') > -1

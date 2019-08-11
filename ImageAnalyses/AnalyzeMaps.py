@@ -264,7 +264,8 @@ def mk_correlation_maps_unthresh(
             narps.dirs.MNI_mask,
             narps.dirs.dirs['output'],
             dataset=dataset,
-            vox_mask_thresh=vox_mask_thresh)
+            vox_mask_thresh=vox_mask_thresh,
+            logfile=logfile)
 
         # compute correlation of all datasets with mean
         if 'mean_corr' not in locals():
@@ -411,6 +412,10 @@ def analyze_clusters(
         mean_smoothing[str(hyp)] = {}
         mean_decision[str(hyp)] = {}
         for j, cl in enumerate(clusters):
+            log_to_file(
+                logfile,
+                'hyp %d cluster %d (%s)' % (
+                    hyp, cl, cluster_colors[j-1]))
             # get all images for this cluster and average them
             member_maps = []
             member_smoothing = []
@@ -431,9 +436,6 @@ def analyze_clusters(
                         narps.metadata.query(
                             'varnum==%d' % hyp).query(
                                 'teamID=="%s"' % member)['Decision'].iloc[0])
-            log_to_file(logfile,
-                        'hyp %d cluster %d (%s)' % (
-                            hyp, cl, cluster_colors[j-1]))
             log_to_file(logfile, membership[str(hyp)][str(cl)])
             cluster_metadata[hyp][cl] = narps.metadata[
                 narps.metadata.teamID.isin(membership[str(hyp)][str(cl)])]
@@ -452,7 +454,13 @@ def analyze_clusters(
             maskdata = masker.fit_transform(member_maps)
             meandata = numpy.mean(maskdata, 0)
             mean_img = masker.inverse_transform(meandata)
-
+            mean_filename = os.path.join(
+                narps.dirs.dirs['output'],
+                'cluster_maps/hyp%d_cluster%d_mean.nii.gz' % (hyp, cl)
+            )
+            if not os.path.exists(os.path.dirname(mean_filename)):
+                os.mkdir(os.path.dirname(mean_filename))
+            mean_img.to_filename(mean_filename)
             nilearn.plotting.plot_stat_map(
                 mean_img,
                 threshold=thresh,
@@ -475,7 +483,7 @@ def analyze_clusters(
     # save cluster metadata to data frame
     cluster_metadata_df = cluster_metadata_df.dropna()
     cluster_metadata_df.to_csv(os.path.join(
-        narps.dirs.dirs['output'],
+        narps.dirs.dirs['metadata'],
         'cluster_metadata_df.csv'))
 
     # compute clustering similarity across hypotheses
@@ -565,8 +573,6 @@ def get_thresh_similarity(narps, dataset='resampled'):
         logfile,
         stringify_dict(func_args))
 
-    output_dir = narps.dirs.get_output_dir('jaccard_thresh')
-
     for hyp in hypnums:
         print('creating Jaccard map for hypothesis', hyp)
         maskdata, labels = get_concat_data(
@@ -578,15 +584,30 @@ def get_thresh_similarity(narps, dataset='resampled'):
 
         jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
         jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
+        median_jacsim = numpy.median(
+            jacsim[numpy.triu_indices_from(jacsim, 1)])
+        log_to_file(
+            logfile,
+            'hyp %d: mean jaccard similarity (with zeros): %f' %
+            (hyp, median_jacsim))
+        median_jacsim_nonzero = numpy.median(
+            jacsim_nonzero[numpy.triu_indices_from(jacsim_nonzero, 1)])
+        log_to_file(
+                logfile,
+                'hyp %d: mean jacaard similarity (nonzero): %f' %
+                (hyp, median_jacsim_nonzero))
+
         df = pandas.DataFrame(jacsim, index=labels, columns=labels)
         df.to_csv(os.path.join(
-            output_dir, 'jacsim_thresh_hyp%d.csv' % hyp))
+            narps.dirs.dirs['metadata'],
+            'jacsim_thresh_hyp%d.csv' % hyp))
         df_nonzero = pandas.DataFrame(
             jacsim_nonzero,
             index=labels,
             columns=labels)
         df_nonzero.to_csv(os.path.join(
-            output_dir, 'jacsim_nonzero_thresh_hyp%d.csv' % hyp))
+            narps.dirs.dirs['metadata'],
+            'jacsim_nonzero_thresh_hyp%d.csv' % hyp))
         seaborn.clustermap(
             df,
             cmap='jet',

@@ -26,13 +26,14 @@ def compare_thresh_unthresh_values(
     if more than error_thresh percent of voxels are
     in opposite direction, then flag a problem
     - we allow a few to bleed over due to interpolation"""
+    verbose = True
     hyps = [i for i in range(1, 10)]
     teamID = collectionID.split('_')[1]
     diagnostic_data = pandas.DataFrame({
         'collectionID': collectionID,
         'teamID': teamID,
         'hyp': hyps,
-        'rectify': False,
+        'autorectify': False,
         'problem': numpy.nan,
         'reverse_contrast': False,
         'n_thresh_vox': numpy.nan,
@@ -60,7 +61,7 @@ def compare_thresh_unthresh_values(
         return(None)
 
     for hyp in hyps:
-        rectify = False
+        autorectify = False
         threshfile = os.path.join(
             teamdir_thresh, 'hypo%d_thresh.nii.gz' % hyp)
         if not os.path.exists(threshfile):
@@ -79,7 +80,6 @@ def compare_thresh_unthresh_values(
                 'WARN: %s %d - empty mask' % (
                     collectionID, hyp
                 ))
-            continue
 
         unthreshfile = os.path.join(
             teamdir_thresh, 'hypo%d_unthresh.nii.gz' % hyp)
@@ -94,24 +94,31 @@ def compare_thresh_unthresh_values(
                 'ERROR: thresh/unthresh size mismatch for %s hyp%d' %
                 (collectionID, hyp))
             continue
-        inmask_unthreshdata = unthreshdata[threshdata > 0]
-        min_val = numpy.min(inmask_unthreshdata)
-        max_val = numpy.max(inmask_unthreshdata)
+        if numpy.sum(threshdata > 0) > 0:
+            inmask_unthreshdata = unthreshdata[threshdata > 0]
+            min_val = numpy.min(inmask_unthreshdata)
+            max_val = numpy.max(inmask_unthreshdata)
+            p_pos_unthresh = numpy.mean(inmask_unthreshdata > 0)
+            p_neg_unthresh = numpy.mean(inmask_unthreshdata < 0)
+        else:
+            min_val = 0
+            max_val = 0
+            p_pos_unthresh = 0
+            p_neg_unthresh = 0
+
         if max_val < 0:  # need to rectify
-            rectify = True
+            autorectify = True
             if verbose:
                 print('autorectify:', teamID, hyp)
             diagnostic_data.loc[
                 diagnostic_data.hyp == hyp,
-                'rectify'] = True
+                'autorectify'] = True
         diagnostic_data.loc[
             diagnostic_data.hyp == hyp,
             'min_unthresh'] = min_val
         diagnostic_data.loc[
             diagnostic_data.hyp == hyp,
             'max_unthresh'] = max_val
-        p_pos_unthresh = numpy.mean(inmask_unthreshdata > 0)
-        p_neg_unthresh = numpy.mean(inmask_unthreshdata < 0)
         diagnostic_data.loc[
             diagnostic_data.hyp == hyp,
             'p_pos_unthresh'] = p_pos_unthresh
@@ -170,7 +177,7 @@ def compare_thresh_unthresh_values(
         diagnostic_data.loc[
             diagnostic_data.hyp == hyp,
             'reverse_contrast'] = reverse_contrast
-        if reverse_contrast != rectify:
+        if reverse_contrast != autorectify:
             log_to_file(
                 logfile,
                 'WARN: %s %d rectification mismatch' %
