@@ -123,7 +123,7 @@ Get odds ratios for factorial variables.
 odds_ratios <- exp(fixef(m_hyp_full))
 # this uses the immensely faster but less accurate Wald method for confidence intervals
 cc <- confint(m_hyp_full,parm="beta_",method="Wald")  
-ctab <- cbind(est=odds_ratios,cc)
+ctab <- cbind(est=odds_ratios,exp(cc))
 kable(ctab)
 write.table(ctab,
             file=paste(basedir,"figures/OddsRatios.txt",sep='/'))
