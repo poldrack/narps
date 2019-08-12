@@ -24,7 +24,7 @@ RUN pip install \
     numpy==1.16.4 \
     pandas==0.24.2 \
     scikit-learn==0.21.2 \
-    matplotlib==3.1.1 \
+    matplotlib==3.1.0 \
     scipy==1.3.0 \
     seaborn==0.9.0 \
     xlrd==1.2.0 \
