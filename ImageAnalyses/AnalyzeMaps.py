@@ -50,9 +50,9 @@ def mk_overlap_maps(narps, verbose=True):
     masker = nilearn.input_data.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
     max_overlap = {}
-    fig, ax = plt.subplots(4, 2, figsize=(12, 24))
-    axis_y = [1, 1, 1, 1, 2, 2, 2, 2]
-    axis_x = [1, 2, 3, 4, 1, 2, 3, 4]
+    fig, ax = plt.subplots(4, 2, figsize=(15, 10))
+    axis_y = [0, 0, 0, 0, 1, 1, 1, 1]
+    axis_x = [0, 1, 2, 3, 0, 1, 2, 3]
     for i, hyp in enumerate(hypnums):
         imgfile = os.path.join(
             narps.dirs.dirs['output'],
@@ -66,7 +66,8 @@ def mk_overlap_maps(narps, verbose=True):
             vmax=1.,
             cmap='jet',
             cut_coords=cut_coords,
-            axes=ax[axis_x[i], axis_y[i],
+            axes=ax[axis_x[i], axis_y[i]],
+            annotate=False,
             figure=fig)
 
         # compute max and median overlap
@@ -77,7 +78,11 @@ def mk_overlap_maps(narps, verbose=True):
         overlap = numpy.mean(thresh_concat_data, 0)
         log_to_file(logfile, 'hyp%d: %f' % (hyp, numpy.max(overlap)))
         max_overlap[hyp] = overlap
-    plt.savefig(os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'))
+    # clear axis for last space
+    ax[3, 1].set_axis_off()
+    plt.savefig(
+        os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'),
+        bbox_inches='tight')
     plt.close()
     return(max_overlap)
 
@@ -102,7 +107,8 @@ def mk_range_maps(narps, dataset='zstat'):
             cut_coords=cut_coords,
             axes=ax[i])
     plt.savefig(os.path.join(
-        narps.dirs.dirs['figures'], 'range_map.pdf'))
+        narps.dirs.dirs['figures'], 'range_map.png'),
+        bbox_inches='tight')
     plt.close(fig)
 
 
@@ -127,7 +133,8 @@ def mk_std_maps(narps, dataset='zstat'):
             cut_coords=cut_coords,
             axes=ax[i])
     plt.savefig(os.path.join(
-        narps.dirs.dirs['figures'], 'std_map.pdf'))
+        narps.dirs.dirs['figures'], 'std_map.png'),
+        bbox_inches='tight')
     plt.close(fig)
 
 
@@ -219,7 +226,8 @@ def plot_individual_maps(
                 axes=ax[ctr])
             ctr += 1
         plt.savefig(os.path.join(
-            outdir, '%s.pdf' % teamID))
+            outdir, '%s.png' % teamID),
+            bbox_inches='tight')
         plt.close(fig)
 
 
@@ -325,7 +333,8 @@ def mk_correlation_maps_unthresh(
         cc_unthresh[hyp] = (cc, labels)
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
-            'hyp%d_%s_map_unthresh.pdf' % (hyp, corr_type)))
+            'hyp%d_%s_map_unthresh.png' % (hyp, corr_type)),
+            bbox_inches='tight')
         plt.close()
         dendrograms[hyp] = ward_linkage
 
@@ -480,7 +489,8 @@ def analyze_clusters(
         log_to_file(logfile, '')
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
-            'hyp%d_cluster_means.pdf' % hyp))
+            'hyp%d_cluster_means.png' % hyp),
+            bbox_inches='tight')
         plt.close(fig)
 
     # save cluster metadata to data frame
@@ -532,7 +542,8 @@ def plot_distance_from_mean(narps):
             median_distance_df.median_distance)
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
-        'median_distance_sorted.png'))
+        'median_distance_sorted.png'),
+        bbox_inches='tight')
     plt.close()
 
     # This plot is limited to the teams with particularly
@@ -633,7 +644,8 @@ def get_thresh_similarity(narps, dataset='resampled'):
         plt.title(hypotheses[hyp])
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
-            'hyp%d_pctagree_map_thresh.pdf' % hyp))
+            'hyp%d_pctagree_map_thresh.png' % hyp),
+            bbox_inches='tight')
         plt.close()
 
         seaborn.clustermap(
@@ -644,7 +656,8 @@ def get_thresh_similarity(narps, dataset='resampled'):
         plt.title(hypotheses[hyp])
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
-            'hyp%d_jaccard_map_thresh.pdf' % hyp))
+            'hyp%d_jaccard_map_thresh.png' % hyp),
+            bbox_inches='tight')
         plt.close()
 
         seaborn.clustermap(
@@ -655,7 +668,8 @@ def get_thresh_similarity(narps, dataset='resampled'):
         plt.title(hypotheses[hyp])
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
-            'hyp%d_jaccard_nonzero_map_thresh.pdf' % hyp))
+            'hyp%d_jaccard_nonzero_map_thresh.png' % hyp),
+            bbox_inches='tight')
         plt.close()
 
 
