@@ -18,6 +18,8 @@ from MakeSupplementaryFigure1 import mk_supp_figure1,\
 from ClusterImageCorrelation import\
     cluster_image_correlation
 from ThreshVoxelStatistics import get_thresh_voxel_stats
+from MakeCombinedClusterFigures import\
+    make_combined_cluster_figures
 
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
@@ -154,6 +156,11 @@ def test_cluster_image_correlations(narps):
 # compute thresh statisics
 def test_get_thresh_voxel_stats(narps):
     get_thresh_voxel_stats(narps.basedir)
+
+
+# make combined figures
+def test_make_combined_cluster_figures(narps):
+    make_combined_cluster_figures(narps.basedir)
 
 
 # simulated data analysis
