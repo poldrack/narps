@@ -24,7 +24,8 @@ import seaborn
 import scipy.cluster
 import scipy.stats
 from scipy.spatial.distance import pdist, squareform
-from utils import get_concat_data, log_to_file, stringify_dict
+from utils import get_concat_data, log_to_file, stringify_dict,\
+    matrix_pct_agreement
 from narps import Narps, hypotheses, hypnums
 from narps import NarpsDirs # noqa, flake8 issue
 
@@ -49,7 +50,9 @@ def mk_overlap_maps(narps, verbose=True):
     masker = nilearn.input_data.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
     max_overlap = {}
-    fig, ax = plt.subplots(7, 1, figsize=(12, 24))
+    fig, ax = plt.subplots(4, 2, figsize=(12, 24))
+    axis_y = [1, 1, 1, 1, 2, 2, 2, 2]
+    axis_x = [1, 2, 3, 4, 1, 2, 3, 4]
     for i, hyp in enumerate(hypnums):
         imgfile = os.path.join(
             narps.dirs.dirs['output'],
@@ -63,7 +66,7 @@ def mk_overlap_maps(narps, verbose=True):
             vmax=1.,
             cmap='jet',
             cut_coords=cut_coords,
-            axes=ax[i],
+            axes=ax[axis_x[i], axis_y[i],
             figure=fig)
 
         # compute max and median overlap
@@ -574,7 +577,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
         stringify_dict(func_args))
 
     for hyp in hypnums:
-        print('creating Jaccard map for hypothesis', hyp)
+        print('analyzing thresh similarity for hypothesis', hyp)
         maskdata, labels = get_concat_data(
             hyp,
             narps.dirs.MNI_mask,
@@ -582,8 +585,15 @@ def get_thresh_similarity(narps, dataset='resampled'):
             imgtype='thresh',
             dataset=dataset)
 
+        pctagree = matrix_pct_agreement(maskdata)
         jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
         jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
+        median_pctagree = numpy.median(
+            pctagree[numpy.triu_indices_from(jacsim, 1)])
+        log_to_file(
+            logfile,
+            'hyp %d: mean pctagree similarity: %f' %
+            (hyp, median_pctagree))
         median_jacsim = numpy.median(
             jacsim[numpy.triu_indices_from(jacsim, 1)])
         log_to_file(
@@ -597,10 +607,16 @@ def get_thresh_similarity(narps, dataset='resampled'):
                 'hyp %d: mean jacaard similarity (nonzero): %f' %
                 (hyp, median_jacsim_nonzero))
 
-        df = pandas.DataFrame(jacsim, index=labels, columns=labels)
-        df.to_csv(os.path.join(
+        df_pctagree = pandas.DataFrame(pctagree, index=labels, columns=labels)
+        df_pctagree.to_csv(os.path.join(
+            narps.dirs.dirs['metadata'],
+            'pctagree_hyp%d.csv' % hyp))
+
+        df_jaccard = pandas.DataFrame(jacsim, index=labels, columns=labels)
+        df_jaccard.to_csv(os.path.join(
             narps.dirs.dirs['metadata'],
             'jacsim_thresh_hyp%d.csv' % hyp))
+
         df_nonzero = pandas.DataFrame(
             jacsim_nonzero,
             index=labels,
@@ -608,8 +624,20 @@ def get_thresh_similarity(narps, dataset='resampled'):
         df_nonzero.to_csv(os.path.join(
             narps.dirs.dirs['metadata'],
             'jacsim_nonzero_thresh_hyp%d.csv' % hyp))
+
         seaborn.clustermap(
-            df,
+            df_pctagree,
+            cmap='jet',
+            figsize=(16, 16),
+            method='ward')
+        plt.title(hypotheses[hyp])
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_pctagree_map_thresh.pdf' % hyp))
+        plt.close()
+
+        seaborn.clustermap(
+            df_jaccard,
             cmap='jet',
             figsize=(16, 16),
             method='ward')
@@ -618,6 +646,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
             narps.dirs.dirs['figures'],
             'hyp%d_jaccard_map_thresh.pdf' % hyp))
         plt.close()
+
         seaborn.clustermap(
             df_nonzero,
             cmap='jet',
@@ -640,6 +669,9 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--detailed',
                         action='store_true',
                         help='generate detailed team-level figures')
+    parser.add_argument('-t', '--test',
+                        action='store_true',
+                        help='use testing mode (no processing)')
     args = parser.parse_args()
 
     # set up base directory
@@ -659,31 +691,31 @@ if __name__ == "__main__":
     # Load full metadata and put into narps structure
     narps.metadata = pandas.read_csv(
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
+    if not args.test:
+        # create maps showing overlap of thresholded images
+        mk_overlap_maps(narps)
 
-    # create maps showing overlap of thresholded images
-    mk_overlap_maps(narps)
+        mk_range_maps(narps)
 
-    mk_range_maps(narps)
+        mk_std_maps(narps)
 
-    mk_std_maps(narps)
+        if args.detailed:
+            plot_individual_maps(
+                narps,
+                imgtype='unthresh',
+                dataset='zstat')
 
-    if args.detailed:
-        plot_individual_maps(
+        corr_type = 'spearman'
+        dendrograms, membership = mk_correlation_maps_unthresh(
+            narps, corr_type=corr_type)
+
+        # if variables don't exist then load them
+        cluster_metadata_df = analyze_clusters(
             narps,
-            imgtype='unthresh',
-            dataset='zstat')
+            dendrograms,
+            membership,
+            corr_type=corr_type)
 
-    corr_type = 'spearman'
-    dendrograms, membership = mk_correlation_maps_unthresh(
-        narps, corr_type=corr_type)
+        plot_distance_from_mean(narps)
 
-    # if variables don't exist then load them
-    cluster_metadata_df = analyze_clusters(
-        narps,
-        dendrograms,
-        membership,
-        corr_type=corr_type)
-
-    plot_distance_from_mean(narps)
-
-    get_thresh_similarity(narps)
+        get_thresh_similarity(narps)
