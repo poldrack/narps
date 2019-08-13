@@ -18,12 +18,10 @@ import nilearn.plotting
 import sklearn
 import sys
 import inspect
-from sklearn.metrics.pairwise import pairwise_distances
 import matplotlib.pyplot as plt
 import seaborn
 import scipy.cluster
 import scipy.stats
-from scipy.spatial.distance import pdist, squareform
 from utils import get_concat_data, log_to_file, stringify_dict,\
     matrix_pct_agreement
 from narps import Narps, hypotheses, hypnums
@@ -33,6 +31,12 @@ from narps import NarpsDirs # noqa, flake8 issue
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
 cluster_colors = ['c', 'm', 'b', 'y', 'k']
+cluster_colornames = {
+    'c': 'cyan',
+    'm': 'magenta',
+    'b': 'blue',
+    'y': 'yellow',
+    'k': 'black'}
 
 
 def mk_overlap_maps(narps, verbose=True):
@@ -479,8 +483,9 @@ def analyze_clusters(
                 vmax=vmax,
                 display_mode="z",
                 colorbar=True,
-                title='hyp%d - cluster%d (fwhm=%0.2f, pYes = %0.2f)' % (
-                    hyp, cl, mean_smoothing[str(hyp)][str(cl)],
+                title='hyp%d - cluster%d [%s] (pYes = %0.2f)' % (
+                    hyp, cl,
+                    cluster_colornames[cluster_colors[j-1]],
                     mean_decision[str(hyp)][str(cl)]
                 ),
                 cut_coords=cut_coords,
@@ -597,44 +602,17 @@ def get_thresh_similarity(narps, dataset='resampled'):
             dataset=dataset)
 
         pctagree = matrix_pct_agreement(maskdata)
-        jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
-        jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
         median_pctagree = numpy.median(
-            pctagree[numpy.triu_indices_from(jacsim, 1)])
+            pctagree[numpy.triu_indices_from(pctagree, 1)])
         log_to_file(
             logfile,
             'hyp %d: mean pctagree similarity: %f' %
             (hyp, median_pctagree))
-        median_jacsim = numpy.median(
-            jacsim[numpy.triu_indices_from(jacsim, 1)])
-        log_to_file(
-            logfile,
-            'hyp %d: mean jaccard similarity (with zeros): %f' %
-            (hyp, median_jacsim))
-        median_jacsim_nonzero = numpy.median(
-            jacsim_nonzero[numpy.triu_indices_from(jacsim_nonzero, 1)])
-        log_to_file(
-                logfile,
-                'hyp %d: mean jacaard similarity (nonzero): %f' %
-                (hyp, median_jacsim_nonzero))
 
         df_pctagree = pandas.DataFrame(pctagree, index=labels, columns=labels)
         df_pctagree.to_csv(os.path.join(
             narps.dirs.dirs['metadata'],
             'pctagree_hyp%d.csv' % hyp))
-
-        df_jaccard = pandas.DataFrame(jacsim, index=labels, columns=labels)
-        df_jaccard.to_csv(os.path.join(
-            narps.dirs.dirs['metadata'],
-            'jacsim_thresh_hyp%d.csv' % hyp))
-
-        df_nonzero = pandas.DataFrame(
-            jacsim_nonzero,
-            index=labels,
-            columns=labels)
-        df_nonzero.to_csv(os.path.join(
-            narps.dirs.dirs['metadata'],
-            'jacsim_nonzero_thresh_hyp%d.csv' % hyp))
 
         seaborn.clustermap(
             df_pctagree,
@@ -645,30 +623,6 @@ def get_thresh_similarity(narps, dataset='resampled'):
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_pctagree_map_thresh.png' % hyp),
-            bbox_inches='tight')
-        plt.close()
-
-        seaborn.clustermap(
-            df_jaccard,
-            cmap='jet',
-            figsize=(16, 16),
-            method='ward')
-        plt.title(hypotheses[hyp])
-        plt.savefig(os.path.join(
-            narps.dirs.dirs['figures'],
-            'hyp%d_jaccard_map_thresh.png' % hyp),
-            bbox_inches='tight')
-        plt.close()
-
-        seaborn.clustermap(
-            df_nonzero,
-            cmap='jet',
-            figsize=(16, 16),
-            method='ward')
-        plt.title(hypotheses[hyp])
-        plt.savefig(os.path.join(
-            narps.dirs.dirs['figures'],
-            'hyp%d_jaccard_nonzero_map_thresh.png' % hyp),
             bbox_inches='tight')
         plt.close()
 
