@@ -20,6 +20,6 @@ The required Python packages are required to use this package:
 * Nibabel
 * Nilearn
 * Pandas
-
+* statsmodels
 * wget to download original data
 * xlrd for Excel reading
