@@ -11,6 +11,7 @@ import nibabel
 from scipy.stats import norm, t
 import scipy.stats
 from datetime import datetime
+from sklearn.metrics import cohen_kappa_score
 
 
 def stringify_dict(d):
@@ -336,3 +337,29 @@ def randn_from_shape(shape):
             shape[1],
             shape[2],
             shape[3]))
+
+
+def matrix_kappa_score(d):
+    """
+    compute cohen's kappa for each combination
+    of rows
+    """
+    score = numpy.eye(d.shape[0])
+    for i in range(d.shape[0]):
+        for j in range(i + 1, d.shape[0]):
+            score[i, j] = cohen_kappa_score(d[i, :], d[j, :])
+            score[j, i] = score[i, j]
+    return(score)
+
+
+def matrix_pct_agreement(d):
+    """
+    compute cohen's kappa for each combination
+    of rows
+    """
+    score = numpy.eye(d.shape[0])
+    for i in range(d.shape[0]):
+        for j in range(i + 1, d.shape[0]):
+            score[i, j] = numpy.mean(d[i, :] == d[j, :])
+            score[j, i] = score[i, j]
+    return(score)
