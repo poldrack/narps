@@ -30,8 +30,8 @@ RUN pip install \
     xlrd==1.2.0 \
     statsmodels==0.10.0 \
     wget==3.2 \
-    hickle==3.4.5 \
-    requests==2.22.0
+    requests==2.22.0 \
+    Pillow==5.3.0
 
 RUN pip install git+https://github.com/poldrack/neurovault_collection_downloader.git@f733fd88460230fc39b815574050082f319d7cb7
 
@@ -57,5 +57,7 @@ ENV C_INCLUDE_PATH /usr/local/lib/R/include
 ENV LD_LIBRARY_PATH /usr/local/lib/R/lib
 RUN echo "source /etc/fsl/5.0/fsl.sh" >> /root/.bashrc
 ENV NARPS_BASEDIR /data
+
+WORKDIR /analysis
 
 CMD ["/bin/bash"]
