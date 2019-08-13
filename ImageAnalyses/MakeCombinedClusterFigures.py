@@ -4,20 +4,11 @@ for use as supplementary figures
 """
 
 import os
-import glob
-import numpy
-import pandas
-import nilearn.input_data
-import seaborn
-import matplotlib.pyplot as plt
-import sys
-from PIL import Image
-
 from PIL import Image
 
 
 def append_images(imgfiles, direction='horizontal',
-                  bg_color=(255,255,255), aligment='center'):
+                  bg_color=(255, 255, 255), aligment='center'):
     """
     Appends images in horizontal/vertical direction.
 
@@ -35,7 +26,7 @@ def append_images(imgfiles, direction='horizontal',
     images = [i.convert('RGBA') for i in images]
     widths, heights = zip(*(i.size for i in images))
 
-    if direction=='horizontal':
+    if direction == 'horizontal':
         new_width = sum(widths)
         new_height = max(heights)
     else:
@@ -44,10 +35,9 @@ def append_images(imgfiles, direction='horizontal',
 
     new_im = Image.new('RGBA', (new_width, new_height), color=bg_color)
 
-
     offset = 0
     for im in images:
-        if direction=='horizontal':
+        if direction == 'horizontal':
             y = 0
             if aligment == 'center':
                 y = int((new_height - im.size[1])/2)
@@ -66,13 +56,13 @@ def append_images(imgfiles, direction='horizontal',
 
     return new_im
 
-
-# after https://stackoverflow.com/questions/30227466/combine-several-images-horizontally-with-python
+# after https://stackoverflow.com/questions/30227466/
+#  combine-several-images-horizontally-with-python
 
 
 def make_combined_cluster_figures(basedir):
     figdir = os.path.join(basedir, 'figures')
-    for hyp in range(1,10):
+    for hyp in range(1, 10):
         if hyp in [3, 4]:
             continue
         heatmap_file = os.path.join(
@@ -89,7 +79,7 @@ def make_combined_cluster_figures(basedir):
         )
         new_im = append_images([heatmap_file, slices_file])
         new_im.save(outfile)
-            
+
 
 if __name__ == "__main__":
 
