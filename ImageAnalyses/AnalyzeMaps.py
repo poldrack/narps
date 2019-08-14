@@ -18,13 +18,12 @@ import nilearn.plotting
 import sklearn
 import sys
 import inspect
-from sklearn.metrics.pairwise import pairwise_distances
 import matplotlib.pyplot as plt
 import seaborn
 import scipy.cluster
 import scipy.stats
-from scipy.spatial.distance import pdist, squareform
-from utils import get_concat_data, log_to_file, stringify_dict
+from utils import get_concat_data, log_to_file, stringify_dict,\
+    matrix_pct_agreement
 from narps import Narps, hypotheses, hypnums
 from narps import NarpsDirs # noqa, flake8 issue
 
@@ -32,6 +31,12 @@ from narps import NarpsDirs # noqa, flake8 issue
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
 cluster_colors = ['c', 'm', 'b', 'y', 'k']
+cluster_colornames = {
+    'c': 'cyan',
+    'm': 'magenta',
+    'b': 'blue',
+    'y': 'yellow',
+    'k': 'black'}
 
 
 def mk_overlap_maps(narps, verbose=True):
@@ -49,7 +54,9 @@ def mk_overlap_maps(narps, verbose=True):
     masker = nilearn.input_data.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
     max_overlap = {}
-    fig, ax = plt.subplots(7, 1, figsize=(12, 24))
+    fig, ax = plt.subplots(4, 2, figsize=(15, 10))
+    axis_y = [0, 0, 0, 0, 1, 1, 1, 1]
+    axis_x = [0, 1, 2, 3, 0, 1, 2, 3]
     for i, hyp in enumerate(hypnums):
         imgfile = os.path.join(
             narps.dirs.dirs['output'],
@@ -63,7 +70,8 @@ def mk_overlap_maps(narps, verbose=True):
             vmax=1.,
             cmap='jet',
             cut_coords=cut_coords,
-            axes=ax[i],
+            axes=ax[axis_x[i], axis_y[i]],
+            annotate=False,
             figure=fig)
 
         # compute max and median overlap
@@ -74,7 +82,11 @@ def mk_overlap_maps(narps, verbose=True):
         overlap = numpy.mean(thresh_concat_data, 0)
         log_to_file(logfile, 'hyp%d: %f' % (hyp, numpy.max(overlap)))
         max_overlap[hyp] = overlap
-    plt.savefig(os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'))
+    # clear axis for last space
+    ax[3, 1].set_axis_off()
+    plt.savefig(
+        os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'),
+        bbox_inches='tight')
     plt.close()
     return(max_overlap)
 
@@ -99,7 +111,8 @@ def mk_range_maps(narps, dataset='zstat'):
             cut_coords=cut_coords,
             axes=ax[i])
     plt.savefig(os.path.join(
-        narps.dirs.dirs['figures'], 'range_map.pdf'))
+        narps.dirs.dirs['figures'], 'range_map.png'),
+        bbox_inches='tight')
     plt.close(fig)
 
 
@@ -124,7 +137,8 @@ def mk_std_maps(narps, dataset='zstat'):
             cut_coords=cut_coords,
             axes=ax[i])
     plt.savefig(os.path.join(
-        narps.dirs.dirs['figures'], 'std_map.pdf'))
+        narps.dirs.dirs['figures'], 'std_map.png'),
+        bbox_inches='tight')
     plt.close(fig)
 
 
@@ -216,7 +230,8 @@ def plot_individual_maps(
                 axes=ax[ctr])
             ctr += 1
         plt.savefig(os.path.join(
-            outdir, '%s.pdf' % teamID))
+            outdir, '%s.png' % teamID),
+            bbox_inches='tight')
         plt.close(fig)
 
 
@@ -322,7 +337,8 @@ def mk_correlation_maps_unthresh(
         cc_unthresh[hyp] = (cc, labels)
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
-            'hyp%d_%s_map_unthresh.pdf' % (hyp, corr_type)))
+            'hyp%d_%s_map_unthresh.png' % (hyp, corr_type)),
+            bbox_inches='tight')
         plt.close()
         dendrograms[hyp] = ward_linkage
 
@@ -467,8 +483,9 @@ def analyze_clusters(
                 vmax=vmax,
                 display_mode="z",
                 colorbar=True,
-                title='hyp%d - cluster%d (fwhm=%0.2f, pYes = %0.2f)' % (
-                    hyp, cl, mean_smoothing[str(hyp)][str(cl)],
+                title='hyp%d - cluster%d [%s] (pYes = %0.2f)' % (
+                    hyp, cl,
+                    cluster_colornames[cluster_colors[j-1]],
                     mean_decision[str(hyp)][str(cl)]
                 ),
                 cut_coords=cut_coords,
@@ -477,7 +494,8 @@ def analyze_clusters(
         log_to_file(logfile, '')
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
-            'hyp%d_cluster_means.pdf' % hyp))
+            'hyp%d_cluster_means.png' % hyp),
+            bbox_inches='tight')
         plt.close(fig)
 
     # save cluster metadata to data frame
@@ -529,7 +547,8 @@ def plot_distance_from_mean(narps):
             median_distance_df.median_distance)
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
-        'median_distance_sorted.png'))
+        'median_distance_sorted.png'),
+        bbox_inches='tight')
     plt.close()
 
     # This plot is limited to the teams with particularly
@@ -574,7 +593,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
         stringify_dict(func_args))
 
     for hyp in hypnums:
-        print('creating Jaccard map for hypothesis', hyp)
+        print('analyzing thresh similarity for hypothesis', hyp)
         maskdata, labels = get_concat_data(
             hyp,
             narps.dirs.MNI_mask,
@@ -582,51 +601,29 @@ def get_thresh_similarity(narps, dataset='resampled'):
             imgtype='thresh',
             dataset=dataset)
 
-        jacsim = 1 - pairwise_distances(maskdata,  metric="hamming")
-        jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
-        median_jacsim = numpy.median(
-            jacsim[numpy.triu_indices_from(jacsim, 1)])
+        pctagree = matrix_pct_agreement(maskdata)
+        median_pctagree = numpy.median(
+            pctagree[numpy.triu_indices_from(pctagree, 1)])
         log_to_file(
             logfile,
-            'hyp %d: mean jaccard similarity (with zeros): %f' %
-            (hyp, median_jacsim))
-        median_jacsim_nonzero = numpy.median(
-            jacsim_nonzero[numpy.triu_indices_from(jacsim_nonzero, 1)])
-        log_to_file(
-                logfile,
-                'hyp %d: mean jacaard similarity (nonzero): %f' %
-                (hyp, median_jacsim_nonzero))
+            'hyp %d: mean pctagree similarity: %f' %
+            (hyp, median_pctagree))
 
-        df = pandas.DataFrame(jacsim, index=labels, columns=labels)
-        df.to_csv(os.path.join(
+        df_pctagree = pandas.DataFrame(pctagree, index=labels, columns=labels)
+        df_pctagree.to_csv(os.path.join(
             narps.dirs.dirs['metadata'],
-            'jacsim_thresh_hyp%d.csv' % hyp))
-        df_nonzero = pandas.DataFrame(
-            jacsim_nonzero,
-            index=labels,
-            columns=labels)
-        df_nonzero.to_csv(os.path.join(
-            narps.dirs.dirs['metadata'],
-            'jacsim_nonzero_thresh_hyp%d.csv' % hyp))
+            'pctagree_hyp%d.csv' % hyp))
+
         seaborn.clustermap(
-            df,
+            df_pctagree,
             cmap='jet',
             figsize=(16, 16),
             method='ward')
         plt.title(hypotheses[hyp])
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
-            'hyp%d_jaccard_map_thresh.pdf' % hyp))
-        plt.close()
-        seaborn.clustermap(
-            df_nonzero,
-            cmap='jet',
-            figsize=(16, 16),
-            method='ward')
-        plt.title(hypotheses[hyp])
-        plt.savefig(os.path.join(
-            narps.dirs.dirs['figures'],
-            'hyp%d_jaccard_nonzero_map_thresh.pdf' % hyp))
+            'hyp%d_pctagree_map_thresh.png' % hyp),
+            bbox_inches='tight')
         plt.close()
 
 
@@ -640,6 +637,9 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--detailed',
                         action='store_true',
                         help='generate detailed team-level figures')
+    parser.add_argument('-t', '--test',
+                        action='store_true',
+                        help='use testing mode (no processing)')
     args = parser.parse_args()
 
     # set up base directory
@@ -659,31 +659,31 @@ if __name__ == "__main__":
     # Load full metadata and put into narps structure
     narps.metadata = pandas.read_csv(
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
+    if not args.test:
+        # create maps showing overlap of thresholded images
+        mk_overlap_maps(narps)
 
-    # create maps showing overlap of thresholded images
-    mk_overlap_maps(narps)
+        mk_range_maps(narps)
 
-    mk_range_maps(narps)
+        mk_std_maps(narps)
 
-    mk_std_maps(narps)
+        if args.detailed:
+            plot_individual_maps(
+                narps,
+                imgtype='unthresh',
+                dataset='zstat')
 
-    if args.detailed:
-        plot_individual_maps(
+        corr_type = 'spearman'
+        dendrograms, membership = mk_correlation_maps_unthresh(
+            narps, corr_type=corr_type)
+
+        # if variables don't exist then load them
+        cluster_metadata_df = analyze_clusters(
             narps,
-            imgtype='unthresh',
-            dataset='zstat')
+            dendrograms,
+            membership,
+            corr_type=corr_type)
 
-    corr_type = 'spearman'
-    dendrograms, membership = mk_correlation_maps_unthresh(
-        narps, corr_type=corr_type)
+        plot_distance_from_mean(narps)
 
-    # if variables don't exist then load them
-    cluster_metadata_df = analyze_clusters(
-        narps,
-        dendrograms,
-        membership,
-        corr_type=corr_type)
-
-    plot_distance_from_mean(narps)
-
-    get_thresh_similarity(narps)
+        get_thresh_similarity(narps)
