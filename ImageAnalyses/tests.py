@@ -150,7 +150,14 @@ def test_mk_suppfigure1(narps):
 
 # compute cluster similarity
 def test_cluster_image_correlations(narps):
-    cluster_image_correlation(narps.basedir)
+    cluster_image_correlation(
+        narps.basedir,
+        'TomEtAl',
+        ['Task', 'Gain', 'Loss'])
+    cluster_image_correlation(
+        narps.basedir,
+        'NARPS_mean',
+        ['Task'])
 
 
 # compute thresh statisics
