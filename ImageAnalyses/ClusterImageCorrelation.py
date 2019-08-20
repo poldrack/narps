@@ -13,7 +13,9 @@ import seaborn
 import matplotlib.pyplot as plt
 
 
-def cluster_image_correlation(basedir):
+def cluster_image_correlation(basedir,
+                              targetdir,
+                              zstat_desc):
     # load cluster maps
     cluster_img_dir = os.path.join(
         basedir,
@@ -41,43 +43,43 @@ def cluster_image_correlation(basedir):
     plt.tight_layout()
     plt.savefig(os.path.join(basedir, 'figures/cluster_correlation.pdf'))
 
-    # load original Tom et al. maps and compare to each cluster map
-    tom_files = glob.glob(os.path.join(
-        basedir,
-        'orig/TomEtAl/zstat*'))
-    tom_files.sort()
-    tom_data = masker.fit_transform(tom_files)
-    tom_corr = numpy.zeros((data.shape[0], tom_data.shape[0]))
+    # load target maps and compare to each cluster map
+    target_files = glob.glob(os.path.join(
+        basedir, 'orig/%s/zstat*' % targetdir))
+    target_files.sort()
+    target_data = masker.fit_transform(target_files)
+    target_corr = numpy.zeros((data.shape[0], target_data.shape[0]))
     for i in range(data.shape[0]):
-        for j in range(tom_data.shape[0]):
-            tom_corr[i, j] = numpy.corrcoef(data[i, :], tom_data[j, :])[0, 1]
+        for j in range(target_data.shape[0]):
+            target_corr[i, j] = numpy.corrcoef(
+                data[i, :], target_data[j, :])[0, 1]
 
-    tom_corr_df = pandas.DataFrame(tom_corr,
-                                   columns=['Task', 'Gain', 'Loss'],
-                                   index=labels)
+    target_corr_df = pandas.DataFrame(target_corr,
+                                      columns=zstat_desc,
+                                      index=labels)
     plt.figure(figsize=(6, 12))
-    seaborn.heatmap(tom_corr_df, annot=True)
-    plt.xlabel('Tom et al. contrasts')
+    seaborn.heatmap(target_corr_df, annot=True)
+    plt.xlabel('%s contrasts' % targetdir)
     plt.ylabel('NARPS contrasts')
     plt.tight_layout()
-    plt.savefig(os.path.join(basedir, 'figures/tom_correlation.pdf'))
-
-    # compare consensus results to Tom et al.
-    consensus_files = glob.glob(os.path.join(
+    plt.savefig(os.path.join(
         basedir,
-        'output/consensus_analysis/hypo[1,5]_t.nii.gz'))
-    consensus_files.sort()
-    consensus_data = masker.fit_transform(consensus_files)
+        'figures/%s_correlation.pdf' % targetdir))
 
-    consensus_tom_corr = numpy.zeros((
-        consensus_data.shape[0], tom_data.shape[0]))
-    for i in range(consensus_data.shape[0]):
-        for j in range(tom_data.shape[0]):
-            consensus_tom_corr[i, j] = numpy.corrcoef(
-                consensus_data[i, :], tom_data[j, :])[0, 1]
+    target_corr_df.to_csv(os.path.join(
+        basedir,
+        'metadata/cluster_corr_%s.csv' % targetdir
+    ))
 
 
 if __name__ == "__main__":
 
     basedir = os.environ['NARPS_BASEDIR']
-    cluster_image_correlation(basedir)
+    cluster_image_correlation(
+        basedir,
+        'TomEtAl',
+        ['Task', 'Gain', 'Loss'])
+    cluster_image_correlation(
+        basedir,
+        'NARPS_mean',
+        ['Task'])
