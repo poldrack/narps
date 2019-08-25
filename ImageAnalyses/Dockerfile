@@ -31,9 +31,14 @@ RUN pip install \
     statsmodels==0.10.0 \
     wget==3.2 \
     requests==2.22.0 \
-    Pillow==5.3.0
+    Pillow==5.3.0 \
+    extract==1.0 \
+    python-dotenv==0.10.3
+    
 
 RUN pip install git+https://github.com/poldrack/neurovault_collection_downloader.git@f733fd88460230fc39b815574050082f319d7cb7
+
+RUN pip install git+https://github.com/neurostuff/NiMARE.git@0170c712308742442e0b32b5f4fedd949ba6358e#egg=nimare[peaks2maps-cpu]
 
 # install fsl
 RUN wget -O- http://neuro.debian.net/lists/stretch.us-nh.full |  tee /etc/apt/sources.list.d/neurodebian.sources.list
