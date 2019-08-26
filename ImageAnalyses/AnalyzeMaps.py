@@ -24,19 +24,31 @@ import scipy.cluster
 import scipy.stats
 from utils import get_concat_data, log_to_file, stringify_dict,\
     matrix_pct_agreement
-from narps import Narps, hypotheses, hypnums
+from narps import Narps, hypnums
 from narps import NarpsDirs # noqa, flake8 issue
 
 # create some variables used throughout
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
-cluster_colors = ['c', 'm', 'b', 'y', 'k']
+cluster_colors = ['c', 'm', 'y', 'k', 'b']
 cluster_colornames = {
     'c': 'cyan',
     'm': 'magenta',
     'b': 'blue',
     'y': 'yellow',
     'k': 'black'}
+
+# set up full names for figures
+hypotheses_full = {
+    1: '+gain: equal indifference',
+    2: '+gain: equal range',
+    3: '+gain: equal indifference',
+    4: '+gain: equal range',
+    5: '-loss: equal indifference',
+    6: '-loss: equal range',
+    7: '+loss: equal indifference',
+    8: '+loss: equal range',
+    9: '+loss: ER > EI'}
 
 
 def mk_overlap_maps(narps, verbose=True):
@@ -66,7 +78,7 @@ def mk_overlap_maps(narps, verbose=True):
             threshold=0.1,
             display_mode="z",
             colorbar=True,
-            title='hyp %d:' % hyp+hypotheses[hyp],
+            title='H%d:' % hyp+hypotheses_full[hyp],
             vmax=1.,
             cmap='jet',
             cut_coords=cut_coords,
@@ -106,7 +118,7 @@ def mk_range_maps(narps, dataset='zstat'):
             threshold=.1,
             display_mode="z",
             colorbar=True,
-            title='Range: hyp %d:' % hyp+hypotheses[hyp],
+            title='Range: H%d:' % hyp+hypotheses_full[hyp],
             vmax=25,
             cut_coords=cut_coords,
             axes=ax[i])
@@ -132,7 +144,7 @@ def mk_std_maps(narps, dataset='zstat'):
             threshold=.1,
             display_mode="z",
             colorbar=True,
-            title='SD: hyp %d:' % hyp+hypotheses[hyp],
+            title='SD: H%d:' % hyp+hypotheses_full[hyp],
             vmax=4,
             cut_coords=cut_coords,
             axes=ax[i])
@@ -286,7 +298,7 @@ def mk_correlation_maps_unthresh(
         if 'mean_corr' not in locals():
             mean_corr = pandas.DataFrame(
                 numpy.zeros((len(labels), len(hypnums))),
-                columns=['hyp%d' % i for i in hypnums],
+                columns=['H%d' % i for i in hypnums],
                 index=labels)
         meandata = numpy.mean(maskdata, 0)
         for t in range(maskdata.shape[0]):
@@ -306,12 +318,14 @@ def mk_correlation_maps_unthresh(
 
         ward_linkage = scipy.cluster.hierarchy.ward(cc)
 
+        # add 1 to cluster labels so they start at 1
+        # rather than zero - for clarity in paper
         clustlabels = [
-            s[0] for s in
+            s[0] + 1 for s in
             scipy.cluster.hierarchy.cut_tree(
                 ward_linkage,
                 n_clusters=n_clusters[hyp])]
-
+        print('clustlabels:', clustlabels)
         # get decisions for column colors
         md = narps.metadata.query(
             'varnum==%d' % hyp).set_index('teamID')
@@ -322,7 +336,8 @@ def mk_correlation_maps_unthresh(
             for teamID in labels
             ]
 
-        row_colors = [cluster_colors[s-1] for s in clustlabels]
+        row_colors = [cluster_colors[s] for s in clustlabels]
+        print('row_colors:', row_colors)
         cm = seaborn.clustermap(
             df,
             cmap='vlag',
@@ -333,7 +348,7 @@ def mk_correlation_maps_unthresh(
             center=0,
             vmin=-1,
             vmax=1)
-        plt.title('hyp %d:' % hyp+hypotheses[hyp])
+        plt.title('H%d:' % hyp+hypotheses_full[hyp])
         cc_unthresh[hyp] = (cc, labels)
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
@@ -431,7 +446,7 @@ def analyze_clusters(
             log_to_file(
                 logfile,
                 'hyp %d cluster %d (%s)' % (
-                    hyp, cl, cluster_colors[j-1]))
+                    hyp, cl, cluster_colors[j+1]))
             # get all images for this cluster and average them
             member_maps = []
             member_smoothing = []
@@ -483,9 +498,9 @@ def analyze_clusters(
                 vmax=vmax,
                 display_mode="z",
                 colorbar=True,
-                title='hyp%d - cluster%d [%s] (pYes = %0.2f)' % (
+                title='H%d - cluster %d [%s] (pYes = %0.2f)' % (
                     hyp, cl,
-                    cluster_colornames[cluster_colors[j-1]],
+                    cluster_colornames[cluster_colors[j+1]],
                     mean_decision[str(hyp)][str(cl)]
                 ),
                 cut_coords=cut_coords,
@@ -619,7 +634,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
             cmap='jet',
             figsize=(16, 16),
             method='ward')
-        plt.title(hypotheses[hyp])
+        plt.title(hypotheses_full[hyp])
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_pctagree_map_thresh.png' % hyp),
@@ -640,6 +655,10 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--test',
                         action='store_true',
                         help='use testing mode (no processing)')
+    parser.add_argument(
+        '--skip_maps',
+        action='store_true',
+        help='skip creation of overlap/range/std maps')
     args = parser.parse_args()
 
     # set up base directory
@@ -660,12 +679,13 @@ if __name__ == "__main__":
     narps.metadata = pandas.read_csv(
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
     if not args.test:
-        # create maps showing overlap of thresholded images
-        mk_overlap_maps(narps)
+        if not args.skip_maps:
+            # create maps showing overlap of thresholded images
+            mk_overlap_maps(narps)
 
-        mk_range_maps(narps)
+            mk_range_maps(narps)
 
-        mk_std_maps(narps)
+            mk_std_maps(narps)
 
         if args.detailed:
             plot_individual_maps(
