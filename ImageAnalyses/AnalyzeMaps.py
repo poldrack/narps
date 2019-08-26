@@ -30,7 +30,7 @@ from narps import NarpsDirs # noqa, flake8 issue
 # create some variables used throughout
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
-cluster_colors = ['c', 'm', 'b', 'y', 'k']
+cluster_colors = ['c', 'm', 'y', 'k', 'b']
 cluster_colornames = {
     'c': 'cyan',
     'm': 'magenta',
