@@ -336,7 +336,7 @@ def mk_correlation_maps_unthresh(
             for teamID in labels
             ]
 
-        row_colors = [cluster_colors[s-1] for s in clustlabels]
+        row_colors = [cluster_colors[s] for s in clustlabels]
         cm = seaborn.clustermap(
             df,
             cmap='vlag',
