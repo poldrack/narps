@@ -298,7 +298,7 @@ def mk_correlation_maps_unthresh(
         if 'mean_corr' not in locals():
             mean_corr = pandas.DataFrame(
                 numpy.zeros((len(labels), len(hypnums))),
-                columns=['hyp%d' % i for i in hypnums],
+                columns=['H%d' % i for i in hypnums],
                 index=labels)
         meandata = numpy.mean(maskdata, 0)
         for t in range(maskdata.shape[0]):
@@ -318,8 +318,10 @@ def mk_correlation_maps_unthresh(
 
         ward_linkage = scipy.cluster.hierarchy.ward(cc)
 
+        # add 1 to cluster labels so they start at 1
+        # rather than zero - for clarity in paper
         clustlabels = [
-            s[0] for s in
+            s[0] + 1 for s in
             scipy.cluster.hierarchy.cut_tree(
                 ward_linkage,
                 n_clusters=n_clusters[hyp])]
@@ -495,7 +497,7 @@ def analyze_clusters(
                 vmax=vmax,
                 display_mode="z",
                 colorbar=True,
-                title='hyp%d - cluster%d [%s] (pYes = %0.2f)' % (
+                title='H%d - cluster %d [%s] (pYes = %0.2f)' % (
                     hyp, cl,
                     cluster_colornames[cluster_colors[j-1]],
                     mean_decision[str(hyp)][str(cl)]
