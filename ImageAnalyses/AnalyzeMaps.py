@@ -325,7 +325,7 @@ def mk_correlation_maps_unthresh(
             scipy.cluster.hierarchy.cut_tree(
                 ward_linkage,
                 n_clusters=n_clusters[hyp])]
-
+        print('clustlabels:', clustlabels)
         # get decisions for column colors
         md = narps.metadata.query(
             'varnum==%d' % hyp).set_index('teamID')
@@ -337,6 +337,7 @@ def mk_correlation_maps_unthresh(
             ]
 
         row_colors = [cluster_colors[s] for s in clustlabels]
+        print('row_colors:', row_colors)
         cm = seaborn.clustermap(
             df,
             cmap='vlag',
@@ -445,7 +446,7 @@ def analyze_clusters(
             log_to_file(
                 logfile,
                 'hyp %d cluster %d (%s)' % (
-                    hyp, cl, cluster_colors[j-1]))
+                    hyp, cl, cluster_colors[j+1]))
             # get all images for this cluster and average them
             member_maps = []
             member_smoothing = []
@@ -499,7 +500,7 @@ def analyze_clusters(
                 colorbar=True,
                 title='H%d - cluster %d [%s] (pYes = %0.2f)' % (
                     hyp, cl,
-                    cluster_colornames[cluster_colors[j-1]],
+                    cluster_colornames[cluster_colors[j+1]],
                     mean_decision[str(hyp)][str(cl)]
                 ),
                 cut_coords=cut_coords,
@@ -654,6 +655,10 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--test',
                         action='store_true',
                         help='use testing mode (no processing)')
+    parser.add_argument(
+        '--skip_maps',
+        action='store_true',
+        help='skip creation of overlap/range/std maps')
     args = parser.parse_args()
 
     # set up base directory
@@ -674,12 +679,13 @@ if __name__ == "__main__":
     narps.metadata = pandas.read_csv(
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
     if not args.test:
-        # create maps showing overlap of thresholded images
-        mk_overlap_maps(narps)
+        if not args.skip_maps:
+            # create maps showing overlap of thresholded images
+            mk_overlap_maps(narps)
 
-        mk_range_maps(narps)
+            mk_range_maps(narps)
 
-        mk_std_maps(narps)
+            mk_std_maps(narps)
 
         if args.detailed:
             plot_individual_maps(
