@@ -24,7 +24,7 @@ import scipy.cluster
 import scipy.stats
 from utils import get_concat_data, log_to_file, stringify_dict,\
     matrix_pct_agreement
-from narps import Narps, hypotheses, hypnums
+from narps import Narps, hypnums
 from narps import NarpsDirs # noqa, flake8 issue
 
 # create some variables used throughout
@@ -37,6 +37,18 @@ cluster_colornames = {
     'b': 'blue',
     'y': 'yellow',
     'k': 'black'}
+
+# set up full names for figures
+hypotheses_full = {
+    1: '+gain: equal indifference',
+    2: '+gain: equal range',
+    3: '+gain: equal indifference',
+    4: '+gain: equal range',
+    5: '-loss: equal indifference',
+    6: '-loss: equal range',
+    7: '+loss: equal indifference',
+    8: '+loss: equal range',
+    9: '+loss: ER > EI'}
 
 
 def mk_overlap_maps(narps, verbose=True):
@@ -66,7 +78,7 @@ def mk_overlap_maps(narps, verbose=True):
             threshold=0.1,
             display_mode="z",
             colorbar=True,
-            title='hyp %d:' % hyp+hypotheses[hyp],
+            title='H%d:' % hyp+hypotheses_full[hyp],
             vmax=1.,
             cmap='jet',
             cut_coords=cut_coords,
@@ -106,7 +118,7 @@ def mk_range_maps(narps, dataset='zstat'):
             threshold=.1,
             display_mode="z",
             colorbar=True,
-            title='Range: hyp %d:' % hyp+hypotheses[hyp],
+            title='Range: H%d:' % hyp+hypotheses_full[hyp],
             vmax=25,
             cut_coords=cut_coords,
             axes=ax[i])
@@ -132,7 +144,7 @@ def mk_std_maps(narps, dataset='zstat'):
             threshold=.1,
             display_mode="z",
             colorbar=True,
-            title='SD: hyp %d:' % hyp+hypotheses[hyp],
+            title='SD: H%d:' % hyp+hypotheses_full[hyp],
             vmax=4,
             cut_coords=cut_coords,
             axes=ax[i])
@@ -333,7 +345,7 @@ def mk_correlation_maps_unthresh(
             center=0,
             vmin=-1,
             vmax=1)
-        plt.title('hyp %d:' % hyp+hypotheses[hyp])
+        plt.title('H%d:' % hyp+hypotheses_full[hyp])
         cc_unthresh[hyp] = (cc, labels)
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
@@ -619,7 +631,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
             cmap='jet',
             figsize=(16, 16),
             method='ward')
-        plt.title(hypotheses[hyp])
+        plt.title(hypotheses_full[hyp])
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_pctagree_map_thresh.png' % hyp),
