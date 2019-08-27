@@ -149,7 +149,7 @@ def extract_peak_coordinates(narps, hyp,
     return(ds_dict)
 
 
-def run_ALE(ds_dict, hyp, overwrite=False):
+def run_ALE(ds_dict, hyp, narps, overwrite=False):
     outfile = os.path.join(
             narps.dirs.dirs['ALE'],
             'ALE_results_hyp%d.pkl' % hyp
@@ -316,7 +316,7 @@ if __name__ == "__main__":
                 verbose=args.verbose)
 
             # Performing ALE
-            res = run_ALE(ds_dict, hyp, overwrite=args.overwrite)
+            res = run_ALE(ds_dict, hyp, narps, overwrite=args.overwrite)
 
             images = save_results(hyp, res, narps)
 
