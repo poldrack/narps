@@ -20,7 +20,9 @@ from ClusterImageCorrelation import\
 from ThreshVoxelStatistics import get_thresh_voxel_stats
 from MakeCombinedClusterFigures import\
     make_combined_cluster_figures
-
+from MetaAnalysis import get_thresholded_Z_maps,\
+    extract_peak_coordinates, run_ALE, save_results,\
+    make_figures, make_combined_figure
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
 
@@ -169,9 +171,10 @@ def test_get_thresh_voxel_stats(narps):
 def test_make_combined_cluster_figures(narps):
     make_combined_cluster_figures(narps.basedir)
 
+
 # run ALE meta-analysis
 def test_run_ALE(narps):
-    output_dir = narps.dirs.get_output_dir('ALE')
+    _ = narps.dirs.get_output_dir('ALE')
 
     # create thresholded versions of Z maps
     narps = get_thresholded_Z_maps(
