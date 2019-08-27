@@ -26,7 +26,7 @@ from ALEextract import get_activations, get_sub_dict
 # use binarized/thresholded maps and z maps to create
 # thresholded z maps
 def get_thresholded_Z_maps(narps, verbose=False, overwrite=False):
-    for teamID in narps.complete_image_sets['unthresh']:
+    for teamID in narps.complete_image_sets['thresh']:
         if 'zstat' not in narps.teams[teamID].images['thresh']:
             narps.teams[teamID].images['thresh']['zstat'] = {}
 
@@ -34,7 +34,12 @@ def get_thresholded_Z_maps(narps, verbose=False, overwrite=False):
             if hyp not in narps.teams[teamID].images['unthresh']['zstat']:
                 # fill missing data with nan
                 if verbose:
-                    print('no zstat present for', teamID, hyp)
+                    print('no unthresh zstat present for', teamID, hyp)
+                continue
+            if hyp not in narps.teams[teamID].images['thresh']['resampled']:
+                # fill missing data with nan
+                if verbose:
+                    print('no thresh resampled present for', teamID, hyp)
                 continue
             zfile = narps.teams[teamID].images['unthresh']['zstat'][hyp]
             if not os.path.exists(zfile):
