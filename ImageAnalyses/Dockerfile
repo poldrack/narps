@@ -34,7 +34,8 @@ RUN pip install \
     Pillow==5.3.0 \
     extract==1.0 \
     python-dotenv==0.10.3 \
-    nipy==0.4.2
+    nipy==0.4.2 \
+    colorama==0.4.1
     
 
 RUN pip install git+https://github.com/poldrack/neurovault_collection_downloader.git@f733fd88460230fc39b815574050082f319d7cb7
