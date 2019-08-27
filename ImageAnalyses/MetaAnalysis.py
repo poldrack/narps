@@ -308,7 +308,7 @@ if __name__ == "__main__":
                 narps,
                 hyp,
                 overwrite=args.overwrite,
-                verbose=ars.verbose)
+                verbose=args.verbose)
 
             # Performing ALE
             res = run_ALE(ds_dict, hyp, overwrite=args.overwrite)

@@ -11,7 +11,8 @@ from nipy.algorithms.graph.field import field_from_graph_and_data
 from nipy.io.nibcompat import get_affine
 
 
-def get_3d_peaks(image, mask=None, threshold=0., nn=18, order_th=0):
+def get_3d_peaks(image, mask=None, threshold=0., nn=18, order_th=0,
+                 verbose=False):
     """
     returns all the peaks of image that are with the mask
     and above the provided threshold
@@ -46,7 +47,8 @@ def get_3d_peaks(image, mask=None, threshold=0., nn=18, order_th=0):
     affine = get_affine(image)
 
     if not (data > threshold).any():
-        print('no suprathreshold voxels found')
+        if verbose:
+            print('no suprathreshold voxels found')
         return None
 
     # Extract local maxima and connex components above some threshold
