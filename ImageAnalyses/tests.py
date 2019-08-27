@@ -169,6 +169,27 @@ def test_get_thresh_voxel_stats(narps):
 def test_make_combined_cluster_figures(narps):
     make_combined_cluster_figures(narps.basedir)
 
+# run ALE meta-analysis
+def test_run_ALE(narps):
+    output_dir = narps.dirs.get_output_dir('ALE')
+
+    # create thresholded versions of Z maps
+    narps = get_thresholded_Z_maps(
+        narps)
+
+    # extract peak coordinates
+    for hyp in range(1, 10):
+        ds_dict = extract_peak_coordinates(
+            narps,
+            hyp)
+
+        # Performing ALE
+        res = run_ALE(ds_dict, hyp)
+        images = save_results(hyp, res, narps)
+        make_figures(narps, hyp, images)
+    # make a figure with all hypotheses
+    make_combined_figure(narps)
+
 
 # simulated data analysis
 def test_simulated_data(narps):
