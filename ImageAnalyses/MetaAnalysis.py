@@ -237,7 +237,7 @@ def make_combined_figure(narps, thresh=0.95):
         pimg = nibabel.load(pmap)
         timg = nibabel.load(tmap)
         pdata = pimg.get_fdata()
-        tdata = timg.get_fdata()[:, :, :, 0]
+        tdata = timg.get_fdata()
         threshdata = (pdata > thresh)*tdata
         threshimg = nibabel.Nifti1Image(threshdata, affine=timg.affine)
         nilearn.plotting.plot_stat_map(
