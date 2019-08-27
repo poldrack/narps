@@ -75,7 +75,7 @@ def get_thresholded_Z_maps(narps, verbose=False, overwrite=False):
 
 def extract_peak_coordinates(narps, hyp,
                              overwrite=False, threshold=0.,
-                             verbose=True):
+                             verbose=False):
     '''
     def extract(dir_path, filename, threshold=0., load=True, save_dir=None):
     # threshold_type='percentile',
@@ -201,6 +201,7 @@ def make_figures(narps, hyp, images, fdr_thresh=0.05):
             'hyp%d_ALE_%s.png' % (hyp, i)
         )
         plt.savefig(outfile)
+        plt.close()
 
     nilearn.plotting.plot_stat_map(
         images['fdr_oneminusp'],
@@ -217,6 +218,7 @@ def make_figures(narps, hyp, images, fdr_thresh=0.05):
         'hyp%d_ALE_fdr_thresh_%0.2f.png' % (hyp, fdr_thresh)
     )
     plt.savefig(outfile)
+    plt.close()
     return(None)
 
 
@@ -305,7 +307,8 @@ if __name__ == "__main__":
             ds_dict = extract_peak_coordinates(
                 narps,
                 hyp,
-                overwrite=args.overwrite)
+                overwrite=args.overwrite,
+                verbose=ars.verbose)
 
             # Performing ALE
             res = run_ALE(ds_dict, hyp, overwrite=args.overwrite)
