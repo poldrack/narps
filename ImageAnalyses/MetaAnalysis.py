@@ -51,10 +51,10 @@ def get_thresholded_Z_maps(narps, verbose=False, overwrite=False):
                 if verbose:
                     print('no image present:', threshfile)
                 continue
-            narps.teams[teamID].images['thresh']['zstat'][hyp] = threshfile
 
             outfile = zfile.replace('unthresh', 'thresh')
             assert outfile != zfile
+            narps.teams[teamID].images['thresh']['zstat'][hyp] = outfile
 
             if not os.path.exists(outfile) or overwrite:
                 if verbose:
