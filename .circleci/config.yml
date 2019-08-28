@@ -9,21 +9,21 @@ jobs:
             - "e4:d9:2a:de:d8:40:56:15:af:c7:34:93:ad:d2:85:d1"
       - checkout
       - run:
-           name: static analysis and style check using flake8
-           command: |
+          name: static analysis and style check using flake8
+          command: |
              pip install -U flake8
              flake8 ImageAnalyses
       - run:
           name: Get codecov
           command: python -m pip install codecov
       - run:
-           name: run main narps tests
-           command: |
+          name: run main narps tests
+          command: |
              pip install -U pytest pytest-cov
              source /etc/fsl/5.0/fsl.sh; pytest --cov=./ImageAnalyses --cov-report=xml:/tmp/tests.xml ImageAnalyses/tests.py
       - run:
-           name: run narps ALE tests
-           command: |
+          name: run narps ALE tests
+          command: |
              pip install -U pytest pytest-cov
              source /etc/fsl/5.0/fsl.sh; pytest --cov=./ImageAnalyses --cov-report=xml:/tmp/tests.xml ImageAnalyses/tests_ale.py
       - run:
@@ -31,8 +31,8 @@ jobs:
           command: |
             python -m codecov --file /tmp/tests.xml -e CIRCLE_JOB
       - run:
-           name: run R script test
-           command: |
+          name: run R script test
+          command: |
              cat /root/project/ImageAnalyses/*.Rmd | grep library >| /root/project/ImageAnalyses/R_libraries.R
              export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(rmarkdown); rmarkdown::render("/root/project/ImageAnalyses/DecisionAnalysis.Rmd", "html_document", output_dir = "/tmp/data/figures")' 
              cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs ./metadata ./image_diagnostics ./output/unthresh_concat_zstat/hypo*_voxelmap.nii.gz
