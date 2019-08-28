@@ -48,14 +48,18 @@ def get_thresh_voxel_stats(basedir):
             results_df.hyp == hyp,
             'n_empty'] = numpy.sum(hypdata.n_thresh_vox == 0)
 
+    results_df.to_csv(os.path.join(
+        basedir, 'metadata/thresh_voxel_statistics.csv'
+    ))
+    all_data.to_csv(os.path.join(
+        basedir, 'metadata/thresh_voxel_data.csv'
+    ))
     print(results_df)
-    return(results_df)
+    return(None)
 
 
 if __name__ == "__main__":
 
     basedir = os.environ['NARPS_BASEDIR']
-    results_df = get_thresh_voxel_stats(basedir)
-    results_df.to_csv(os.path.join(
-        basedir, 'metadata/thresh_voxel_statistics.csv'
-    ))
+
+    get_thresh_voxel_stats(basedir)
