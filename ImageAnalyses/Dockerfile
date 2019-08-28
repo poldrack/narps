@@ -25,7 +25,7 @@ RUN pip install \
     pandas==0.24.2 \
     scikit-learn==0.21.2 \
     matplotlib==3.1.0 \
-    scipy==1.3.0 \
+    scipy==1.2.1 \
     seaborn==0.9.0 \
     xlrd==1.2.0 \
     statsmodels==0.10.0 \
@@ -33,7 +33,9 @@ RUN pip install \
     requests==2.22.0 \
     Pillow==5.3.0 \
     extract==1.0 \
-    python-dotenv==0.10.3
+    python-dotenv==0.10.3 \
+    nipy==0.4.2 \
+    colorama==0.4.1
     
 
 RUN pip install git+https://github.com/poldrack/neurovault_collection_downloader.git@f733fd88460230fc39b815574050082f319d7cb7
