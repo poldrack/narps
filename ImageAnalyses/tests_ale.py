@@ -20,17 +20,20 @@ def narps():
     narps.load_data()
     narps.metadata = pandas.read_csv(
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
+    _ = narps.dirs.get_output_dir('ALE')
     return(narps)
 
 
 # tests
 # run ALE meta-analysis
-def test_run_ALE(narps):
-    _ = narps.dirs.get_output_dir('ALE')
-
+def test_thresh_zmap(narps):
     # create thresholded versions of Z maps
     narps = get_thresholded_Z_maps(
         narps)
+
+
+def test_run_ALE(narps):
+    _ = narps.dirs.get_output_dir('ALE')
 
     # extract peak coordinates
     for hyp in range(1, 10):
@@ -42,5 +45,8 @@ def test_run_ALE(narps):
         res = run_ALE(ds_dict, hyp, narps)
         images = save_results(hyp, res, narps)
         make_figures(narps, hyp, images)
+
+
+def test_combined_figure(narps):
     # make a figure with all hypotheses
     make_combined_figure(narps)
