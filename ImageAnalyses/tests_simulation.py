@@ -17,6 +17,8 @@ def narps():
     assert os.path.exists(basedir)
     narps = Narps(basedir)
     narps.load_data()
+    narps.metadata = pandas.read_csv(
+        os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
     return(narps)
 
 

@@ -3,6 +3,7 @@
 
 import pytest
 import os
+import pandas
 from narps import Narps
 from AnalyzeMaps import mk_overlap_maps,\
     mk_range_maps, mk_std_maps,\
@@ -18,6 +19,8 @@ def narps():
     assert os.path.exists(basedir)
     narps = Narps(basedir)
     narps.load_data()
+    narps.metadata = pandas.read_csv(
+        os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
     return(narps)
 
 
