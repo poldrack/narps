@@ -15,8 +15,8 @@ from utils import log_to_file, get_map_metadata
 
 def compare_thresh_unthresh_values(
         dirs, collectionID, logfile,
-        unthresh_dataset='orig',
-        thresh_dataset='orig',
+        unthresh_dataset='zstat',
+        thresh_dataset='zstat',
         verbose=True,
         error_thresh=.05,
         create_histogram=False,
@@ -50,7 +50,8 @@ def compare_thresh_unthresh_values(
         dirs.dirs[thresh_dataset],
         collectionID
     )
-
+    print('using %s for thresh and %s for unthresh' %
+          (thresh_dataset, unthresh_dataset))
     if not os.path.exists(teamdir_unthresh):
         print('no unthresh %s for %s' % (unthresh_dataset, collectionID))
         print(teamdir_unthresh)
