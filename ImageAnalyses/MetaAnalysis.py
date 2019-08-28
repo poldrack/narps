@@ -258,7 +258,7 @@ def make_combined_figure(narps, thresh=0.95):
 
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
-        'ALE_map.pdf'))
+        'ALE_map.png'))
     plt.close(fig)
 
 
