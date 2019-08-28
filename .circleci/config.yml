@@ -25,17 +25,17 @@ jobs:
           name: run map analysis tests
           command: |
              pip install -U pytest pytest-cov
-             source /etc/fsl/5.0/fsl.sh; pytest --cov=./ImageAnalyses --cov-report=xml:/tmp/tests.xml ImageAnalyses/tests_maps.py
+             source /etc/fsl/5.0/fsl.sh; pytest --cov-append --cov=./ImageAnalyses --cov-report=xml:/tmp/tests.xml ImageAnalyses/tests_maps.py
       - run:
           name: run consensus analysis tests
           command: |
              pip install -U pytest pytest-cov
-             source /etc/fsl/5.0/fsl.sh; pytest --cov=./ImageAnalyses --cov-report=xml:/tmp/tests.xml ImageAnalyses/tests_consensus.py
+             source /etc/fsl/5.0/fsl.sh; pytest --cov-append --cov=./ImageAnalyses --cov-report=xml:/tmp/tests.xml ImageAnalyses/tests_consensus.py
       - run:
           name: run narps ALE tests
           command: |
              pip install -U pytest pytest-cov
-             source /etc/fsl/5.0/fsl.sh; pytest -v --cov=./ImageAnalyses --cov-report=xml:/tmp/tests.xml ImageAnalyses/tests_ale.py
+             source /etc/fsl/5.0/fsl.sh; pytest -v --cov-append --cov=./ImageAnalyses --cov-report=xml:/tmp/tests.xml ImageAnalyses/tests_ale.py
           no_output_timeout: 1200
       - run:
           name: Submit test coverage
