@@ -73,6 +73,7 @@ def test_prepare_metadata(narps):
     narps.metadata = pandas.read_csv(
         os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
 
+
 # save the structure for use by later tests
 def test_wrapup(narps):
     narps.write_data()
