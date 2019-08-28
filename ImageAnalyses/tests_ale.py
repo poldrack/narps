@@ -39,7 +39,7 @@ def test_run_ALE(narps):
             hyp)
 
         # Performing ALE
-        res = run_ALE(ds_dict, hyp)
+        res = run_ALE(ds_dict, hyp, narps)
         images = save_results(hyp, res, narps)
         make_figures(narps, hyp, images)
     # make a figure with all hypotheses
