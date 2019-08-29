@@ -7,7 +7,8 @@ import pandas
 from narps import Narps
 from MetaAnalysis import extract_peak_coordinates,\
     run_ALE, save_results,\
-    make_figures, make_combined_figure
+    make_figures, make_combined_figure,\
+    get_thresholded_Z_maps
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
 
@@ -29,6 +30,8 @@ def narps():
 
 def test_run_ALE(narps):
     _ = narps.dirs.get_output_dir('ALE')
+    narps = get_thresholded_Z_maps(
+        narps)
 
     # extract peak coordinates
     for hyp in range(1, 10):
