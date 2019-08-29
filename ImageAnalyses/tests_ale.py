@@ -5,9 +5,10 @@ import pytest
 import os
 import pandas
 from narps import Narps
-from MetaAnalysis import get_thresholded_Z_maps,\
-    extract_peak_coordinates, run_ALE, save_results,\
-    make_figures, make_combined_figure
+from MetaAnalysis import extract_peak_coordinates,\
+    run_ALE, save_results,\
+    make_figures, make_combined_figure,\
+    get_thresholded_Z_maps
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
 
@@ -26,14 +27,11 @@ def narps():
 
 # tests
 # run ALE meta-analysis
-def test_thresh_zmap(narps):
-    # create thresholded versions of Z maps
-    narps = get_thresholded_Z_maps(
-        narps)
-
 
 def test_run_ALE(narps):
     _ = narps.dirs.get_output_dir('ALE')
+    narps = get_thresholded_Z_maps(
+        narps)
 
     # extract peak coordinates
     for hyp in range(1, 10):

@@ -50,7 +50,8 @@ def compare_thresh_unthresh_values(
         dirs.dirs[thresh_dataset],
         collectionID
     )
-
+    print('using %s for thresh and %s for unthresh' %
+          (thresh_dataset, unthresh_dataset))
     if not os.path.exists(teamdir_unthresh):
         print('no unthresh %s for %s' % (unthresh_dataset, collectionID))
         print(teamdir_unthresh)

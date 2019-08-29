@@ -75,11 +75,6 @@ hypotheses = {1: '+gain: equal indiff',
 
 hypnums = [1, 2, 5, 6, 7, 8, 9]
 
-# one team had thresholded maps that
-# had 0 for exceedence and 1 for null
-# so we flip those
-FLIP_THRESH_MAPS = {'27SS': [2, 5, 7]}
-
 
 # separate class to store base directories,
 # since we need them in multiple places
@@ -105,7 +100,8 @@ class NarpsDirs(object):
 
         dirs_to_add = ['output', 'metadata', 'templates',
                        'cached', 'figures', 'logs', 'orig',
-                       'image_diagnostics']
+                       'image_diagnostics_orig',
+                       'image_diagnostics_zstat']
         for d in dirs_to_add:
             self.dirs[d] = os.path.join(self.dirs['base'], d)
 
@@ -247,8 +243,10 @@ class NarpsTeam(object):
             self.dirs.dirs['logs'],
             'image_diagnostics.log')
         collection_string = '%s_%s' % (self.NV_collection_id, self.teamID)
+        if not os.path.exists(self.dirs.dirs['image_diagnostics_orig']):
+            os.mkdir(self.dirs.dirs['image_diagnostics_orig'])
         self.image_diagnostics_file = os.path.join(
-            self.dirs.dirs['image_diagnostics'],
+            self.dirs.dirs['image_diagnostics_orig'],
             '%s.csv' % collection_string
         )
         if not os.path.exists(self.image_diagnostics_file):
@@ -288,7 +286,7 @@ class NarpsTeam(object):
                     self.images[imgtype]['orig'][hyp] = None
                     self.has_all_images[imgtype] = False
 
-    def create_binarized_thresh_masks(self, thresh=1e-6,
+    def create_binarized_thresh_masks(self, thresh=1e-4,
                                       overwrite=False,
                                       replace_na=True):
         """
@@ -317,10 +315,7 @@ class NarpsTeam(object):
                 if replace_na:
                     threshdata = numpy.nan_to_num(threshdata)
                 threshdata_bin = numpy.zeros(threshdata.shape)
-                # fix teams with maps where 1 is null and zero is supra
-                if self.teamID in FLIP_THRESH_MAPS:
-                    if hyp in FLIP_THRESH_MAPS[self.teamID]:
-                        threshdata_bin = -1 * (threshdata_bin - 1)
+
                 # if the team reported using a negative contrast,
                 # then we use the negative direction, otherwise
                 # use the positive direction.

@@ -9,6 +9,9 @@ from AnalyzeMaps import mk_overlap_maps,\
     mk_range_maps, mk_std_maps,\
     mk_correlation_maps_unthresh, analyze_clusters,\
     plot_distance_from_mean, get_thresh_similarity
+from MetaAnalysis import get_thresholded_Z_maps
+from ThreshVoxelStatistics import get_thresh_voxel_stats,\
+    get_zstat_diagnostics
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
 
@@ -59,3 +62,15 @@ def test_plot_distance_from_mean(narps):
 
 def test_get_thresh_similarity(narps):
     get_thresh_similarity(narps)
+
+
+# this was created for ALE but we do it earlier here
+def test_thresh_zmap(narps):
+    # create thresholded versions of Z maps
+    narps = get_thresholded_Z_maps(
+        narps)
+
+
+def test_thresh_voxel_stats(narps):
+    get_zstat_diagnostics(narps)
+    get_thresh_voxel_stats(narps.basedir)

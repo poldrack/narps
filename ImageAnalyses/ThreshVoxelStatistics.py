@@ -6,13 +6,16 @@ import os
 import glob
 import numpy
 import pandas
+import argparse
+from narps import Narps
+from ValueDiagnostics import compare_thresh_unthresh_values
 
 
 def get_thresh_voxel_stats(basedir):
     # load cluster maps
     data_dir = os.path.join(
         basedir,
-        'image_diagnostics')
+        'image_diagnostics_zstat')
     datafiles = glob.glob(os.path.join(
         data_dir, '*'
     ))
@@ -48,14 +51,74 @@ def get_thresh_voxel_stats(basedir):
             results_df.hyp == hyp,
             'n_empty'] = numpy.sum(hypdata.n_thresh_vox == 0)
 
+    results_df.to_csv(os.path.join(
+        basedir, 'metadata/thresh_voxel_statistics.csv'
+    ))
+    all_data.to_csv(os.path.join(
+        basedir, 'metadata/thresh_voxel_data.csv'
+    ))
     print(results_df)
-    return(results_df)
+    return(None)
+
+
+# run diagnostics on zstat images
+def get_zstat_diagnostics(narps,
+                          verbose=True,
+                          overwrite=False):
+    for teamID in narps.teams:
+        collectionID = '%s_%s' % (
+            narps.teams[teamID].NV_collection_id,
+            teamID)
+        if verbose:
+            print(collectionID)
+        logfile = os.path.join(
+            narps.dirs.dirs['logs'],
+            'zstat_diagnostics.log')
+
+        diagnostics_file = os.path.join(
+            narps.dirs.dirs['image_diagnostics_zstat'],
+            '%s.csv' % collectionID)
+        if not os.path.exists(diagnostics_file)\
+                or overwrite:
+            image_diagnostics = compare_thresh_unthresh_values(
+                narps.dirs, collectionID, logfile,
+                unthresh_dataset='zstat',
+                thresh_dataset='zstat')
+            if image_diagnostics is not None:
+                image_diagnostics.to_csv(diagnostics_file)
 
 
 if __name__ == "__main__":
 
-    basedir = os.environ['NARPS_BASEDIR']
-    results_df = get_thresh_voxel_stats(basedir)
-    results_df.to_csv(os.path.join(
-        basedir, 'metadata/thresh_voxel_statistics.csv'
-    ))
+    # parse arguments
+    parser = argparse.ArgumentParser(
+        description='Get stats for thresholded maps')
+    parser.add_argument('-b', '--basedir',
+                        help='base directory')
+    parser.add_argument('-t', '--test',
+                        action='store_true',
+                        help='use testing mode (no processing)')
+    args = parser.parse_args()
+
+    # set up base directory
+    if args.basedir is not None:
+        basedir = args.basedir
+    elif 'NARPS_BASEDIR' in os.environ:
+        basedir = os.environ['NARPS_BASEDIR']
+        print("using basedir specified in NARPS_BASEDIR")
+    else:
+        basedir = '/data'
+        print("using default basedir:", basedir)
+
+    # setup main class
+    narps = Narps(basedir)
+    narps.load_data()
+
+    # Load full metadata and put into narps structure
+    narps.metadata = pandas.read_csv(
+        os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
+    if not args.test:
+
+        get_zstat_diagnostics(narps)
+
+        get_thresh_voxel_stats(narps.basedir)
