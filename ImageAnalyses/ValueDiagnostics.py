@@ -15,8 +15,8 @@ from utils import log_to_file, get_map_metadata
 
 def compare_thresh_unthresh_values(
         dirs, collectionID, logfile,
-        unthresh_dataset='zstat',
-        thresh_dataset='zstat',
+        unthresh_dataset='orig',
+        thresh_dataset='orig',
         verbose=True,
         error_thresh=.05,
         create_histogram=False,
