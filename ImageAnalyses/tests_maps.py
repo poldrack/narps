@@ -10,7 +10,8 @@ from AnalyzeMaps import mk_overlap_maps,\
     mk_correlation_maps_unthresh, analyze_clusters,\
     plot_distance_from_mean, get_thresh_similarity
 from MetaAnalysis import get_thresholded_Z_maps
-from ThreshVoxelStatistics import get_thresh_voxel_stats
+from ThreshVoxelStatistics import get_thresh_voxel_stats,\
+    get_zstat_diagnostics
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
 
