@@ -105,7 +105,8 @@ class NarpsDirs(object):
 
         dirs_to_add = ['output', 'metadata', 'templates',
                        'cached', 'figures', 'logs', 'orig',
-                       'image_diagnostics']
+                       'image_diagnostics_orig',
+                       'image_diagnostics_zstat']
         for d in dirs_to_add:
             self.dirs[d] = os.path.join(self.dirs['base'], d)
 
@@ -247,8 +248,10 @@ class NarpsTeam(object):
             self.dirs.dirs['logs'],
             'image_diagnostics.log')
         collection_string = '%s_%s' % (self.NV_collection_id, self.teamID)
+        if not os.path.exists(self.dirs.dirs['image_diagnostics_orig']):
+            os.mkdir(self.dirs.dirs['image_diagnostics_orig'])
         self.image_diagnostics_file = os.path.join(
-            self.dirs.dirs['image_diagnostics'],
+            self.dirs.dirs['image_diagnostics_orig'],
             '%s.csv' % collection_string
         )
         if not os.path.exists(self.image_diagnostics_file):
@@ -288,7 +291,7 @@ class NarpsTeam(object):
                     self.images[imgtype]['orig'][hyp] = None
                     self.has_all_images[imgtype] = False
 
-    def create_binarized_thresh_masks(self, thresh=1e-6,
+    def create_binarized_thresh_masks(self, thresh=1e-4,
                                       overwrite=False,
                                       replace_na=True):
         """
