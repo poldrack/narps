@@ -71,4 +71,5 @@ def test_thresh_zmap(narps):
 
 
 def test_thresh_voxel_stats(narps):
+    get_zstat_diagnostics(narps)
     get_thresh_voxel_stats(narps.basedir)
