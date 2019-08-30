@@ -7,8 +7,10 @@ import os
 from PIL import Image
 
 
-def append_images(imgfiles, direction='horizontal',
-                  bg_color=(255, 255, 255), aligment='center'):
+def append_images(imgfiles, direction='vertical',
+                  bg_color=(255, 255, 255),
+                  aligment='center',
+                  nudge=100):
     """
     Appends images in horizontal/vertical direction.
 
@@ -36,7 +38,7 @@ def append_images(imgfiles, direction='horizontal',
     new_im = Image.new('RGBA', (new_width, new_height), color=bg_color)
 
     offset = 0
-    for im in images:
+    for i, im in enumerate(images):
         if direction == 'horizontal':
             y = 0
             if aligment == 'center':
@@ -47,8 +49,13 @@ def append_images(imgfiles, direction='horizontal',
             offset += im.size[0]
         else:
             x = 0
+            if i == 0:
+                xnudge = 0
+            else:
+                xnudge = nudge
+
             if aligment == 'center':
-                x = int((new_width - im.size[0])/2)
+                x = int((new_width - im.size[0])/2 + xnudge)
             elif aligment == 'right':
                 x = new_width - im.size[0]
             new_im.paste(im, (x, offset))
