@@ -124,7 +124,7 @@ Note that the correlations are not interpretable for the factorial variables - t
 
 df_for_vis <- narps_df %>% 
   drop_na(fwhm,used_fmriprep_data,package,testing) %>%
-  dplyr::select(c(fwhm,used_fmriprep_data,package,testing,smoothing_coef))
+  dplyr::select(c(fwhm,used_fmriprep_data,package,testing,smoothing_coef, movement_modeling))
 
 pairs.panels(df_for_vis)
 
@@ -432,6 +432,18 @@ for (hyp in 1:9){
 
 ```
 
+### Assess relation between smoothness and movement modeling
+
+```{r}
+
+smoothness_full = lmer(fwhm ~ varnum +  movement_modeling +  smoothing_coef + (1|teamID),
+            data = narps_df)
+
+summary_smoothness <- summary(smoothness_full)
+print(summary_smoothness)
+
+```
+
 ### Examine effects of various factors on pattern distance
 
 ```{r loadPatternDistance}
@@ -464,7 +476,7 @@ merged_df <- merged_df %>%
 merged_df = merged_df %>% 
   drop_na(fwhm,used_fmriprep_data,package,testing)
 
-dist_hyp_full = lm(z_mean_distance ~ fwhm + used_fmriprep_data + package + testing,
+dist_hyp_full = lm(z_mean_distance ~ fwhm + used_fmriprep_data + package + testing + movement_modeling,
             data = merged_df)
 
 s <- summary(dist_hyp_full)
