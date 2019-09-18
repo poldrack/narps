@@ -76,6 +76,46 @@ cor(narps_df$fwhm,narps_df$smoothing_coef,
     method='spearman')
 ```
 
+## Make decision summary table
+
+Compute data for Table 1 in paper
+
+```{r}
+desc <- c('Positive parametric effect of gains in the vmPFC (equal indifference group)',
+'Positive parametric effect of gains in the vmPFC (equal range group)',
+'Positive parametric effect of gains in the ventral striatum (equal indifference group)',
+'Positive parametric effect of gains in the ventral striatum (equal range group)',
+'Negative parametric effect of losses in the vmPFC (equal indifference group)',
+'Negative parametric effect of losses in the vmPFC (equal range group)',
+'Positive parametric effect of losses in the amygdala (equal indifference group)',
+'Positive parametric effect of losses in the amygdala (equal range group)',
+'Greater positive response to losses in amygdala for equal range group vs. equal indifference group')
+
+decision_df <- narps_df %>%
+  dplyr::select(Decision, varnum, Similar, Confidence) 
+
+decision_summary <- decision_df %>%
+  group_by(varnum) %>%
+  summarise(pDecision = mean(Decision), 
+            medianSimilar = median(Similar),
+            madSimilar = mad(Similar, constant=1),
+            medianConfidence = median(as.numeric(Confidence)),
+            madConfidence = mad(as.numeric(Confidence), constant=1))
+decision_summary$Description <- desc
+decision_summary <- decision_summary[c('varnum',
+                                       'Description',
+                                       'pDecision',
+                                       'medianSimilar',
+                                       'madSimilar',
+                                       'medianConfidence',
+                                       'madConfidence')]
+write.table(decision_summary,
+            file=paste(basedir,"figures/Table1.txt",sep='/'))
+
+decision_summary
+
+```
+
 ## Check independent variables
 
 Note that the correlations are not interpretable for the factorial variables - the plot is shown simply to provide some insight into the relationships between the different variables and their distributions.
