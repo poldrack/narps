@@ -9,18 +9,6 @@ For analyses of the prediction market data, see the [PredictionMarketAnalyses](P
 
 For analyses of the imaging results, see the [ImageAnalyses](ImageAnalyses) directory.
 
-Dependencies
-============
+## Dependencies
 
-The required Python packages are required to use this package:
-
-* Python
-* Numpy
-* Scipy
-* Nipype
-* Nibabel
-* Nilearn
-* Pandas
-* statsmodels
-* wget to download original data
-* xlrd for Excel reading
+The full set of dependencies for this project are specified in the [Dockerfile](ImageAnalyses/Dockerfile)
