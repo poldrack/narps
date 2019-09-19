@@ -76,6 +76,46 @@ cor(narps_df$fwhm,narps_df$smoothing_coef,
     method='spearman')
 ```
 
+## Make decision summary table
+
+Compute data for Table 1 in paper
+
+```{r}
+desc <- c('Positive parametric effect of gains in the vmPFC (equal indifference group)',
+'Positive parametric effect of gains in the vmPFC (equal range group)',
+'Positive parametric effect of gains in the ventral striatum (equal indifference group)',
+'Positive parametric effect of gains in the ventral striatum (equal range group)',
+'Negative parametric effect of losses in the vmPFC (equal indifference group)',
+'Negative parametric effect of losses in the vmPFC (equal range group)',
+'Positive parametric effect of losses in the amygdala (equal indifference group)',
+'Positive parametric effect of losses in the amygdala (equal range group)',
+'Greater positive response to losses in amygdala for equal range group vs. equal indifference group')
+
+decision_df <- narps_df %>%
+  dplyr::select(Decision, varnum, Similar, Confidence) 
+
+decision_summary <- decision_df %>%
+  group_by(varnum) %>%
+  summarise(pDecision = mean(Decision), 
+            medianSimilar = median(Similar),
+            madSimilar = mad(Similar, constant=1),
+            medianConfidence = median(as.numeric(Confidence)),
+            madConfidence = mad(as.numeric(Confidence), constant=1))
+decision_summary$Description <- desc
+decision_summary <- decision_summary[c('varnum',
+                                       'Description',
+                                       'pDecision',
+                                       'medianSimilar',
+                                       'madSimilar',
+                                       'medianConfidence',
+                                       'madConfidence')]
+write.table(decision_summary,
+            file=paste(basedir,"figures/Table1.txt",sep='/'))
+
+decision_summary
+
+```
+
 ## Check independent variables
 
 Note that the correlations are not interpretable for the factorial variables - the plot is shown simply to provide some insight into the relationships between the different variables and their distributions.
@@ -84,7 +124,7 @@ Note that the correlations are not interpretable for the factorial variables - t
 
 df_for_vis <- narps_df %>% 
   drop_na(fwhm,used_fmriprep_data,package,testing) %>%
-  dplyr::select(c(fwhm,used_fmriprep_data,package,testing,smoothing_coef))
+  dplyr::select(c(fwhm,used_fmriprep_data,package,testing,smoothing_coef, movement_modeling))
 
 pairs.panels(df_for_vis)
 
@@ -392,6 +432,30 @@ for (hyp in 1:9){
 
 ```
 
+### Assess consistency across packages
+
+```{r}
+var_by_package <- hyp_df %>% group_by(varnum, package) %>% summarize(varDecision = var(Decision))
+var_model <- lm(varDecision ~ varnum + package, data = var_by_package)
+var_model_nopackage <- lm(varDecision ~ varnum, data = var_by_package)
+summary(var_model)
+anova(var_model, var_model_nopackage)
+emmeans(var_model,'package')
+
+```
+
+### Assess relation between smoothness and movement modeling
+
+```{r smoothnessMovement}
+
+smoothness_full = lmer(fwhm ~ varnum +  movement_modeling +  smoothing_coef + (1|teamID),
+            data = hyp_df)
+
+summary_smoothness <- summary(smoothness_full)
+print(summary_smoothness)
+
+```
+
 ### Examine effects of various factors on pattern distance
 
 ```{r loadPatternDistance}
@@ -424,7 +488,7 @@ merged_df <- merged_df %>%
 merged_df = merged_df %>% 
   drop_na(fwhm,used_fmriprep_data,package,testing)
 
-dist_hyp_full = lm(z_mean_distance ~ fwhm + used_fmriprep_data + package + testing,
+dist_hyp_full = lm(z_mean_distance ~ fwhm + used_fmriprep_data + package + testing + movement_modeling,
             data = merged_df)
 
 s <- summary(dist_hyp_full)
