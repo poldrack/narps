@@ -432,12 +432,24 @@ for (hyp in 1:9){
 
 ```
 
-### Assess relation between smoothness and movement modeling
+### Assess consistency across packages
 
 ```{r}
+var_by_package <- hyp_df %>% group_by(varnum, package) %>% summarize(varDecision = var(Decision))
+var_model <- lm(varDecision ~ varnum + package, data = var_by_package)
+var_model_nopackage <- lm(varDecision ~ varnum, data = var_by_package)
+summary(var_model)
+anova(var_model, var_model_nopackage)
+emmeans(var_model,'package')
+
+```
+
+### Assess relation between smoothness and movement modeling
+
+```{r smoothnessMovement}
 
 smoothness_full = lmer(fwhm ~ varnum +  movement_modeling +  smoothing_coef + (1|teamID),
-            data = narps_df)
+            data = hyp_df)
 
 summary_smoothness <- summary(smoothness_full)
 print(summary_smoothness)
