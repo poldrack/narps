@@ -8,3 +8,19 @@ This repository contains code related to the [Neuroimaging Analysis Replication 
 For analyses of the prediction market data, see the [PredictionMarketAnalyses](PredictionMarketAnalyses) directory.
 
 For analyses of the imaging results, see the [ImageAnalyses](ImageAnalyses) directory.
+
+Dependencies
+============
+
+The required Python packages are required to use this package:
+
+* Python
+* Numpy
+* Scipy
+* Nipype
+* Nibabel
+* Nilearn
+* Pandas
+* statsmodels
+* wget to download original data
+* xlrd for Excel reading
