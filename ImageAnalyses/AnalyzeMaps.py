@@ -553,35 +553,35 @@ def plot_distance_from_mean(narps):
         func_name,
         flush=True)
 
-    median_distance_df = pandas.read_csv(os.path.join(
+    median_corr_df = pandas.read_csv(os.path.join(
         narps.dirs.dirs['metadata'],
         'median_pattern_corr.csv'))
 
     # Plot distance from mean across teams
-    plt.bar(median_distance_df.index,
-            median_distance_df.median_distance)
+    plt.bar(median_corr_df.index,
+            median_corr_df.median_corr)
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
-        'median_distance_sorted.png'),
+        'median_corr_sorted.png'),
         bbox_inches='tight')
     plt.close()
 
     # This plot is limited to the teams with particularly
     # low median correlations (<.2)
-    median_distance_low = median_distance_df.query(
-        'median_distance < 0.2')
+    median_corr_low = median_corr_df.query(
+        'median_corr < 0.2')
     log_to_file(
         logfile,
         'found %d teams with r<0.2 with mean pattern' %
-        median_distance_low.shape[0])
-    log_to_file(logfile, median_distance_low.iloc[:, 0].values)
+        median_corr_low.shape[0])
+    log_to_file(logfile, median_corr_low.iloc[:, 0].values)
 
-    median_distance_high = median_distance_df.query(
-        'median_distance > 0.7')
+    median_corr_high = median_corr_df.query(
+        'median_corr > 0.7')
     log_to_file(
         logfile,
         'found %d teams with r>0.7 with mean pattern' %
-        median_distance_high.shape[0])
+        median_corr_high.shape[0])
 
 
 def get_thresh_similarity(narps, dataset='resampled'):
