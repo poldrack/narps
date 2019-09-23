@@ -557,7 +557,7 @@ multcomp::cld(leastsquare,
 ```
 
 ```{r fitNoTestingDistanceModel}
-dist_hyp_notesting = lm(z_mean_distance ~ used_fmriprep_data + fwhm + package + movement_modeling,
+dist_hyp_notesting = lm(z_median_corr ~ used_fmriprep_data + fwhm + package + movement_modeling,
             data = merged_df)   
 
 anova(dist_hyp_full,
@@ -576,7 +576,7 @@ multcomp::cld(leastsquare,
 ```
 
 ```{r fitNoMovementDistanceModel}
-dist_hyp_nomovement = lm(z_mean_distance ~ used_fmriprep_data + fwhm + package + testing,
+dist_hyp_nomovement = lm(z_median_corr ~ used_fmriprep_data + fwhm + package + testing,
             data = merged_df)   
 
 anova(dist_hyp_full,
