@@ -371,13 +371,13 @@ def mk_correlation_maps_unthresh(
         json.dump(membership, f)
 
     # also save correlation info
-    median_distance = mean_corr.median(1).sort_values()
-    median_distance_df = pandas.DataFrame(
-        median_distance,
-        columns=['median_distance'])
-    median_distance_df.to_csv(os.path.join(
+    median_corr = mean_corr.median(1).sort_values()
+    median_corr_df = pandas.DataFrame(
+        median_corr,
+        columns=['median_corr'])
+    median_corr_df.to_csv(os.path.join(
         narps.dirs.dirs['metadata'],
-        'median_pattern_distance.csv'))
+        'median_pattern_corr.csv'))
 
     log_to_file(logfile, 'median correlation between teams: %f' %
                 numpy.median(cc[numpy.triu_indices_from(cc, 1)]))
@@ -555,7 +555,7 @@ def plot_distance_from_mean(narps):
 
     median_distance_df = pandas.read_csv(os.path.join(
         narps.dirs.dirs['metadata'],
-        'median_pattern_distance.csv'))
+        'median_pattern_corr.csv'))
 
     # Plot distance from mean across teams
     plt.bar(median_distance_df.index,
