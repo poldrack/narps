@@ -145,7 +145,7 @@ hyp_df <- hyp_df %>%  mutate(
     used_fmriprep_data = factor(used_fmriprep_data)) %>%
   mutate(testing = recode_factor(hyp_df$testing, ARI = 'Other'))
 
-m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + testing + (1|teamID),
+m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + testing + movement_modeling + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
@@ -179,7 +179,7 @@ Estimate a set of models leaving out each variable of interest, so that we can t
 #### Model without hypothesis
 
 ```{r hypModel}
-m_hyp_nohyp = glmer(Decision ~ fwhm + used_fmriprep_data + package + testing + (1|teamID),
+m_hyp_nohyp = glmer(Decision ~ fwhm + used_fmriprep_data + package + testing + movement_modeling + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
@@ -197,7 +197,7 @@ print(delta_r2_hyp)
 #### Model without smoothing
 
 ```{r nosmoothModel}
-m_hyp_nosmooth = glmer(Decision ~ varnum + used_fmriprep_data + package + testing + (1|teamID),
+m_hyp_nosmooth = glmer(Decision ~ varnum + used_fmriprep_data + package + testing + movement_modeling + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
@@ -217,7 +217,7 @@ print(delta_r2_smoothing)
 #### Model without fmriprep
 
 ```{r noprepModel}
-m_hyp_noprep = glmer(Decision ~ varnum + fwhm + package + testing + (1|teamID),
+m_hyp_noprep = glmer(Decision ~ varnum + fwhm + package + testing + movement_modeling + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
@@ -239,7 +239,7 @@ print(delta_r2_fmriprep)
 ```{r nopackageModel}
 
 
-m_hyp_nopackage = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + testing + (1|teamID),
+m_hyp_nopackage = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + testing + movement_modeling + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb'))) 
@@ -263,7 +263,7 @@ print(delta_r2_package)
 
 ```{r notestingModel}
   
-m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package + (1|teamID),
+m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package + movement_modeling + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))   
@@ -282,12 +282,30 @@ delta_r2_testing <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_notesting)
 print(delta_r2_testing)
 ```
 
+#### Model without movement modeling
+
+```{r nomovementModel}
+  
+m_hyp_nomovement = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package  + testing + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))   
+
+anova_testing <- anova(m_hyp_full,
+                       m_hyp_nomovement,test='Chisq')
+print(anova_testing)
+
+# compute delta r-squared between this model and full model
+delta_r2_movement <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nomovement)
+print(delta_r2_movement)
+```
+
 #### Applied vs. estimated smoothness
 
 Full model using specified smoothing filter rather than estimated smoothness.
 
 ```{r kernelModel}
-m_hyp_full_tsc = glmer(Decision ~ varnum + smoothing_coef + used_fmriprep_data + package + testing + (1|teamID),
+m_hyp_full_tsc = glmer(Decision ~ varnum + smoothing_coef + used_fmriprep_data + package + testing + movement_modeling + (1|teamID),
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
@@ -385,7 +403,7 @@ For each hypothesis, we ask whether decisions are associated with fwhm and use o
 runModels = function(hyp, data_df){
   pvals = c()
 
-  m_hyp_full = bayesglm(Decision ~ fwhm + used_fmriprep_data + package + testing,
+  m_hyp_full = bayesglm(Decision ~ fwhm + used_fmriprep_data + package + testing + movement_modeling,
                    data = data_df,family=binomial)
   
   m_hyp_nosmooth = bayesglm(Decision ~ used_fmriprep_data + package + testing,
@@ -461,9 +479,9 @@ print(summary_smoothness)
 ```{r loadPatternDistance}
 
 patterndist_df = read_csv(paste(basedir,
-          'metadata/median_pattern_distance.csv',
+          'metadata/median_pattern_corr.csv',
           sep='/'),skip=0)
-names(patterndist_df)=c('teamID','mean_distance')
+names(patterndist_df)=c('teamID','median_corr')
 
 merged_df = join(patterndist_df,narps_df %>% 
                    filter(varnum==1),by=c('teamID'))
@@ -483,12 +501,12 @@ r2z = function(r){
 ```{r fitPatternDistanceModel}
 
 merged_df <- merged_df %>%
-  mutate(z_mean_distance = r2z(mean_distance))
+  mutate(z_median_corr = r2z(median_corr))
 
 merged_df = merged_df %>% 
   drop_na(fwhm,used_fmriprep_data,package,testing)
 
-dist_hyp_full = lm(z_mean_distance ~ fwhm + used_fmriprep_data + package + testing + movement_modeling,
+dist_hyp_full = lm(z_median_corr ~ fwhm + used_fmriprep_data + package + testing + movement_modeling,
             data = merged_df)
 
 s <- summary(dist_hyp_full)
@@ -497,7 +515,7 @@ print(s)
 ```
 
 ```{r fitnoSmoothDistanceModel}
-dist_hyp_nosmooth <- lm(z_mean_distance ~ used_fmriprep_data + package + testing,
+dist_hyp_nosmooth <- lm(z_median_corr ~ used_fmriprep_data + package + testing + movement_modeling,
             data = merged_df)
 
 anova(dist_hyp_full,
@@ -510,7 +528,7 @@ s$r.squared - summary(dist_hyp_nosmooth)$r.squared
 ```
 
 ```{r fitNoPrepDistanceModel}
-dist_hyp_noprep = lm(z_mean_distance ~ fwhm + package + testing,
+dist_hyp_noprep = lm(z_median_corr ~ fwhm + package + testing + movement_modeling,
             data = merged_df)
 
 anova(dist_hyp_full,
@@ -522,8 +540,8 @@ s$r.squared - summary(dist_hyp_noprep)$r.squared
 
 ```
 
-```{r fitNoHypDistanceModel}
-dist_hyp_nopackage = lm(z_mean_distance ~ used_fmriprep_data + fwhm + testing,
+```{r fitNoPackageDistanceModel}
+dist_hyp_nopackage = lm(z_median_corr ~ used_fmriprep_data + fwhm + testing + movement_modeling,
             data = merged_df) 
 
 anova(dist_hyp_full,
@@ -539,7 +557,7 @@ multcomp::cld(leastsquare,
 ```
 
 ```{r fitNoTestingDistanceModel}
-dist_hyp_notesting = lm(z_mean_distance ~ used_fmriprep_data + fwhm + package,
+dist_hyp_notesting = lm(z_mean_distance ~ used_fmriprep_data + fwhm + package + movement_modeling,
             data = merged_df)   
 
 anova(dist_hyp_full,
@@ -553,6 +571,19 @@ leastsquare = emmeans(dist_hyp_full,
 
 multcomp::cld(leastsquare, 
     level=.05)
+
+
+```
+
+```{r fitNoMovementDistanceModel}
+dist_hyp_nomovement = lm(z_mean_distance ~ used_fmriprep_data + fwhm + package + testing,
+            data = merged_df)   
+
+anova(dist_hyp_full,
+      dist_hyp_nomovement,
+      test='Chisq')
+
+s$r.squared - summary(dist_hyp_nomovement)$r.squared
 
 
 ```
