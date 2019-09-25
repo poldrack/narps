@@ -62,7 +62,6 @@ narps_df <- read_csv(paste(basedir,
 narps_df <- narps_df %>% 
   mutate(Confidence = as.ordered(narps_df$Confidence))
 
-
 narps_df$testing[is.na(narps_df$testing)] <- "Other"
 narps_df$teamID = as.factor(narps_df$teamID)
 narps_df$varnum = as.factor(narps_df$varnum)
@@ -130,11 +129,10 @@ pairs.panels(df_for_vis)
 
 ```
 
-## Models
+## Descriptive stats
 
-First run mixed model across full dataset to assess overall effects on hypothesis acceptance. We use nlminb as the optimizer because the model failed to converge using the standard optimizer in lmer.
 
-```{r fullModel}
+```{r dataSetup}
 hyp_df = narps_df %>% drop_na(fwhm,
                               used_fmriprep_data,
                               package,
@@ -143,7 +141,48 @@ hyp_df <- hyp_df %>%  mutate(
     package = factor(package, c('SPM', 'FSL', 'AFNI', 'Other')),
     testing = factor(testing),
     used_fmriprep_data = factor(used_fmriprep_data)) %>%
-  mutate(testing = recode_factor(hyp_df$testing, ARI = 'Other'))
+  mutate(testing = recode_factor(hyp_df$testing, ARI = 'Other', randomise = 'nonparametric', permutations = 'nonparametric'))
+
+
+```
+
+### fMRIPrep
+
+```{r tableFmriprep}
+
+table(hyp_df$used_fmriprep_data)/9
+
+```
+
+### Package
+
+
+```{r tablePackage}
+
+table(hyp_df$package)/9
+
+```
+
+### Testing
+
+```{r tableTesting}
+
+table(hyp_df$testing)/9
+
+```
+### Movement
+
+```{r tableMovement}
+
+table(hyp_df$movement_modeling)/9
+
+```
+
+## Models
+
+First run mixed model across full dataset to assess overall effects on hypothesis acceptance. We use nlminb as the optimizer because the model failed to converge using the standard optimizer in lmer.
+
+```{r fullModel}
 
 m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + testing + movement_modeling + (1|teamID),
             data = hyp_df,family=binomial,
