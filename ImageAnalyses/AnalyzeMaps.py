@@ -22,6 +22,8 @@ import matplotlib.pyplot as plt
 import seaborn
 import scipy.cluster
 import scipy.stats
+from collections import Counter
+
 from utils import get_concat_data, log_to_file, stringify_dict,\
     matrix_pct_agreement
 from narps import Narps, hypnums
@@ -514,7 +516,7 @@ def analyze_clusters(
         plt.close(fig)
 
     # save cluster metadata to data frame
-    cluster_metadata_df = cluster_metadata_df.dropna()
+    cluster_metadata_df = cluster_metadata_df.dropna().drop_duplicates()
     cluster_metadata_df.to_csv(os.path.join(
         narps.dirs.dirs['metadata'],
         'cluster_metadata_df.csv'))
@@ -538,6 +540,25 @@ def analyze_clusters(
         narps.dirs.dirs['output'],
         'cluster_membership_Rand_indices.csv'),
         randmtx)
+
+    # are the same teams in the main cluster each time?
+    main_cluster_teams = []
+    for i, hyp in enumerate(hypnums):
+        # find main cluster
+        clusters = cluster_metadata_df.loc[:, 'hyp%d' % hyp]
+        clusters.index = cluster_metadata_df.teamID
+        cnt = clusters.value_counts()
+        largest_cluster = cnt.index[0]
+        main_cluster_teams = main_cluster_teams +\
+            clusters[clusters == largest_cluster].index.tolist()
+    main_cluster_counts = Counter(main_cluster_teams)
+    consistent_teams = [m for m in main_cluster_counts if
+                        main_cluster_counts[m] == 7]
+
+    log_to_file(
+        logfile,
+        'Number of teams consistently in main cluster: %d' % len(
+            consistent_teams))
 
     return(cluster_metadata_df)
 
