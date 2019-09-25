@@ -475,7 +475,9 @@ def analyze_clusters(
             for m in membership[str(hyp)][str(cl)]:
                 cluster_metadata_df.loc[m, 'hyp%d' % hyp] = cl
 
-            log_to_file(logfile, 'N cluster %d maps: %d' % (cl, len(member_maps)))
+            log_to_file(
+                logfile,
+                'N cluster %d maps: %d' % (cl, len(member_maps)))
             mean_smoothing[str(hyp)][str(cl)] = numpy.mean(
                 numpy.array(member_smoothing))
             mean_decision[str(hyp)][str(cl)] = numpy.mean(
@@ -516,7 +518,7 @@ def analyze_clusters(
         plt.close(fig)
 
     # save cluster metadata to data frame
-    cluster_metadata_df = cluster_metadata_df.dropna() 
+    cluster_metadata_df = cluster_metadata_df.dropna()
     cluster_metadata_df = cluster_metadata_df[
         ~cluster_metadata_df.index.duplicated(keep='first')]
     cluster_metadata_df.to_csv(os.path.join(
