@@ -49,6 +49,6 @@ jobs:
       - run:
           name: create results tarball
           command: |
-             cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs ./metadata ./image_diagnostics* ./output/unthresh_concat_zstat/hypo*_voxelmap.nii.gz ./output/overlap_binarized_thresh/hypo*.nii.gz ./output/consensus_analysis/hypo*_1-fdr.nii.gz ./output/ALE/hypo*_fdr_oneminusp.nii.gz ./output/cluster_maps
+             cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs ./metadata ./image_diagnostics* ./output/unthresh_concat_zstat/hypo*_voxelmap.nii.gz ./output/overlap_binarized_thresh/hypo*.nii.gz ./output/consensus_analysis/hypo*_1-fdr.nii.gz ./output/ALE/hypo*_fdr_oneminusp.nii.gz ./output/cluster_maps ./output/correlation_unthresh
       - store_artifacts:
           path: /tmp/data/results.tgz
