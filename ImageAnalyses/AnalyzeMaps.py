@@ -23,6 +23,7 @@ import seaborn
 import scipy.cluster
 import scipy.stats
 from collections import Counter
+from scipy.spatial.distance import pdist, squareform
 
 from utils import get_concat_data, log_to_file, stringify_dict,\
     matrix_pct_agreement
@@ -647,7 +648,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
             pctagree[numpy.triu_indices_from(pctagree, 1)])
         log_to_file(
             logfile,
-            'hyp %d: mean pctagree similarity: %f' %
+            'hyp %d: median pctagree similarity: %f' %
             (hyp, median_pctagree))
 
         df_pctagree = pandas.DataFrame(pctagree, index=labels, columns=labels)
@@ -666,6 +667,15 @@ def get_thresh_similarity(narps, dataset='resampled'):
             'hyp%d_pctagree_map_thresh.png' % hyp),
             bbox_inches='tight')
         plt.close()
+
+        # get jaccard for nonzero voxels
+        jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
+        median_jacsim_nonzero = numpy.median(
+            jacsim_nonzero[numpy.triu_indices_from(jacsim_nonzero, 1)])
+        log_to_file(
+                logfile,
+                'hyp %d: median jacaard similarity (nonzero): %f' %
+                (hyp, median_jacsim_nonzero))
 
 
 if __name__ == "__main__":
