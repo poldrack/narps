@@ -146,6 +146,15 @@ hyp_df <- hyp_df %>%  mutate(
 
 ```
 
+### FWHM
+
+```{r}
+print(mean(narps_df$fwhm,na.rm=TRUE))
+print(min(narps_df$fwhm,na.rm=TRUE))
+print(max(narps_df$fwhm,na.rm=TRUE))
+
+```
+
 ### fMRIPrep
 
 ```{r tableFmriprep}
@@ -342,6 +351,15 @@ print(delta_r2_movement)
 #### Applied vs. estimated smoothness
 
 Full model using specified smoothing filter rather than estimated smoothness.
+
+### FWHM
+
+```{r}
+print(median(narps_df$smoothing_coef,na.rm=TRUE))
+print(min(narps_df$smoothing_coef,na.rm=TRUE))
+print(max(narps_df$smoothing_coef,na.rm=TRUE))
+
+```
 
 ```{r kernelModel}
 m_hyp_full_tsc = glmer(Decision ~ varnum + smoothing_coef + used_fmriprep_data + package + testing + movement_modeling + (1|teamID),
@@ -627,7 +645,10 @@ s$r.squared - summary(dist_hyp_nomovement)$r.squared
 
 ```
 
-Make supplementary table 5
+## Similarity as function of fmriprep use
+
+
+## Make supplementary table 5
 
 ```{r mkSuppTable5}
 
@@ -700,4 +721,54 @@ if (use_checkpoint){
   unlink(checkpointDir, recursive = TRUE)
 }
 ```
+
+# create tidy version of pairwise map similarity
+
+```{r makeSimdata}
+simdata <- data.frame(varnum=integer(),
+                      team1=character(),
+                      team2=character(),
+                      similarity = double())
+
+for (hyp in c(1,2,5,6,7,8,9)){
+  # load pairwise similarity
+  sim_df <- read_csv(
+    paste(basedir,
+    'output/correlation_unthresh',
+    sprintf('spearman_unthresh_hyp%d.csv',hyp),
+    sep='/'))
+  rownames(sim_df) <- sim_df$X1
+  sim_df$X1 <- NULL
+  for (i in 1:dim(sim_df)[1]){
+    for (j in 1:dim(sim_df)[1]){
+      if (j > i){
+        team1_fmriprep = hyp_df %>% dplyr::filter(teamID==rownames(sim_df)[i]) %>% slice(1) %>% pull(used_fmriprep_data)
+        team2_fmriprep = hyp_df %>% dplyr::filter(teamID==names(sim_df)[j]) %>% slice(1) %>% pull(used_fmriprep_data)
+        
+        newdata <- data.frame(
+          varnum=hyp,
+          team1=rownames(sim_df)[i],
+          team2=names(sim_df)[j],
+          similarity = as.numeric(sim_df[i, j]),
+          fmriprep = sum(c(team1_fmriprep=='Yes', team2_fmriprep=='Yes')))
+        simdata <- rbind(simdata,newdata)
+      }
+    }
+  }
+  
+}
+simdata <- simdata %>%
+  mutate(similarity_z = r2z(simdata$similarity),
+         fmriprep = as.factor(simdata$fmriprep))
+
+z2r <- function(z) {
+  return((exp(2.0*z) - 1)/(exp(2.0*z) + 1))
+}
+
+simdata %>% group_by(fmriprep) %>% summarise(m = z2r(mean(similarity)))
+```
+
+
+Performing inference on the differnces between these groups would require implementing a permutation test approach.  Given how small the numeric differences are between groups, I decided to forego this analysis for now.
+
 
