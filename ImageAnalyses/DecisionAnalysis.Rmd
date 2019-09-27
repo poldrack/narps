@@ -716,12 +716,6 @@ close(fileConn)
 ```
 
 
-```{r tmpCleanup}
-if (use_checkpoint){
-  unlink(checkpointDir, recursive = TRUE)
-}
-```
-
 # create tidy version of pairwise map similarity
 
 ```{r makeSimdata}
@@ -772,3 +766,8 @@ simdata %>% group_by(fmriprep) %>% summarise(m = z2r(mean(similarity)))
 Performing inference on the differnces between these groups would require implementing a permutation test approach.  Given how small the numeric differences are between groups, I decided to forego this analysis for now.
 
 
+```{r tmpCleanup}
+if (use_checkpoint){
+  unlink(checkpointDir, recursive = TRUE)
+}
+```
