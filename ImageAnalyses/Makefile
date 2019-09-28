@@ -55,7 +55,7 @@ run-ALE: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/MetaAnalysis.py"
 
 run-AnalyzeDecisions: guard-DOCKER_USERNAME guard-NARPS_BASEDIR get-R-packages
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data/figures")'
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(knitr);library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data/figures")'
 
 run-MakeFigures: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/MakeSupplementaryFigure1.py"
@@ -81,7 +81,7 @@ run-ConsensusAnalysis-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 
 
 run-AnalyzeDecisions-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR get-R-packages
-	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data/figures")'
+	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis Rscript -e 'library(knitr);library(rmarkdown); rmarkdown::render("/analysis/DecisionAnalysis.Rmd", "html_document", output_dir = "/data/figures")'
 
 run-MakeFigures-simulated: guard-DOCKER_USERNAME guard-NARPS_BASEDIR
 	docker run -v $(current_dir):/analysis -v $(NARPS_BASEDIR_SIMULATED):/data $(DOCKER_USERNAME)/narps-analysis /bin/bash -c "source /etc/fsl/5.0/fsl.sh;python /analysis/MakeSupplementaryFigure1.py"
@@ -127,5 +127,5 @@ run-ConsensusAnalysis-local:
 	python ConsensusAnalysis.py
 
 run-AnalyzeDecisions-local: get-R-packages
-	 Rscript -e 'library(rmarkdown); rmarkdown::render("DecisionAnalysis.Rmd", "html_document", output_dir = "$(NARPS_BASEDIR)/figures")'
+	 Rscript -e 'library(knitr);library(rmarkdown); rmarkdown::render("DecisionAnalysis.Rmd", "html_document", output_dir = "$(NARPS_BASEDIR)/figures")'
 
