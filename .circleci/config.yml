@@ -9,12 +9,6 @@ jobs:
             - "e4:d9:2a:de:d8:40:56:15:af:c7:34:93:ad:d2:85:d1"
       - checkout
       - run:
-          name: run PM analyses
-          command: |
-             export NARPS_BASEDIR="/tmp/data"; Rscript /root/project/PredictionMarketAnalyses/DataProcessing.R
-             export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/PredictionMarketAnalyses/PM_Analyses.Rmd","html_document", output_dir = "/tmp/data/PredictionMarkets/Figures")'
-             export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/PredictionMarketAnalyses/PM_Figures.Rmd","html_document", output_dir = "/tmp/data/PredictionMarkets/Figures")'
-      - run:
           name: static analysis and style check using flake8
           command: |
              pip install -U flake8
@@ -52,6 +46,12 @@ jobs:
           command: |
              cat /root/project/ImageAnalyses/*.Rmd | grep library >| /root/project/ImageAnalyses/R_libraries.R
              export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/ImageAnalyses/DecisionAnalysis.Rmd","html_document", output_dir = "/tmp/data/figures")'
+      - run:
+          name: run PM analyses
+          command: |
+             export NARPS_BASEDIR="/tmp/data"; Rscript /root/project/PredictionMarketAnalyses/DataProcessing.R
+             export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/PredictionMarketAnalyses/PM_Analyses.Rmd","html_document", output_dir = "/tmp/data/PredictionMarkets/Figures")'
+             export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/PredictionMarketAnalyses/PM_Figures.Rmd","html_document", output_dir = "/tmp/data/PredictionMarkets/Figures")'
       - run:
           name: create results tarball
           command: |
