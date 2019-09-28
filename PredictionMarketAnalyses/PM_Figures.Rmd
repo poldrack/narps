@@ -112,7 +112,8 @@ A <- ggplot() +
   theme(panel.border = element_rect(colour = "black", 
                                     fill=NA, size=1)) + scale_fill_discrete(name = NULL, labels = c("Fundamental value", "Non-team Members", "Team members"))
 
-ggsave(paste(figdir,'PMbeliefs_Figure3.png',sep='/'))
+ggsave(paste(figdir,'PMbeliefs_Figure3.pdf',sep='/'),
+       width=7,height = 5)
 
 ```
 
@@ -169,7 +170,7 @@ A <- ggplot() +
   theme(panel.border = element_rect(colour = "black", 
                                     fill=NA, size=1)) + scale_fill_discrete(name = NULL, labels = c("All traders", "Active traders"))
 
-ggsave(paste(figdir,'Active_vs_All_traders.png',sep='/'),
+ggsave(paste(figdir,'Active_vs_All_traders.pdf',sep='/'),
        width=7,height = 5)
 ```
 
@@ -221,7 +222,7 @@ for (hyp in 1:9){
 
 plot_grid(figs[[1]],figs[[2]],figs[[3]],figs[[4]],figs[[5]],figs[[6]],figs[[7]],figs[[8]], figs[[9]], ncol=3, labels = labels, label_x=0.25, label_size = 14) #, labels = c('A', 'B'), )
 
-ggsave(paste(figdir,'Timeseries.png',sep='/'),
+ggsave(paste(figdir,'Timeseries.pdf',sep='/'),
        width=8,height = 8)
 
 ```
