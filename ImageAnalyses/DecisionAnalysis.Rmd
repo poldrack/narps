@@ -9,6 +9,20 @@ Analyze decisions across teams.
 
 ```{r setup, echo=FALSE,message=FALSE}
 
+use_checkpoint = TRUE
+
+s = Sys.info()
+if (s['sysname'] == 'Darwin'){
+  use_checkpoint = FALSE
+}
+
+if (use_checkpoint) {
+  library(checkpoint)
+  checkpointDir <- '/checkpoint'
+  checkpoint("2019-08-13", checkpointLocation = checkpointDir)
+  }
+
+
 library(plyr)
 library(tidyverse)
 library(lmerTest)
@@ -22,7 +36,7 @@ library(multcompView)
 library(optimx)
 library(xtable)
 library(psych)
-library(knitr)
+#library(knitr)
 
 basedir = Sys.getenv('NARPS_BASEDIR')
 if (basedir == ""){
