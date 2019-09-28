@@ -52,9 +52,9 @@ jobs:
              export NARPS_BASEDIR="/tmp/data"; Rscript /root/project/PredictionMarketAnalyses/DataProcessing.R
              export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/PredictionMarketAnalyses/PM_Analyses.Rmd","html_document", output_dir = "/tmp/data/PredictionMarkets/Figures")'
              export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/PredictionMarketAnalyses/PM_Figures.Rmd","html_document", output_dir = "/tmp/data/PredictionMarkets/Figures")'
-     - run:
+       - run:
           name: create results tarball
           command: |
              cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs ./metadata ./image_diagnostics* ./output/unthresh_concat_zstat/hypo*_voxelmap.nii.gz ./output/overlap_binarized_thresh/hypo*.nii.gz ./output/consensus_analysis/hypo*_1-fdr.nii.gz ./output/ALE/hypo*_fdr_oneminusp.nii.gz ./output/cluster_maps ./output/correlation_unthresh ./PredictionMarkets
-      - store_artifacts:
-          path: /tmp/data/results.tgz
+        - store_artifacts:
+             path: /tmp/data/results.tgz
