@@ -19,7 +19,7 @@ if (basedir == ""){
   # use default
   basedir = "/data"
 }
-
+basedir="/Users/poldrack/data_unsynced/NARPS_docker"
 use_checkpoint = TRUE
 
 s = Sys.info()
@@ -58,6 +58,35 @@ Data <- reshape(Data,
                 idvar = "hid")
 
 
+
+```
+
+Make table for Supplementary Materials
+
+```{r}
+bracket = function(s) {sprintf('[%s]', s)}
+
+supptable_df <- Data %>%
+  mutate(fv = formatC(Data$fv, digits=2,format='f'),
+         CI_lower = formatC(Data$fv_95l, digits=2,format='f'),
+         CI_upper = formatC(Data$fv_95u, digits=2,format='f'),
+         nt_exceed = as.integer((Data$price.0 > Data$fv_95u) | (Data$price.0 < Data$fv_95l)),
+         t_exceed = as.integer((Data$price.1 > Data$fv_95u) | (Data$price.1 < Data$fv_95l)))
+
+supptable_df <- supptable_df %>%
+  mutate(
+         NonTeams = price.0,
+         NonTeamsOutside = recode(supptable_df$nt_exceed, `0` = '', `1` = '*'),
+         Teams = price.1,
+         TeamsOutside = recode(supptable_df$t_exceed, `0` = '', `1` = '*')) %>%
+  unite('CI', CI_lower:CI_upper, sep='-') %>%
+  mutate(CI = sapply(CI,bracket)) %>%
+  dplyr::select(-fv_95l, -fv_95u, -price.0, -price.1, -t_exceed, -nt_exceed)
+
+write.table(supptable_df,
+            file=paste(output_dir,
+                       "Figures/SuppTable_MarketResults.txt",sep='/'),
+            quote=FALSE, col.names=FALSE,sep='\t')
 ```
 
 ## Spearman Correlations: Market Beliefs
