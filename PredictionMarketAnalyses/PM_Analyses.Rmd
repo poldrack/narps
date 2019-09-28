@@ -1,0 +1,254 @@
+---
+title: "NARPS Prediction Market Analyses"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+This was adapted from Analyses.R provided by Felix Holzmeister.
+
+
+## Setup Working Directories
+```{r setup}
+
+basedir = Sys.getenv('NARPS_BASEDIR')
+if (basedir == ""){
+  # use default
+  basedir = "/data"
+}
+basedir = '/Users/poldrack/data_unsynced/NARPS_docker'
+
+output_dir <- paste(basedir,'PredictionMarkets',sep='/')
+proc <- paste(output_dir, 'Processed',sep='/')
+if (!dir.exists(proc)){
+  stop('proc dir does not exist!')
+}
+
+
+```
+
+## Prepare Data
+
+```{r prepareData}
+load(paste(proc, "Prices.RData", sep='/'))
+load(paste(proc, "Fundamentals.RData", sep='/'))
+
+Data <- merge(Prices, 
+              fundamental, 
+              by="hid")
+
+Data <- reshape(Data, 
+                direction = "wide", 
+                v.names = "price", 
+                timevar = "teams", 
+                idvar = "hid")
+
+
+```
+
+
+
+## SPEARMAN CORRELATIONS: MARKET BELIEFS
+
+### Fundamental Value vs. Market Belief 'Non-Teams'
+
+```{r}
+sc_fv_nt <- cor.test(x=Data$price.0, 
+                     y=Data$fv, 
+                     method='spearman', 
+                     exact=FALSE)
+cat("rho:", sc_fv_nt$estimate, 
+    "p-value:", sc_fv_nt$p.value)
+
+```
+
+
+
+### Fundamental Value vs. Market Belief 'Teams'
+
+```{r}
+sc_fv_tt <- cor.test(x=Data$price.1, 
+                     y=Data$fv, 
+                     method='spearman', 
+                     exact=FALSE)
+cat("rho:", sc_fv_tt$estimate, 
+    "p-value:", sc_fv_tt$p.value)
+
+```
+
+
+
+# Market Belief 'Non-Teams' vs. Market Belief 'Teams' #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+```{r}
+sc_nt_tt <- cor.test(x=Data$price.0, 
+                     y=Data$price.1, 
+                     method='spearman', 
+                     exact=FALSE)
+cat("rho:", sc_nt_tt$estimate, 
+    "p-value:", sc_nt_tt$p.value)
+
+
+```
+
+
+
+### WILCOXON SIGNED-RANK TESTS: MARKET BELIEFS                                 ###
+### -------------------------------------------------------------------------- ###
+
+# Fundamental Value vs. Market Belief 'Non-Teams' #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+```{r}
+wt_fv_nt <- wilcox.test(Data$price.0, 
+                        Data$fv, 
+                        alternative="two.sided", 
+                        paired=TRUE, 
+                        exact=TRUE)
+cat("z-value:", abs(qnorm(wt_fv_nt$p.value/2)), 
+    "p-value:", wt_fv_nt$p.value)
+
+```
+
+
+
+# Fundamental Value vs. Market Belief 'Teams' #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+```{r}
+wt_fv_tt <- wilcox.test(Data$price.1, 
+                        Data$fv, 
+                        alternative="two.sided",
+                        paired=TRUE,
+                        exact=TRUE) 
+cat("z-value:", abs(qnorm(wt_fv_tt$p.value/2)), 
+    "p-value:", wt_fv_tt$p.value)
+
+```
+
+# Market Belief 'Non-Teams' vs. Market Belief 'Teams' #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+```{r}
+wt_nt_tt <- wilcox.test(Data$price.0, 
+                        Data$price.1, 
+                        alternative="two.sided", 
+                        paired=TRUE, 
+                        exact=TRUE)  
+cat("z-value:", abs(qnorm(wt_nt_tt$p.value/2)), 
+    "p-value:", wt_nt_tt$p.value)
+
+
+```
+
+
+
+
+# Prepare Data #
+# ~~~~~~~~~~~~ #
+
+```{r}
+load(paste(proc, "Holdings.RData", sep='/'))
+load(paste(proc, "TeamResults.RData", sep='/'))
+load(paste(proc, "Fundamentals.RData", sep='/'))
+
+Data <- merge(Holdings,
+              TeamResults,
+              by=c("uid","hid","teams"),
+              all.x = TRUE)
+
+Data <- merge(Data, 
+              fundamental, 
+              by="hid")
+
+Data<-Data[!(Data$teams == 0),]
+Data<-Data[!(Data$shares == 0),]
+
+```
+
+
+### SPEARMAN CORRELATIONS: Fundamental Value vs. Market Belief 'Teams'         ###
+### -------------------------------------------------------------------------- ###
+```{r}
+for (i in 1:9) {
+  
+  data_corr<-Data[(Data$hid == i),]
+
+  corr <- cor.test(x=data_corr$shares, 
+                   y=data_corr$decision,
+                   method='spearman', 
+                   exact=FALSE)
+  
+  cat("Hypothesis", i, ": \n",
+      "  rho:    ", corr$estimate, "\n", 
+      "  p-value:", corr$p.value, "\n",
+      "\n\n")
+  
+}
+
+```
+
+
+### WILCOXON SIGNED-RANK TESTS: Final Holdings Consistent with Team Result     ###
+### -------------------------------------------------------------------------- ###
+```{r}
+
+Data$consistent <- 0
+Data$consistent <- ifelse(Data$decision==1 & Data$shares>0,1,Data$consistent)
+Data$consistent <- ifelse(Data$decision==0 & Data$shares<0,1,Data$consistent)
+
+for (i in 1:9) {
+  
+  data_wt <- Data[(Data$hid == i),]
+  
+  data_wt$testval <- 0.5
+  data_wt$test <- data_wt$consistent - 0.5
+  a <- as.data.frame(table(sign(data_wt$test)))
+  
+  a$total <- sum(a$Freq)
+  a$frac  <- a$Freq/a$total
+  
+  wt <- wilcox.test(data_wt$consistent, 
+                    data_wt$testval, 
+                    alternative="two.sided",
+                    paired=TRUE,
+                    exact=FALSE)      
+  
+  fv <- mean(data_wt$fv)
+  z <- abs(qnorm(wt$p.value/2))
+  inc <- mean(data_wt[data_wt$consistent==0,"shares"])
+  con <- mean(data_wt[data_wt$consistent==1,"shares"])
+  frac <- a[a$Var1==1, "frac"]
+  
+  cat("Hypothesis", i, ": \n",
+      "  consistent:                    ", frac, 
+      "  ( z =", z, ", p =", wt$p.value, ")", "\n",
+      "  fundamental value:             ", fv, "\n",
+      "  avg. holdings if consistent:   ", con, "\n",
+      "  avg. holdings if inconsistent: ", inc, "\n",
+      "\n\n")
+
+}
+
+
+```
+
+
+
+
+# Prepare Data #
+# ~~~~~~~~~~~~ #
+```{r}
+
+load(paste(proc, "BalancedPanel.Rdata", sep='/'))
+#attach(BalancedPanel, warn.conflicts = FALSE)
+
+
+### PANEL REGRESSIONS                                                          ###
+### -------------------------------------------------------------------------- ###
+m1 <- lm(ae~time+teams, data = BalancedPanel)
+summary(m1, robust=TRUE)
+
+m2 <- lm(ae~time+teams+time:teams, data = BalancedPanel)
+summary(m2, robust=TRUE)
+
+```
