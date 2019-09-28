@@ -43,6 +43,7 @@ if (basedir == ""){
    # use default
    basedir = "/data"
 }
+basedir = '/Users/poldrack/data_unsynced/NARPS_docker'
 
 ```
 
@@ -198,7 +199,9 @@ m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + tes
                                    optCtrl=list(method='nlminb')))
 
 summary_full_model <- summary(m_hyp_full)
+sink(paste(basedir,'figures/decision_model_summary.txt', sep='/'))
 print(summary_full_model)
+sink() 
 
 r.squaredGLMM(m_hyp_full)
 
@@ -338,14 +341,52 @@ m_hyp_nomovement = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))   
 
-anova_testing <- anova(m_hyp_full,
+anova_movement <- anova(m_hyp_full,
                        m_hyp_nomovement,test='Chisq')
-print(anova_testing)
+print(anova_movement)
 
 # compute delta r-squared between this model and full model
 delta_r2_movement <- r.squaredGLMM(m_hyp_full) - r.squaredGLMM(m_hyp_nomovement)
 print(delta_r2_movement)
 ```
+
+#### Create table for paper with modeling results
+
+```{r}
+summary_df = data.frame(Effects=c('Hypothesis','Estimated smoothness','Used fMRIPprep data','Software package','Multiple correction method','Movement modeling'))
+summary_df['Chi-squared'] = c(anova_hyp$Chisq[2],
+                              anova_smoothing$Chisq[2],
+                              anova_fmriprep$Chisq[2],
+                              anova_package$Chisq[2],
+                              anova_testing$Chisq[2],
+                              anova_movement$Chisq[2])
+summary_df['P value'] = c(anova_hyp$"Pr(>Chisq)"[2],
+                              anova_smoothing$"Pr(>Chisq)"[2],
+                              anova_fmriprep$"Pr(>Chisq)"[2],
+                              anova_package$"Pr(>Chisq)"[2],
+                              anova_testing$"Pr(>Chisq)"[2],
+                              anova_movement$"Pr(>Chisq)"[2])
+summary_df['Delta R^2'] = c(delta_r2_hyp[2,1],
+                            delta_r2_smoothing[2,1],
+                            delta_r2_fmriprep[2,1],
+                            delta_r2_package[2,1],
+                            delta_r2_testing[2,1],
+                            delta_r2_movement[2,1])
+summary_df <- summary_df %>%
+  mutate(`Chi-squared` = formatC(summary_df$'Chi-squared',
+                                 digits=2,format='f'),
+    `P value` = formatC(summary_df$'P value',
+                        digits=3,format='f'),
+    `Delta R^2` = formatC(summary_df$'Delta R^2',
+                        digits=2,format='f')
+    )
+summary_df
+write.table(summary_df,
+            file=paste(basedir,
+                       "figures/ModelingSummaryTable.txt",sep='/'),
+            quote=FALSE,sep='\t', row.names = FALSE)
+```
+
 
 #### Applied vs. estimated smoothness
 
