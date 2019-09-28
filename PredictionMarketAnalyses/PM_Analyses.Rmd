@@ -164,11 +164,11 @@ Data$consistent <- ifelse(Data$decision==0 & Data$shares<0,1,Data$consistent)
 wt_results_df <- data.frame(Hypothesis=c(1:9)) %>%
   mutate(rho = NA,
          pValue = NA,
+         frac = NA,
          z = NA,
          z_pval = NA,
          inc = NA,
-         con = NA,
-         frac = NA)
+         con = NA)
 
 for (i in 1:9) {
   
@@ -180,8 +180,8 @@ for (i in 1:9) {
                    y=data_wt$decision,
                    method='spearman', 
                    exact=FALSE)
-  wt_results_df[i,'rho'] <- corr$estimate
-  wt_results_df[i,'pValue'] <- corr$p.value
+  wt_results_df[i,'rho'] <- formatC(corr$estimate,digits=2,format='f')
+  wt_results_df[i,'pValue'] <- formatC(corr$p.value,digits=3,format='f')
   data_wt$testval <- 0.5
   data_wt$test <- data_wt$consistent - 0.5
   a <- as.data.frame(table(sign(data_wt$test)))
@@ -197,22 +197,31 @@ for (i in 1:9) {
                     paired=TRUE,
                     exact=FALSE)      
   
-  #wt_results_df[i,'fv'] <- mean(data_wt$fv)
-  wt_results_df[i,'z'] <- abs(qnorm(wt$p.value/2))
-  wt_results_df[i,'z_pval'] <- wt$p.value/2
-  wt_results_df[i,'inc'] <- mean(data_wt[data_wt$consistent==0,"shares"])
-  wt_results_df[i,'con'] <- mean(data_wt[data_wt$consistent==1,"shares"])
-  wt_results_df[i,'frac'] <- a[a$Var1==1, "frac"]
+  wt_results_df[i,'frac'] <- formatC(a[a$Var1==1, "frac"],digits=2,format='f')
+  wt_results_df[i,'z'] <- formatC(abs(qnorm(wt$p.value/2)),digits=2,format='f')
+  wt_results_df[i,'z_pval'] <- formatC(wt$p.value/2,digits=3,format='f')
+  wt_results_df[i,'inc'] <- formatC(mean(data_wt[data_wt$consistent==0,"shares"]),digits=2,format='f')
+  wt_results_df[i,'con'] <- formatC(mean(data_wt[data_wt$consistent==1,"shares"]),digits=2,format='f')
   
 
 }
-
 ```
 
 ### Make supplementary tables
 
 ```{r}
-
+names(wt_results_df) <- c('Hypothesis #',
+                          'Spearman rho',
+                          'p-value',
+                          'Share of consistent holdings',
+                          'Z (signed rank test)',
+                          'p-value (signed rank test)',
+                          'Average holdings if consistent',
+                          'Average holdings if inconsistent')
+write.table(t(wt_results_df), file=paste(output_dir,
+                       "Figures/SuppTable_HoldingStats.txt",sep='/'),
+            quote=FALSE, col.names=FALSE,sep='\t')
+wt_results_df
 ```
 
 
@@ -249,10 +258,6 @@ panelreg_df <- data.frame(effect = c('Intercept',
 panelreg_df[1:3, 'Beta_1'] = s1$coefficients[1:3,1]
 panelreg_df[1:3, 't_1'] = s1$coefficients[1:3,3]
 panelreg_df[1:3, 'pValue_1'] = s1$coefficients[1:3,4]
-
-write.table(panelreg_df,
-            file=paste(output_dir,
-                       "Figures/SuppTable4.txt",sep='/'))
 
 panelreg_df
 ```
