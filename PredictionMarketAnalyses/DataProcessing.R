@@ -28,10 +28,10 @@ if (use_checkpoint) {
 
 # Libraries #
 # ~~~~~~~~~ #
-library("fs")
-library("dplyr")
-library("tidyr")
-library("lubridate")
+library(fs)
+library(dplyr)
+library(tidyr)
+library(lubridate)
 
 # Working Directories #
 # ~~~~~~~~~~~~~~~~~~~ #

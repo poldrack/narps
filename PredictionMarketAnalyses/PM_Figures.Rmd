@@ -9,12 +9,6 @@ This code was adapted from Figures.R written by Sebastian Kupek.
 
 ```{r setup}
 
-library(ggplot2)
-library(ggpubr)
-library(hrbrthemes)
-library(dplyr)
-library(tidyr)
-library(cowplot)
 
 basedir = Sys.getenv('NARPS_BASEDIR')
 if (basedir == ""){
@@ -34,6 +28,13 @@ if (use_checkpoint) {
   checkpointDir <- '/checkpoint'
   checkpoint("2019-08-13", checkpointLocation = checkpointDir)
   }
+
+library(ggplot2)
+library(ggpubr)
+library(hrbrthemes)
+library(dplyr)
+library(tidyr)
+library(cowplot)
 
 output_dir <- paste(basedir,'PredictionMarkets',sep='/')
 proc <- paste(output_dir, 'Processed',sep='/')

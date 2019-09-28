@@ -12,7 +12,6 @@ This was adapted from Analyses.R provided by Felix Holzmeister.
 
 ```{r setup}
 
-library(dplyr)
 
 basedir = Sys.getenv('NARPS_BASEDIR')
 if (basedir == ""){
@@ -32,6 +31,8 @@ if (use_checkpoint) {
   checkpointDir <- '/checkpoint'
   checkpoint("2019-08-13", checkpointLocation = checkpointDir)
   }
+
+library(dplyr)
 
 output_dir <- paste(basedir,'PredictionMarkets',sep='/')
 proc <- paste(output_dir, 'Processed',sep='/')
