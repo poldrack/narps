@@ -348,7 +348,7 @@ Prices$long_outstanding <- NULL
 Prices$short_outstanding <- NULL
 
 save(Prices,
-     file=paste(proc, "Prices.Rdata", sep='/'))
+     file=paste(proc, "Prices.RData", sep='/'))
 
 
 # Transactions
