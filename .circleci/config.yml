@@ -52,7 +52,6 @@ jobs:
              export NARPS_BASEDIR="/tmp/data"; Rscript /root/project/PredictionMarketAnalyses/DataProcessing.R
              export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/PredictionMarketAnalyses/PM_Analyses.Rmd","html_document", output_dir = "/tmp/data/PredictionMarkets/Figures")'
              export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/PredictionMarketAnalyses/PM_Figures.Rmd","html_document", output_dir = "/tmp/data/PredictionMarkets/Figures")'
-
      - run:
           name: create results tarball
           command: |
