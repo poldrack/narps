@@ -1,0 +1,317 @@
+---
+title: "NARPS Prediction Market Analyses"
+output:
+  word_document: default
+  pdf_document: default
+  html_notebook: default
+---
+
+This was adapted from Analyses.R provided by Felix Holzmeister.
+
+## Setup Working Directories
+
+```{r setup}
+
+
+basedir = Sys.getenv('NARPS_BASEDIR')
+if (basedir == ""){
+  # use default
+  basedir = "/data"
+}
+
+use_checkpoint = TRUE
+
+s = Sys.info()
+if (s['sysname'] == 'Darwin'){
+  use_checkpoint = FALSE
+}
+
+if (use_checkpoint) {
+  library(checkpoint)
+  checkpointDir <- '/checkpoint'
+  checkpoint("2019-08-13", checkpointLocation = checkpointDir)
+  }
+
+library(dplyr)
+library(tidyr)
+
+output_dir <- paste(basedir,'PredictionMarkets',sep='/')
+proc <- paste(output_dir, 'Processed',sep='/')
+if (!dir.exists(proc)){
+  stop('proc dir does not exist!')
+}
+figdir <- paste(output_dir, 'Figures',sep='/')
+if (!dir.exists(figdir)){
+  dir.create(figdir)
+}
+
+```
+
+## Prepare Data
+
+```{r prepareData}
+load(paste(proc, "Prices.RData", sep='/'))
+load(paste(proc, "Fundamentals.RData", sep='/'))
+
+Data <- merge(Prices, 
+              fundamental, 
+              by="hid")
+
+Data <- reshape(Data, 
+                direction = "wide", 
+                v.names = "price", 
+                timevar = "teams", 
+                idvar = "hid")
+
+
+
+```
+
+Make table for Supplementary Materials
+
+```{r}
+bracket = function(s) {sprintf('[%s]', s)}
+
+supptable_df <- Data %>%
+  mutate(fv = formatC(Data$fv, digits=2,format='f'),
+         CI_lower = formatC(Data$fv_95l, digits=2,format='f'),
+         CI_upper = formatC(Data$fv_95u, digits=2,format='f'),
+         nt_exceed = as.integer((Data$price.0 > Data$fv_95u) | (Data$price.0 < Data$fv_95l)),
+         t_exceed = as.integer((Data$price.1 > Data$fv_95u) | (Data$price.1 < Data$fv_95l)))
+
+supptable_df <- supptable_df %>%
+  mutate(
+         NonTeams = price.0,
+         NonTeamsOutside = recode(supptable_df$nt_exceed, `0` = '', `1` = '*'),
+         Teams = price.1,
+         TeamsOutside = recode(supptable_df$t_exceed, `0` = '', `1` = '*')) %>%
+  unite('CI', CI_lower:CI_upper, sep='-') %>%
+  mutate(CI = sapply(CI,bracket)) %>%
+  dplyr::select(-fv_95l, -fv_95u, -price.0, -price.1, -t_exceed, -nt_exceed)
+
+write.table(supptable_df,
+            file=paste(output_dir,
+                       "Figures/SuppTable_MarketResults.txt",sep='/'),
+            quote=FALSE, col.names=FALSE,sep='\t')
+```
+
+## Spearman Correlations: Market Beliefs
+
+### Fundamental Value vs. Market Belief 'Non-Teams'
+
+```{r}
+sc_fv_nt <- cor.test(x=Data$price.0, 
+                     y=Data$fv, 
+                     method='spearman', 
+                     exact=FALSE)
+cat("rho:", sc_fv_nt$estimate, 
+    "p-value:", sc_fv_nt$p.value)
+
+```
+
+### Fundamental Value vs. Market Belief 'Teams'
+
+```{r}
+sc_fv_tt <- cor.test(x=Data$price.1, 
+                     y=Data$fv, 
+                     method='spearman', 
+                     exact=FALSE)
+cat("rho:", sc_fv_tt$estimate, 
+    "p-value:", sc_fv_tt$p.value)
+
+```
+
+### Market Belief 'Non-Teams' vs. Market Belief 'Teams' 
+
+```{r}
+sc_nt_tt <- cor.test(x=Data$price.0, 
+                     y=Data$price.1, 
+                     method='spearman', 
+                     exact=FALSE)
+cat("rho:", sc_nt_tt$estimate, 
+    "p-value:", sc_nt_tt$p.value)
+
+
+```
+
+## Wilcoxon signed-rank tests: Market beliefs
+
+
+### Fundamental Value vs. Market Belief for 'Non-Teams'
+
+```{r wt_fv_nt}
+wt_fv_nt <- wilcox.test(Data$price.0, 
+                        Data$fv, 
+                        alternative="two.sided", 
+                        paired=TRUE, 
+                        exact=TRUE)
+cat("z-value:", abs(qnorm(wt_fv_nt$p.value/2)), 
+    "p-value:", wt_fv_nt$p.value)
+
+```
+
+### Fundamental Value vs. Market Belief for 'Teams'
+
+```{r wt_fv_tt}
+wt_fv_tt <- wilcox.test(Data$price.1, 
+                        Data$fv, 
+                        alternative="two.sided",
+                        paired=TRUE,
+                        exact=TRUE) 
+cat("z-value:", abs(qnorm(wt_fv_tt$p.value/2)), 
+    "p-value:", wt_fv_tt$p.value)
+
+```
+
+### Market Belief 'Non-Teams' vs. Market Belief 'Teams'
+
+```{r wt_nt_tt}
+wt_nt_tt <- wilcox.test(Data$price.0, 
+                        Data$price.1, 
+                        alternative="two.sided", 
+                        paired=TRUE, 
+                        exact=TRUE)  
+cat("z-value:", abs(qnorm(wt_nt_tt$p.value/2)), 
+    "p-value:", wt_nt_tt$p.value)
+
+
+```
+
+
+## Team statistics
+
+### Prepare Data
+
+```{r prepData2}
+load(paste(proc, "Holdings.RData", sep='/'))
+load(paste(proc, "TeamResults.RData", sep='/'))
+load(paste(proc, "Fundamentals.RData", sep='/'))
+
+Data <- merge(Holdings,
+              TeamResults,
+              by=c("uid","hid","teams"),
+              all.x = TRUE)
+
+Data <- merge(Data, 
+              fundamental, 
+              by="hid")
+
+Data<-Data[!(Data$teams == 0),]
+Data<-Data[!(Data$shares == 0),]
+
+```
+
+
+```{r}
+
+Data$consistent <- 0
+Data$consistent <- ifelse(Data$decision==1 & Data$shares>0,1,Data$consistent)
+Data$consistent <- ifelse(Data$decision==0 & Data$shares<0,1,Data$consistent)
+
+wt_results_df <- data.frame(Hypothesis=c(1:9)) %>%
+  mutate(rho = NA,
+         pValue = NA,
+         frac = NA,
+         z = NA,
+         z_pval = NA,
+         inc = NA,
+         con = NA)
+
+for (i in 1:9) {
+  
+  data_wt <- Data[(Data$hid == i),]
+  
+  # Spearman correlation: 
+  # Fundamental Value vs. Market Belief
+  corr <- cor.test(x=data_wt$shares, 
+                   y=data_wt$decision,
+                   method='spearman', 
+                   exact=FALSE)
+  wt_results_df[i,'rho'] <- formatC(corr$estimate,digits=2,format='f')
+  wt_results_df[i,'pValue'] <- formatC(corr$p.value,digits=3,format='f')
+  data_wt$testval <- 0.5
+  data_wt$test <- data_wt$consistent - 0.5
+  a <- as.data.frame(table(sign(data_wt$test)))
+  
+  a$total <- sum(a$Freq)
+  a$frac  <- a$Freq/a$total
+  
+  # Wilcoxon signed-rank test: 
+  # Final Holdings Consistent with Team Result    
+  wt <- wilcox.test(data_wt$consistent, 
+                    data_wt$testval, 
+                    alternative="two.sided",
+                    paired=TRUE,
+                    exact=FALSE)      
+  
+  wt_results_df[i,'frac'] <- formatC(a[a$Var1==1, "frac"],digits=2,format='f')
+  wt_results_df[i,'z'] <- formatC(abs(qnorm(wt$p.value/2)),digits=2,format='f')
+  wt_results_df[i,'z_pval'] <- formatC(wt$p.value/2,digits=3,format='f')
+  wt_results_df[i,'inc'] <- formatC(mean(data_wt[data_wt$consistent==0,"shares"]),digits=2,format='f')
+  wt_results_df[i,'con'] <- formatC(mean(data_wt[data_wt$consistent==1,"shares"]),digits=2,format='f')
+  
+
+}
+```
+
+### Make supplementary tables
+
+```{r}
+names(wt_results_df) <- c('Hypothesis #',
+                          'Spearman rho',
+                          'p-value',
+                          'Share of consistent holdings',
+                          'Z (signed rank test)',
+                          'p-value (signed rank test)',
+                          'Average holdings if consistent',
+                          'Average holdings if inconsistent')
+write.table(t(wt_results_df), file=paste(output_dir,
+                       "Figures/SuppTable_HoldingStats.txt",sep='/'),
+            quote=FALSE, col.names=FALSE,sep='\t')
+wt_results_df
+```
+
+
+## Panel regressions                                      
+
+```{r}
+
+load(paste(proc, "BalancedPanel.RData", sep='/'))
+
+m1 <- lm(ae~time+teams, data = BalancedPanel)
+s1 <- summary(m1, robust=TRUE)
+
+sink(paste(figdir,'lm1_summary.txt', sep='/'))
+print(s1)
+sink() 
+
+m2 <- lm(ae~time+teams+time:teams, data = BalancedPanel)
+s2 <- summary(m2, robust=TRUE)
+
+sink(paste(figdir,'lm2_summary.txt', sep='/'))
+print(s2)
+sink() 
+
+```
+
+### Make supplementary table for panel regressions
+
+```{r}
+panelreg_df <- data.frame(effect = c('Intercept',
+                                     'Time',
+                                     'Teams',
+                                     'Time X Teams')) %>%
+  mutate(Beta_1=NA, 
+         t_1 = NA,
+         pValue_1=NA,
+         Beta_2=s2$coefficients[1:4,1], 
+         t_2 = s2$coefficients[1:4,3],
+         pValue_2=s2$coefficients[1:4,4])
+panelreg_df[1:3, 'Beta_1'] = s1$coefficients[1:3,1]
+panelreg_df[1:3, 't_1'] = s1$coefficients[1:3,3]
+panelreg_df[1:3, 'pValue_1'] = s1$coefficients[1:3,4]
+
+panelreg_df
+```
+
+

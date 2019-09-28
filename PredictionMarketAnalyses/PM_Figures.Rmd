@@ -1,0 +1,230 @@
+---
+title: "NARPS Prediction Market Analyses - Figures"
+output: html_notebook
+---
+
+This code was adapted from Figures.R written by Sebastian Kupek.
+
+## Setup Working Directories
+
+```{r setup}
+
+
+basedir = Sys.getenv('NARPS_BASEDIR')
+if (basedir == ""){
+  # use default
+  basedir = "/data"
+}
+
+use_checkpoint = TRUE
+
+s = Sys.info()
+if (s['sysname'] == 'Darwin'){
+  use_checkpoint = FALSE
+}
+
+if (use_checkpoint) {
+  library(checkpoint)
+  checkpointDir <- '/checkpoint'
+  checkpoint("2019-08-13", checkpointLocation = checkpointDir)
+  }
+
+library(ggplot2)
+library(ggpubr)
+library(hrbrthemes)
+library(dplyr)
+library(tidyr)
+library(cowplot)
+
+output_dir <- paste(basedir,'PredictionMarkets',sep='/')
+proc <- paste(output_dir, 'Processed',sep='/')
+if (!dir.exists(proc)){
+  stop('proc dir does not exist!')
+}
+figdir <- paste(output_dir, 'Figures',sep='/')
+if (!dir.exists(figdir)){
+  dir.create(figdir)
+}
+raw <- paste(basedir,'orig/PredictionMarkets',sep='/')
+
+
+```
+
+## Market Beliefs
+
+
+```{r prepareBeliefsData}
+load(paste(proc, "Prices.RData", sep='/'))
+load(paste(proc, "Fundamentals.RData", sep='/'))
+
+plotDataWide <- merge(Prices, 
+              fundamental, 
+              by="hid")
+
+plotDataWide <- reshape(plotDataWide, 
+                direction = "wide", 
+                v.names = "price", 
+                timevar = "teams", 
+                idvar = "hid")
+
+plotDataWide <- plotDataWide[order(plotDataWide$fv),]
+plotDataWide$id <- 1:9
+
+```
+
+```{r mainPanel}
+
+# create long version of data without CI
+plotData <- plotDataWide %>% 
+  dplyr::select(-hypothesis,-fv_95l,-fv_95u) %>%
+  rename(nonTeams = price.0,
+         Teams = price.1,
+         FundamentalValue = fv) %>%
+  gather(group,value,FundamentalValue:Teams)
+
+# make plot
+A <- ggplot() + 
+  geom_errorbar(data=plotDataWide,
+            mapping=aes(x=factor(id), 
+                y=fv,
+                ymin=fv_95l,
+                ymax=fv_95u), width=0.25) +  
+  geom_point(data = plotData,
+            mapping = aes(x=factor(id),
+                y=value,
+                colour=group,
+                fill=group), 
+            size=3, shape=21, colour ='black',stroke=.5, alpha=.75) +  
+  theme_minimal() +
+  theme(panel.grid.minor =   element_blank()) + scale_x_discrete(labels=c("1"="#7", 
+                                   "2"="#8", 
+                                   "3"="#9", 
+                                   "4"="#2", 
+                                   "5"="#3", 
+                                   "6"="#4", 
+                                   "7"="#6",
+                                   "8"="#1",
+                                   "9"="#5"), 
+                          name="Hypothesis ID")+
+  scale_y_continuous(name="Final Market Prices",
+                            limits=c(0,1),
+                            breaks=seq(0,1,0.1)) + 
+  theme(panel.border = element_rect(colour = "black", 
+                                    fill=NA, size=1)) + scale_fill_discrete(name = NULL, labels = c("Fundamental value", "Non-team Members", "Team members"))
+
+ggsave(paste(figdir,'PMbeliefs_Figure3.pdf',sep='/'),
+       width=7,height = 5)
+
+```
+
+
+## Set up fundamentals data
+
+```{r prepareFundamentalsData}
+load(paste(proc, "Fundamentals.RData", sep='/'))
+
+Fu <- read.csv(paste(raw,"Fundamentals.csv", sep='/'),
+               header=TRUE,sep=",")
+
+fundamental <- merge(fundamental,Fu[,c("hid","fv_active")],by="hid")
+fundamental <- fundamental[order(fundamental$fv),]
+fundamental$id <- 1:9
+
+fundamental_long <- fundamental %>%
+  dplyr::select(-hid,-fv_95l,-fv_95u) %>%
+  gather(group,value,fv:fv_active)
+
+```
+
+
+## Plot Active traders vs. All
+
+```{r plotActiveVsAll}
+
+A <- ggplot() + 
+  geom_errorbar(data=fundamental,
+            mapping=aes(x=factor(id), 
+                y=fv,
+                ymin=fv_95l,
+                ymax=fv_95u), width=0.25) +  
+  geom_point(data = fundamental_long,
+            mapping = aes(x=factor(id),
+                y=value,
+                colour=group,
+                fill=group), 
+            size=3, shape=21, colour ='black',stroke=.5, alpha=.75) +  
+  theme_minimal() +
+  theme(panel.grid.minor =   element_blank()) + scale_x_discrete(labels=c("1"="#7", 
+                                   "2"="#8", 
+                                   "3"="#9", 
+                                   "4"="#2", 
+                                   "5"="#3", 
+                                   "6"="#4", 
+                                   "7"="#6",
+                                   "8"="#1",
+                                   "9"="#5"), 
+                          name="Hypothesis ID")+
+  scale_y_continuous(name="Final Market Prices",
+                            limits=c(0,1),
+                            breaks=seq(0,1,0.1)) + 
+  theme(panel.border = element_rect(colour = "black", 
+                                    fill=NA, size=1)) + scale_fill_discrete(name = NULL, labels = c("All traders", "Active traders"))
+
+ggsave(paste(figdir,'Active_vs_All_traders.pdf',sep='/'),
+       width=7,height = 5)
+```
+
+### Time series
+
+```{r setupTimeseriesData}
+load(paste(proc,"BalancedPanel.RData", sep='/'))
+timeseriesData <- reshape(BalancedPanel,
+                direction="wide",
+                v.names=c("price","ae"),
+                timevar="teams",
+                idvar=c("hid","time"))
+
+timeseriesData_long = timeseriesData %>%
+  dplyr::select(-ae.0,-ae.1) %>%
+  gather(group,value,fv:price.1)
+
+
+```
+
+
+```{r plotTimeseriesData}
+figs = list()
+labels = c()
+
+
+for (hyp in 1:9){
+  figs[[hyp]] = ggplot(timeseriesData_long[(timeseriesData_long$hid == hyp),],aes(x=time,y=value, colour=as.factor(group))) + 
+    geom_line() + 
+    scale_y_continuous(name="Price",
+                            limits=c(0,1),
+                            breaks=seq(0,1,0.2)) + 
+    scale_x_continuous(name="Time (hours)",
+                            limits=c(0,240),
+                            breaks=seq(0,240,48)) +
+    scale_color_manual(values=c('gray', 'blue', 'green'),labels=c('Fundamental values', 'Non-team members', 'Team members')) + 
+    theme(axis.text=element_text(size=10),
+    axis.title=element_text(size=12,face="bold"))
+  
+    labels = c(labels, sprintf('Hypothesis %d', hyp))
+    if (hyp==1){
+      figs[[hyp]]  = figs[[hyp]] + theme(legend.position = c(0.1, 0.2)) + 
+        theme(legend.title = element_blank())
+    } else {
+      figs[[hyp]] = figs[[hyp]] + theme(legend.position = "none")
+    }
+
+}
+
+plot_grid(figs[[1]],figs[[2]],figs[[3]],figs[[4]],figs[[5]],figs[[6]],figs[[7]],figs[[8]], figs[[9]], ncol=3, labels = labels, label_x=0.25, label_size = 14) #, labels = c('A', 'B'), )
+
+ggsave(paste(figdir,'Timeseries.pdf',sep='/'),
+       width=8,height = 8)
+
+```
+
+

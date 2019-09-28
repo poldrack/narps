@@ -22,6 +22,9 @@ import matplotlib.pyplot as plt
 import seaborn
 import scipy.cluster
 import scipy.stats
+from collections import Counter
+from scipy.spatial.distance import pdist, squareform
+
 from utils import get_concat_data, log_to_file, stringify_dict,\
     matrix_pct_agreement
 from narps import Narps, hypnums
@@ -371,13 +374,13 @@ def mk_correlation_maps_unthresh(
         json.dump(membership, f)
 
     # also save correlation info
-    median_distance = mean_corr.median(1).sort_values()
-    median_distance_df = pandas.DataFrame(
-        median_distance,
-        columns=['median_distance'])
-    median_distance_df.to_csv(os.path.join(
+    median_corr = mean_corr.median(1).sort_values()
+    median_corr_df = pandas.DataFrame(
+        median_corr,
+        columns=['median_corr'])
+    median_corr_df.to_csv(os.path.join(
         narps.dirs.dirs['metadata'],
-        'median_pattern_distance.csv'))
+        'median_pattern_corr.csv'))
 
     log_to_file(logfile, 'median correlation between teams: %f' %
                 numpy.median(cc[numpy.triu_indices_from(cc, 1)]))
@@ -473,7 +476,9 @@ def analyze_clusters(
             for m in membership[str(hyp)][str(cl)]:
                 cluster_metadata_df.loc[m, 'hyp%d' % hyp] = cl
 
-            log_to_file(logfile, 'found %d maps: %d' % (cl, len(member_maps)))
+            log_to_file(
+                logfile,
+                'N cluster %d maps: %d' % (cl, len(member_maps)))
             mean_smoothing[str(hyp)][str(cl)] = numpy.mean(
                 numpy.array(member_smoothing))
             mean_decision[str(hyp)][str(cl)] = numpy.mean(
@@ -515,6 +520,8 @@ def analyze_clusters(
 
     # save cluster metadata to data frame
     cluster_metadata_df = cluster_metadata_df.dropna()
+    cluster_metadata_df = cluster_metadata_df[
+        ~cluster_metadata_df.index.duplicated(keep='first')]
     cluster_metadata_df.to_csv(os.path.join(
         narps.dirs.dirs['metadata'],
         'cluster_metadata_df.csv'))
@@ -539,6 +546,26 @@ def analyze_clusters(
         'cluster_membership_Rand_indices.csv'),
         randmtx)
 
+    # are the same teams in the main cluster each time?
+    main_cluster_teams = []
+    print('index:', cluster_metadata_df.index)
+    for i, hyp in enumerate(hypnums):
+        # find main cluster
+        clusters = cluster_metadata_df.loc[:, 'hyp%d' % hyp]
+        clusters.index = cluster_metadata_df.index
+        cnt = clusters.value_counts()
+        largest_cluster = cnt.index[0]
+        main_cluster_teams = main_cluster_teams +\
+            clusters[clusters == largest_cluster].index.tolist()
+    main_cluster_counts = Counter(main_cluster_teams)
+    consistent_teams = [m for m in main_cluster_counts if
+                        main_cluster_counts[m] == 7]
+
+    log_to_file(
+        logfile,
+        'Number of teams consistently in main cluster: %d' % len(
+            consistent_teams))
+
     return(cluster_metadata_df)
 
 
@@ -553,35 +580,35 @@ def plot_distance_from_mean(narps):
         func_name,
         flush=True)
 
-    median_distance_df = pandas.read_csv(os.path.join(
+    median_corr_df = pandas.read_csv(os.path.join(
         narps.dirs.dirs['metadata'],
-        'median_pattern_distance.csv'))
+        'median_pattern_corr.csv'))
 
     # Plot distance from mean across teams
-    plt.bar(median_distance_df.index,
-            median_distance_df.median_distance)
+    plt.bar(median_corr_df.index,
+            median_corr_df.median_corr)
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
-        'median_distance_sorted.png'),
+        'median_corr_sorted.png'),
         bbox_inches='tight')
     plt.close()
 
     # This plot is limited to the teams with particularly
     # low median correlations (<.2)
-    median_distance_low = median_distance_df.query(
-        'median_distance < 0.2')
+    median_corr_low = median_corr_df.query(
+        'median_corr < 0.2')
     log_to_file(
         logfile,
         'found %d teams with r<0.2 with mean pattern' %
-        median_distance_low.shape[0])
-    log_to_file(logfile, median_distance_low.iloc[:, 0].values)
+        median_corr_low.shape[0])
+    log_to_file(logfile, median_corr_low.iloc[:, 0].values)
 
-    median_distance_high = median_distance_df.query(
-        'median_distance > 0.7')
+    median_corr_high = median_corr_df.query(
+        'median_corr > 0.7')
     log_to_file(
         logfile,
         'found %d teams with r>0.7 with mean pattern' %
-        median_distance_high.shape[0])
+        median_corr_high.shape[0])
 
 
 def get_thresh_similarity(narps, dataset='resampled'):
@@ -621,7 +648,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
             pctagree[numpy.triu_indices_from(pctagree, 1)])
         log_to_file(
             logfile,
-            'hyp %d: mean pctagree similarity: %f' %
+            'hyp %d: median pctagree similarity: %f' %
             (hyp, median_pctagree))
 
         df_pctagree = pandas.DataFrame(pctagree, index=labels, columns=labels)
@@ -640,6 +667,15 @@ def get_thresh_similarity(narps, dataset='resampled'):
             'hyp%d_pctagree_map_thresh.png' % hyp),
             bbox_inches='tight')
         plt.close()
+
+        # get jaccard for nonzero voxels
+        jacsim_nonzero = 1 - squareform(pdist(maskdata, 'jaccard'))
+        median_jacsim_nonzero = numpy.median(
+            jacsim_nonzero[numpy.triu_indices_from(jacsim_nonzero, 1)])
+        log_to_file(
+                logfile,
+                'hyp %d: median jacaard similarity (nonzero): %f' %
+                (hyp, median_jacsim_nonzero))
 
 
 if __name__ == "__main__":
