@@ -19,7 +19,7 @@ if (basedir == ""){
   # use default
   basedir = "/data"
 }
-basedir="/Users/poldrack/data_unsynced/NARPS_docker"
+
 use_checkpoint = TRUE
 
 s = Sys.info()
