@@ -21,7 +21,19 @@ if (basedir == ""){
   # use default
   basedir = "/data"
 }
-basedir = '/Users/poldrack/data_unsynced/NARPS_docker'
+
+use_checkpoint = TRUE
+
+s = Sys.info()
+if (s['sysname'] == 'Darwin'){
+  use_checkpoint = FALSE
+}
+
+if (use_checkpoint) {
+  library(checkpoint)
+  checkpointDir <- '/checkpoint'
+  checkpoint("2019-08-13", checkpointLocation = checkpointDir)
+  }
 
 output_dir <- paste(basedir,'PredictionMarkets',sep='/')
 proc <- paste(output_dir, 'Processed',sep='/')
