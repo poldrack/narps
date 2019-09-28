@@ -33,6 +33,7 @@ if (use_checkpoint) {
   }
 
 library(dplyr)
+library(tidyr)
 
 output_dir <- paste(basedir,'PredictionMarkets',sep='/')
 proc <- paste(output_dir, 'Processed',sep='/')
@@ -271,7 +272,7 @@ wt_results_df
 
 ```{r}
 
-load(paste(proc, "BalancedPanel.Rdata", sep='/'))
+load(paste(proc, "BalancedPanel.RData", sep='/'))
 
 m1 <- lm(ae~time+teams, data = BalancedPanel)
 s1 <- summary(m1, robust=TRUE)
