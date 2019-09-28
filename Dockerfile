@@ -57,7 +57,8 @@ WORKDIR /R-3.6.0
 RUN ./configure --enable-R-shlib=yes && make && make install
 RUN rm -rf /R-3.6.0*
 
-RUN echo 'install.packages(c("checkpoint"), repos="http://cran.us.r-project.org", dependencies=TRUE)' >> /tmp/packages.R && Rscript /tmp/packages.R && rm -rf /R-3.6.0*
+WORKDIR /analysis
+RUN echo 'install.packages(c("checkpoint"), repos="http://cran.us.r-project.org", dependencies=TRUE)' >> /tmp/packages.R && Rscript /tmp/packages.R
 
 # environment setup
 ENV C_INCLUDE_PATH /usr/local/lib/R/include
@@ -65,6 +66,9 @@ ENV LD_LIBRARY_PATH /usr/local/lib/R/lib
 RUN echo "source /etc/fsl/5.0/fsl.sh" >> /root/.bashrc
 ENV NARPS_BASEDIR /data
 
-WORKDIR /analysis
+WORKDIR /tmp
+COPY R_libraries.R checkpoint_setup.R /tmp/
+RUN Rscript checkpoint_setup.R
 
+WORKDIR /analysis
 CMD ["/bin/bash"]
