@@ -11,4 +11,4 @@ For analyses of the imaging results, see the [ImageAnalyses](ImageAnalyses) dire
 
 ## Dependencies
 
-The full set of dependencies for this project are specified in the [Dockerfile](ImageAnalyses/Dockerfile)
+The full set of dependencies for this project are specified in the [Dockerfile](Dockerfile)
