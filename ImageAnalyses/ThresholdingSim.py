@@ -198,15 +198,36 @@ def get_activations(narps, hyp, logfile,
         results.iloc[i, 1] = numpy.sum(p[roi_mask > 0] < mean_fdr_thresh[0])
         results.iloc[i, 2] = numpy.sum(p[roi_mask > 0] < mean_fdr_thresh[1])
 
-    # load ALE results for comparison
+    # load ALE and consensus results for comparison
+    meta_results = numpy.zeros(2)
     ale_img = os.path.join(
         narps.dirs.dirs['output'],
         'ALE/hypo%d_fdr_thresholded.nii.gz' % hyp)
     if os.path.exists(ale_img):
         ale_data = masker.fit_transform(ale_img)[0, :]
-        ale_vox = numpy.sum(ale_data[roi_mask > 0])
+        meta_results[0] = numpy.sum(ale_data[roi_mask > 0])
     else:
-        ale_vox = numpy.nan
+        meta_results[0] = numpy.nan
+    # consensus not performed for 3 and 4, so use 1/2 instead
+    hyp_fix = {1: 1,
+               2: 2,
+               3: 1,
+               4: 2,
+               5: 5,
+               6: 6,
+               7: 7,
+               8: 8,
+               9: 9}
+    consensus_img = os.path.join(
+        narps.dirs.dirs['output'],
+        'consensus_analysis/hypo%d_1-fdr.nii.gz' % hyp_fix[hyp])
+    if os.path.exists(ale_img):
+        consensus_data = masker.fit_transform(consensus_img)[0, :]
+        meta_results[1] = numpy.sum(
+            consensus_data[roi_mask > 0] > (1 - fdr))
+    else:
+        meta_results[1] = numpy.nan
+
 
     message = '\nHypothesis: %s\n' % hyp
     if simulate_noise:
@@ -218,9 +239,11 @@ def get_activations(narps, hyp, logfile,
         mean_fdr_thresh
     message += '\nProportion with activation:\n'
     message += (results > 0).mean(0).to_string() + '\n'
-    message += 'Activated voxels in ALE map: %d\n' % ale_vox
+    message += 'Activated voxels in ALE map: %d\n' % meta_results[0]
+    message += 'Activated voxels in consensus map: %d\n' % meta_results[1]
     log_to_file(logfile, message)
-    return(results, mean_fdr_thresh, ale_vox, numpy.sum(roi_mask))
+    return(results, mean_fdr_thresh, meta_results,
+           numpy.sum(roi_mask))
 
 
 def run_all_analyses(narps, simulate_noise=False):
@@ -234,7 +257,7 @@ def run_all_analyses(narps, simulate_noise=False):
 
     all_results = []
     for hyp in range(1, 10):
-        results, mean_fdr_thresh, ale_vox, roisize = get_activations(
+        results, mean_fdr_thresh, meta_results, roisize = get_activations(
             narps, hyp, logfile,
             simulate_noise=simulate_noise)
         mean_results = (results > 0).mean(0)
@@ -244,7 +267,8 @@ def run_all_analyses(narps, simulate_noise=False):
              mean_fdr_thresh[0],
              mean_results[2],
              mean_fdr_thresh[1],
-             ale_vox]
+             meta_results[0],
+             meta_results[1]]
         all_results.append(r)
 
     results_df = pandas.DataFrame(all_results, columns=[
@@ -255,7 +279,8 @@ def run_all_analyses(narps, simulate_noise=False):
         'FDR cutoff (whole-brain)',
         'p(SVC FDR)',
         'FDR cutoff (SVC)',
-        'ALE (n voxels in ROI)'])
+        'ALE (n voxels in ROI)',
+        'Consensus (n voxels in ROI)'])
     results_df.to_csv(os.path.join(
         narps.dirs.dirs['ThresholdSimulation'],
         'simulation_results.csv'
