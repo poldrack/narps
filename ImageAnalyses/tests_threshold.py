@@ -26,4 +26,7 @@ def narps():
 # tests
 # ThresholdSim
 def test_thresholding_sim(narps):
+    narps.dirs.get_output_dir('ThresholdSimulation',
+                              base='figures')
+
     run_all_analyses(narps)
