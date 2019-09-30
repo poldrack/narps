@@ -228,7 +228,6 @@ def get_activations(narps, hyp, logfile,
     else:
         meta_results[1] = numpy.nan
 
-
     message = '\nHypothesis: %s\n' % hyp
     if simulate_noise:
         message += 'SIMULATING WITH RANDOM NOISE\n'
