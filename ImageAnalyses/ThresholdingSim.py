@@ -7,12 +7,6 @@ using unthresholded Z maps
 H/O regions that overlap vmpfc: 27, 28, 29, 25, 1
 also use neurosynth map for "ventromedial frontal"
 
-From Rotem:
-1) see the same analysis with the striatum (since these unthresh images are for hypo1 and 3). Let's see if it is specifically the vmpfc.
-2) Run this new analysis only for the teams in cluster1 for hypo1 (we saw their unthresh maps were very similar while decisions varied considerably).
-3) test similarity of unthresh maps for hypo1 only in grey matter / with an approach somewhat similar to the unthresh, e.g. take only voxels that exceed a specific threshold before computing the similarity.
-4) Run through a 4d image with the unthresh maps of all teams for hypo1, and the same for the thresh maps created by this new analysis. Let's eyeball to see how it looks like.
-
 """
 
 import os
@@ -21,7 +15,6 @@ import numpy
 import glob
 import pandas
 import nilearn.input_data
-from get_3d_peaks import get_3d_peaks
 import nibabel
 from statsmodels.stats.multitest import multipletests
 import scipy.stats
@@ -84,15 +77,15 @@ def create_mask_img(narps, region):
 
     if region == 'vmpfc':
         neurosynth_img = os.path.join(
-            narps.dirs.dirs['orig'],
-            'neurosynth/ventromedialprefrontal_association-test_z_FDR_0.01.nii.gz'
+            narps.dirs.dirs['orig'], 'neurosynth',
+            'ventromedialprefrontal_association-test_z_FDR_0.01.nii.gz'
         )
     else:
         neurosynth_img = None
 
     masker = nilearn.input_data.NiftiMasker(MNI_img)
-    HO_data = masker.fit_transform(HO_img)[0,:]
-    
+    HO_data = masker.fit_transform(HO_img)[0, :]
+
     # find voxels in any of the HO regions overlapping with VMPFC
     matches = None
     for roi in region_rois[region]:
@@ -118,13 +111,12 @@ def create_mask_img(narps, region):
 def get_zstat_images(narps, hyp):
     imgfiles = []
     zdirs = glob.glob(os.path.join(
-        narps.dirs.dirs['zstat'], '*'
-        ))
+        narps.dirs.dirs['zstat'], '*'))
     for d in zdirs:
         imgfile = os.path.join(
             d, 'hypo%d_unthresh.nii.gz' % hyp)
         if os.path.exists(imgfile):
-                imgfiles.append(imgfile)
+            imgfiles.append(imgfile)
     return(imgfiles)
 
 
@@ -134,7 +126,7 @@ def get_mean_fdr_thresh(zstat_imgs, masker,
     # get average thresh for whole brain and ROI
     fdr_thresh = numpy.zeros((len(zstat_imgs), 2))
     for i, img in enumerate(zstat_imgs):
-        z = masker.fit_transform(img)[0]
+        z = masker.fit_transform(img)[0, :]
         if simulate_noise:
             z = numpy.random.randn(z.shape[0])
         p = 1 - scipy.stats.norm.cdf(z)
@@ -143,9 +135,11 @@ def get_mean_fdr_thresh(zstat_imgs, masker,
             p, fdr, 'fdr_tsbh')
         if numpy.sum(fdr_results[0]) > 0:
             fdr_thresh[i, 0] = numpy.max(
-                p[fdr_results[0]==True])
+                p[fdr_results[0]])
         else:
-            fdr_thresh[i, 0] = numpy.nan
+            # use Bonferroni if there are no
+            # suprathreshold voxels
+            fdr_thresh[i, 0] = fdr/len(p)
 
         # compute fdr only on ROI voxels
         p_roi = p[roi_mask > 0]
@@ -153,11 +147,14 @@ def get_mean_fdr_thresh(zstat_imgs, masker,
             p_roi, fdr, 'fdr_tsbh')
         if numpy.sum(fdr_results_roi[0]) > 0:
             fdr_thresh[i, 1] = numpy.max(
-                p_roi[fdr_results_roi[0]==True])
+                p_roi[fdr_results_roi[0]])
         else:
-            fdr_thresh[i, 1] = numpy.nan
+            # use Bonferroni if there are no
+            # suprathreshold voxels
+            fdr_thresh[i, 1] = fdr/len(p_roi)
 
-    return(numpy.nanmean(fdr_thresh,0))
+    return(numpy.mean(fdr_thresh, 0))
+
 
 def get_activations(narps, hyp, logfile,
                     fdr=0.05, pthresh=0.001,
@@ -182,7 +179,7 @@ def get_activations(narps, hyp, logfile,
     masker = nilearn.input_data.NiftiMasker(MNI_img)
 
     # get roi mask
-    roi_mask = masker.fit_transform(maskimg)[0,:]
+    roi_mask = masker.fit_transform(maskimg)[0, :]
 
     mean_fdr_thresh = get_mean_fdr_thresh(
             zstat_imgs, masker, roi_mask,
@@ -192,25 +189,80 @@ def get_activations(narps, hyp, logfile,
     results['FDR'] = 0.0
     results['FDR (only within ROI)'] = 0.0
     for i, img in enumerate(zstat_imgs):
-        z = masker.fit_transform(img)[0]
+        z = masker.fit_transform(img)[0, :]
         if simulate_noise:
             z = numpy.random.randn(z.shape[0])
-        p = 1 - scipy.stats.norm.cdf(z)
+        p = 1 - scipy.stats.norm.cdf(z)  # convert Z to p
+        # count how many voxels in ROI mask are below each threshold
         results.iloc[i, 0] = numpy.sum(p[roi_mask > 0] < pthresh)
         results.iloc[i, 1] = numpy.sum(p[roi_mask > 0] < mean_fdr_thresh[0])
         results.iloc[i, 2] = numpy.sum(p[roi_mask > 0] < mean_fdr_thresh[1])
-    
+
+    # load ALE results for comparison
+    ale_img = os.path.join(
+        narps.dirs.dirs['output'],
+        'ALE/hypo%d_fdr_thresholded.nii.gz' % hyp)
+    if os.path.exists(ale_img):
+        ale_data = masker.fit_transform(ale_img)[0, :]
+        ale_vox = numpy.sum(ale_data[roi_mask > 0])
+    else:
+        ale_vox = numpy.nan
+
     message = '\nHypothesis: %s\n' % hyp
     if simulate_noise:
         message += 'SIMULATING WITH RANDOM NOISE\n'
-    message += 'Region: %s\n' % region
+    message += 'Region (%d voxels): %s\n' % (
+        numpy.sum(roi_mask), region)
     message += 'ROI image: %s\n' % maskimg_file
     message += 'Using mean FDR thresholds (whole brain/roi): %s\n' %\
-         mean_fdr_thresh
+        mean_fdr_thresh
     message += '\nProportion with activation:\n'
-    message += (results>0).mean(0).to_string() + '\n'
+    message += (results > 0).mean(0).to_string() + '\n'
+    message += 'Activated voxels in ALE map: %d\n' % ale_vox
     log_to_file(logfile, message)
-    return(results)
+    return(results, mean_fdr_thresh, ale_vox, numpy.sum(roi_mask))
+
+
+def run_all_analyses(narps, simulate_noise=False):
+    logfile = os.path.join(
+        narps.dirs.dirs['logs'],
+        'ThresholdSimulation.log')
+    log_to_file(
+        logfile,
+        'Running thresholding simulation',
+        flush=True)
+
+    all_results = []
+    for hyp in range(1, 10):
+        results, mean_fdr_thresh, ale_vox, roisize = get_activations(
+            narps, hyp, logfile,
+            simulate_noise=simulate_noise)
+        mean_results = (results > 0).mean(0)
+        r = [hyp, roisize,
+             mean_results[0],
+             mean_results[1],
+             mean_fdr_thresh[0],
+             mean_results[2],
+             mean_fdr_thresh[1],
+             ale_vox]
+        all_results.append(r)
+
+    results_df = pandas.DataFrame(all_results, columns=[
+        'Hypothesis',
+        'N voxels in ROI',
+        'p(Uncorrected)',
+        'p(whole-brain FDR)',
+        'FDR cutoff (whole-brain)',
+        'p(SVC FDR)',
+        'FDR cutoff (SVC)',
+        'ALE (n voxels in ROI)'])
+    results_df.to_csv(os.path.join(
+        narps.dirs.dirs['ThresholdSimulation'],
+        'simulation_results.csv'
+    ))
+    # compare with ALE
+
+    return(results_df)
 
 
 if __name__ == "__main__":
@@ -223,6 +275,9 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--test',
                         action='store_true',
                         help='use testing mode (no processing)')
+    parser.add_argument('-s', '--simulate_noise',
+                        action='store_true',
+                        help='test using random noise')
     args = parser.parse_args()
 
     # set up base directory
@@ -239,18 +294,6 @@ if __name__ == "__main__":
     narps.dirs.get_output_dir('ThresholdSimulation',
                               base='figures')
 
-    logfile = os.path.join(
-        narps.dirs.dirs['logs'],
-        'ThresholdSimulation.log')
-
     if not args.test:
-
-        log_to_file(
-            logfile,
-            'Running thresholding simulation',
-            flush=True)
-
-        for hyp in range(1, 10):
-            activations = get_activations(
-                narps, hyp, logfile, simulate_noise=False)
-
+        all_results = run_all_analyses(
+            narps, args.simulate_noise)
