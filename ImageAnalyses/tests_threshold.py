@@ -1,0 +1,29 @@
+# tests for narps code
+# - currently these are all just smoke tests
+
+import pytest
+import os
+import pandas
+from narps import Narps
+
+from ThresholdingSim import run_all_analyses
+
+# Use a fixed base dir so that we can
+# access the results as a circleci artifact
+
+
+@pytest.fixture(scope="session")
+def narps():
+    basedir = '/tmp/data'
+    assert os.path.exists(basedir)
+    narps = Narps(basedir)
+    narps.load_data()
+    narps.metadata = pandas.read_csv(
+        os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
+    return(narps)
+
+
+# tests
+# ThresholdSim
+def test_thresholding_sim(narps):
+    run_all_analyses(narps)
