@@ -18,6 +18,9 @@ import nilearn.input_data
 import nibabel
 from statsmodels.stats.multitest import multipletests
 import scipy.stats
+from nipy.labs.statistical_mapping import cluster_stats
+from MakeSupplementaryFigure1 import get_all_metadata
+import matplotlib.pyplot as plt
 
 from utils import log_to_file
 from narps import Narps
@@ -153,12 +156,14 @@ def get_mean_fdr_thresh(zstat_imgs, masker,
             # suprathreshold voxels
             fdr_thresh[i, 1] = fdr/len(p_roi)
 
-    return(numpy.mean(fdr_thresh, 0))
+    return(numpy.mean(fdr_thresh, 0), fdr_thresh)
 
 
 def get_activations(narps, hyp, logfile,
                     fdr=0.05, pthresh=0.001,
-                    simulate_noise=False):
+                    simulate_noise=False,
+                    cluster_kthresh=10,
+                    use_mean_fdr_thresh=False):
 
     assert fdr is not None or pthresh is not None
 
@@ -181,23 +186,27 @@ def get_activations(narps, hyp, logfile,
     # get roi mask
     roi_mask = masker.fit_transform(maskimg)[0, :]
 
-    mean_fdr_thresh = get_mean_fdr_thresh(
+    mean_fdr_thresh, fdr_thresh = get_mean_fdr_thresh(
             zstat_imgs, masker, roi_mask,
             simulate_noise)
 
-    results = pandas.DataFrame({'Uncorrected': numpy.zeros(len(zstat_imgs))})
-    results['FDR'] = 0.0
-    results['FDR (only within ROI)'] = 0.0
+    results = pandas.DataFrame({'p < %0.3f, k > %d' % (
+        pthresh, cluster_kthresh): numpy.zeros(len(zstat_imgs))})
+    results['FDR (per-team threshold)'] = 0.0
     for i, img in enumerate(zstat_imgs):
         z = masker.fit_transform(img)[0, :]
         if simulate_noise:
             z = numpy.random.randn(z.shape[0])
         p = 1 - scipy.stats.norm.cdf(z)  # convert Z to p
-        # count how many voxels in ROI mask are below each threshold
-        results.iloc[i, 0] = numpy.sum(p[roi_mask > 0] < pthresh)
-        results.iloc[i, 1] = numpy.sum(p[roi_mask > 0] < mean_fdr_thresh[0])
-        results.iloc[i, 2] = numpy.sum(p[roi_mask > 0] < mean_fdr_thresh[1])
-
+        # compute per-team FDR
+        results.iloc[i, 1] = numpy.sum(p[roi_mask > 0] < fdr_thresh[i, 0])
+        # cluster z image
+        nii = nibabel.load(img)
+        c = cluster_stats(nii, maskimg,
+                          scipy.stats.norm.ppf(1 - pthresh),
+                          'none', cluster_kthresh)
+        if c[0] is not None:
+            results.iloc[i, 0] = len(c[0])
     # load ALE and consensus results for comparison
     meta_results = numpy.zeros(2)
     ale_img = os.path.join(
@@ -234,9 +243,7 @@ def get_activations(narps, hyp, logfile,
     message += 'Region (%d voxels): %s\n' % (
         numpy.sum(roi_mask), region)
     message += 'ROI image: %s\n' % maskimg_file
-    message += 'Using mean FDR thresholds (whole brain/roi): %s\n' %\
-        mean_fdr_thresh
-    message += '\nProportion with activation:\n'
+    message += '\nProportion teams with nonzero activation:\n'
     message += (results > 0).mean(0).to_string() + '\n'
     message += 'Activated voxels in ALE map: %d\n' % meta_results[0]
     message += 'Activated voxels in consensus map: %d\n' % meta_results[1]
@@ -254,6 +261,11 @@ def run_all_analyses(narps, simulate_noise=False):
         'Running thresholding simulation',
         flush=True)
 
+    # get team results to add to table
+
+    all_metadata = get_all_metadata(narps)
+    mean_decision = all_metadata.groupby('varnum').Decision.mean()
+
     all_results = []
     for hyp in range(1, 10):
         results, mean_fdr_thresh, meta_results, roisize = get_activations(
@@ -261,11 +273,9 @@ def run_all_analyses(narps, simulate_noise=False):
             simulate_noise=simulate_noise)
         mean_results = (results > 0).mean(0)
         r = [hyp, roisize,
+             mean_decision.loc[hyp],
              mean_results[0],
              mean_results[1],
-             mean_fdr_thresh[0],
-             mean_results[2],
-             mean_fdr_thresh[1],
              meta_results[0],
              meta_results[1]]
         all_results.append(r)
@@ -273,20 +283,43 @@ def run_all_analyses(narps, simulate_noise=False):
     results_df = pandas.DataFrame(all_results, columns=[
         'Hypothesis',
         'N voxels in ROI',
-        'p(Uncorrected)',
-        'p(whole-brain FDR)',
-        'FDR cutoff (whole-brain)',
-        'p(SVC FDR)',
-        'FDR cutoff (SVC)',
-        'ALE (n voxels in ROI)',
-        'Consensus (n voxels in ROI)'])
+        'proportion of teams reporting act.',
+        'proportion of teams w/  act. (%s)' % results.columns[0],
+        'proportion of teams w/  act. (%s)' % results.columns[1],
+        'CBMA (n voxels in ROI)',
+        'IBMA (n voxels in ROI)'])
     results_df.to_csv(os.path.join(
         narps.dirs.dirs['ThresholdSimulation'],
         'simulation_results.csv'
     ))
-    # compare with ALE
-
     return(results_df)
+
+
+def make_plot(narps, all_results):
+    # plot results against decisions
+    plt.figure(figsize=(6, 6))
+    plt.axis('square')
+    plt.scatter(
+        all_results['proportion of teams reporting act.'],
+        all_results['proportion of teams w/  act. (p < 0.001, k > 10)'],
+        marker="D", color='black')
+    plt.scatter(
+        all_results['proportion of teams reporting act.'],
+        all_results[
+            'proportion of teams w/  act. (FDR (per-team threshold))'],
+        color='blue')
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('Proportion of teams reporting activation',
+               fontsize=14)
+    plt.ylabel('Proportion of teams with activation after thresholding',
+               fontsize=14)
+    plt.legend(['p<.001, k>10', 'FDR p<.05'])
+    plt.plot([0, 1], [0, 1])
+    plt.tight_layout()
+    plt.savefig(os.path.join(
+        narps.dirs.dirs['ThresholdSimulation'],
+        'decision_vs_activation.png'
+    ))
 
 
 if __name__ == "__main__":
@@ -321,3 +354,4 @@ if __name__ == "__main__":
     if not args.test:
         all_results = run_all_analyses(
             narps, args.simulate_noise)
+        make_plot(narps, all_results)
