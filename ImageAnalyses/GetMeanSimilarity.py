@@ -43,6 +43,7 @@ def get_similarity_summary(narps, corrtype='spearman'):
                              'mean',
                              numpy.mean(corrvals_triu)])
         # plot histogram without zeros
+        plt.figure(figsize=(8, 8))
         plt.hist(corrvals_triu, 50, (-1, 1))
         histfile = os.path.join(
             narps.dirs.dirs['figures'],
@@ -51,7 +52,8 @@ def get_similarity_summary(narps, corrtype='spearman'):
         if not os.path.exists(os.path.dirname(histfile)):
             os.mkdir(os.path.dirname(histfile))
         plt.savefig(histfile)
-            
+        plt.close()
+
         # per-cluster correlation
         ci = clusterinfo['%d' % hyp]
         for cluster in ci:
@@ -64,6 +66,7 @@ def get_similarity_summary(narps, corrtype='spearman'):
                                  'cluster%s' % cluster,
                                  numpy.mean(cluster_corrvals_triu)])
             # plot histogram without zeros
+            plt.figure(figsize=(8, 8))
             plt.hist(cluster_corrvals_triu, 50, (-1, 1))
             histfile = os.path.join(
                 narps.dirs.dirs['figures'],
@@ -72,6 +75,7 @@ def get_similarity_summary(narps, corrtype='spearman'):
             if not os.path.exists(os.path.dirname(histfile)):
                 os.mkdir(os.path.dirname(histfile))
             plt.savefig(histfile)
+            plt.close()
     results_df = pandas.DataFrame(corr_summary)
     results_df.columns = ['hyp', 'group', 'correlation']
     results_df_wide = results_df.pivot(
