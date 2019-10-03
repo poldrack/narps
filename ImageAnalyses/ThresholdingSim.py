@@ -297,18 +297,33 @@ def run_all_analyses(narps, simulate_noise=False):
 
 def make_plot(narps, all_results):
     # plot results against decisions
+    xoff = .01
+    yoff = .01
     plt.figure(figsize=(6, 6))
     plt.axis('square')
+    plt.axis([0, 1, 0, 1])
     plt.scatter(
         all_results['proportion of teams reporting act.'],
         all_results['proportion of teams w/  act. (p < 0.001, k > 10)'],
         marker="D", color='black')
+    for i in range(all_results.shape[0]):
+        xloc = all_results.loc[i, 'proportion of teams reporting act.'] + xoff
+        yloc = all_results.loc[
+            i,'proportion of teams w/  act. (p < 0.001, k > 10)'] + yoff
+        plt.annotate(str(all_results.loc[i, 'Hypothesis']),
+            xy = (xloc, yloc))
+   
     plt.scatter(
         all_results['proportion of teams reporting act.'],
         all_results[
             'proportion of teams w/  act. (FDR (per-team threshold))'],
         color='blue')
-    plt.axis([0, 1, 0, 1])
+    for i in range(all_results.shape[0]):
+        xloc = all_results.loc[i, 'proportion of teams reporting act.'] + xoff
+        yloc = all_results.loc[
+            i,'proportion of teams w/  act. (FDR (per-team threshold))'] + yoff
+        plt.annotate(str(all_results.loc[i, 'Hypothesis']),
+            xy = (xloc, yloc))
     plt.xlabel('Proportion of teams reporting activation',
                fontsize=14)
     plt.ylabel('Proportion of teams with activation after thresholding',
