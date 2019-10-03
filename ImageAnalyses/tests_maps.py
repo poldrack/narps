@@ -12,6 +12,7 @@ from AnalyzeMaps import mk_overlap_maps,\
 from MetaAnalysis import get_thresholded_Z_maps
 from ThreshVoxelStatistics import get_thresh_voxel_stats,\
     get_zstat_diagnostics
+from GetMeanSimilarity import get_similarity_summary
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
 
@@ -74,3 +75,7 @@ def test_thresh_zmap(narps):
 def test_thresh_voxel_stats(narps):
     get_zstat_diagnostics(narps)
     get_thresh_voxel_stats(narps.basedir)
+
+
+def test_mean_similarity(narps):
+    _ = get_similarity_summary(narps)
