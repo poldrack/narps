@@ -232,7 +232,7 @@ m_hyp_nohyp = glmer(Decision ~ fwhm + used_fmriprep_data + package + testing + m
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
-
+summary(m_hyp_nohyp)
 anova_hyp<- anova(m_hyp_full,
                   m_hyp_nohyp,
                   test='Chisq')
@@ -250,7 +250,7 @@ m_hyp_nosmooth = glmer(Decision ~ varnum + used_fmriprep_data + package + testin
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
-
+summary(m_hyp_nosmooth)
 anova_smoothing <- anova(m_hyp_full,
                          m_hyp_nosmooth,
                          test='Chisq')
@@ -270,6 +270,7 @@ m_hyp_noprep = glmer(Decision ~ varnum + fwhm + package + testing + movement_mod
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))
+summary(m_hyp_noprep)
 anova_fmriprep <- anova(m_hyp_full,
                         m_hyp_noprep,
                         test='Chisq')
@@ -292,7 +293,7 @@ m_hyp_nopackage = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + testing 
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb'))) 
-
+summary(m_hyp_nopackage)
 anova_package <- anova(m_hyp_full,
                        m_hyp_nopackage,
                        test='Chisq')
@@ -316,7 +317,7 @@ m_hyp_notesting = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package 
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))   
-
+summary(m_hyp_notesting)
 anova_testing <- anova(m_hyp_full,
                        m_hyp_notesting,test='Chisq')
 print(anova_testing)
@@ -339,7 +340,7 @@ m_hyp_nomovement = glmer(Decision ~ varnum + used_fmriprep_data + fwhm + package
             data = hyp_df,family=binomial,
             control = glmerControl(optimizer ='optimx', 
                                    optCtrl=list(method='nlminb')))   
-
+summary(m_hyp_nomovement)
 anova_movement <- anova(m_hyp_full,
                        m_hyp_nomovement,test='Chisq')
 print(anova_movement)
@@ -579,8 +580,19 @@ patterndist_df = read_csv(paste(basedir,
           sep='/'),skip=0)
 names(patterndist_df)=c('teamID','median_corr')
 
-merged_df = join(patterndist_df,narps_df %>% 
-                   filter(varnum==1),by=c('teamID'))
+# use mean FWHM across hypotheses
+
+mean_fwhm <- narps_df %>% 
+  group_by(teamID) %>% 
+  summarize(fwhm = mean(fwhm))
+
+
+merged_df = join(patterndist_df,
+                 narps_df %>% filter(varnum==1),
+                 by=c('teamID')) %>%
+  dplyr::select(-fwhm)
+  
+merged_df = join(merged_df, mean_fwhm, by=c('teamID'))
 ```
 
 ### fit model
