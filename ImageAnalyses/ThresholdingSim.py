@@ -309,10 +309,9 @@ def make_plot(narps, all_results):
     for i in range(all_results.shape[0]):
         xloc = all_results.loc[i, 'proportion of teams reporting act.'] + xoff
         yloc = all_results.loc[
-            i,'proportion of teams w/  act. (p < 0.001, k > 10)'] + yoff
-        plt.annotate(str(all_results.loc[i, 'Hypothesis']),
-            xy = (xloc, yloc))
-   
+            i, 'proportion of teams w/  act. (p < 0.001, k > 10)'] + yoff
+        plt.annotate(str(all_results.loc[i, 'Hypothesis']), xy=(xloc, yloc))
+
     plt.scatter(
         all_results['proportion of teams reporting act.'],
         all_results[
@@ -321,9 +320,9 @@ def make_plot(narps, all_results):
     for i in range(all_results.shape[0]):
         xloc = all_results.loc[i, 'proportion of teams reporting act.'] + xoff
         yloc = all_results.loc[
-            i,'proportion of teams w/  act. (FDR (per-team threshold))'] + yoff
-        plt.annotate(str(all_results.loc[i, 'Hypothesis']),
-            xy = (xloc, yloc))
+            i, 'proportion of teams w/  act. (FDR (per-team threshold))'
+            ] + yoff
+        plt.annotate(str(all_results.loc[i, 'Hypothesis']), xy=(xloc, yloc))
     plt.xlabel('Proportion of teams reporting activation',
                fontsize=14)
     plt.ylabel('Proportion of teams with activation after thresholding',
