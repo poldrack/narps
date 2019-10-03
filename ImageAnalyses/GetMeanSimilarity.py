@@ -10,7 +10,7 @@ import argparse
 import numpy
 import pandas
 import json
-
+import matplotlib.pyplot as plt
 from narps import Narps, hypnums
 
 hypnames = ['%d' % i for i in hypnums]
@@ -20,6 +20,7 @@ hypnames[:2] = ['1/3', '2/4']
 def get_similarity_summary(narps, corrtype='spearman'):
     corr_summary = []
     for i, hyp in enumerate(hypnums):
+        print('hyp', hyp)
         # load correlations and cluster info
         corrdata = pandas.read_csv(
             os.path.join(
@@ -37,20 +38,40 @@ def get_similarity_summary(narps, corrtype='spearman'):
 
         # overall correlation
         corrvals = corrdata.values
-        corrvals_triu = numpy.triu(corrvals, 1)
+        corrvals_triu = corrvals[numpy.triu_indices_from(corrvals, 1)]
         corr_summary.append([hypnames[i],
                              'mean',
                              numpy.mean(corrvals_triu)])
-
+        # plot histogram without zeros
+        plt.hist(corrvals_triu, 50, (-1, 1))
+        histfile = os.path.join(
+            narps.dirs.dirs['figures'],
+            'correlation_unthresh',
+            '%s_unthresh_hyp%d_mean.png' % (corrtype, hyp))
+        if not os.path.exists(os.path.dirname(histfile)):
+            os.mkdir(os.path.dirname(histfile))
+        plt.savefig(histfile)
+            
         # per-cluster correlation
         ci = clusterinfo['%d' % hyp]
         for cluster in ci:
             clusterdata = corrdata.loc[ci[cluster]][ci[cluster]]
             assert (clusterdata.index == clusterdata.columns).all()
-            cluster_corrvals_triu = numpy.triu(clusterdata, 1)
+            cluster_corrvals = clusterdata.values
+            cluster_corrvals_triu = cluster_corrvals[
+                numpy.triu_indices_from(cluster_corrvals, 1)]
             corr_summary.append([hypnames[i],
                                  'cluster%s' % cluster,
                                  numpy.mean(cluster_corrvals_triu)])
+            # plot histogram without zeros
+            plt.hist(cluster_corrvals_triu, 50, (-1, 1))
+            histfile = os.path.join(
+                narps.dirs.dirs['figures'],
+                'correlation_unthresh',
+                '%s_unthresh_hyp%d_cluster%s.png' % (corrtype, hyp, cluster))
+            if not os.path.exists(os.path.dirname(histfile)):
+                os.mkdir(os.path.dirname(histfile))
+            plt.savefig(histfile)
     results_df = pandas.DataFrame(corr_summary)
     results_df.columns = ['hyp', 'group', 'correlation']
     results_df_wide = results_df.pivot(
