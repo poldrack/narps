@@ -102,6 +102,9 @@ def mk_overlap_maps(narps, verbose=True):
     plt.savefig(
         os.path.join(narps.dirs.dirs['figures'], 'overlap_map.pdf'),
         bbox_inches='tight')
+    plt.savefig(
+        os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'),
+        bbox_inches='tight')
     plt.close()
     return(max_overlap)
 
@@ -128,6 +131,9 @@ def mk_range_maps(narps, dataset='zstat'):
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'], 'range_map.pdf'),
         bbox_inches='tight')
+    plt.savefig(os.path.join(
+        narps.dirs.dirs['figures'], 'range_map.png'),
+        bbox_inches='tight')
     plt.close(fig)
 
 
@@ -153,6 +159,9 @@ def mk_std_maps(narps, dataset='zstat'):
             axes=ax[i])
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'], 'std_map.pdf'),
+        bbox_inches='tight')
+    plt.savefig(os.path.join(
+        narps.dirs.dirs['figures'], 'std_map.png'),
         bbox_inches='tight')
     plt.close(fig)
 
@@ -357,6 +366,10 @@ def mk_correlation_maps_unthresh(
             narps.dirs.dirs['figures'],
             'hyp%d_%s_map_unthresh.pdf' % (hyp, corr_type)),
             bbox_inches='tight')
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_%s_map_unthresh.png' % (hyp, corr_type)),
+            bbox_inches='tight')
         plt.close()
         dendrograms[hyp] = ward_linkage
 
@@ -516,6 +529,10 @@ def analyze_clusters(
             narps.dirs.dirs['figures'],
             'hyp%d_cluster_means.pdf' % hyp),
             bbox_inches='tight')
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_cluster_means.png' % hyp),
+            bbox_inches='tight')
         plt.close(fig)
 
     # save cluster metadata to data frame
@@ -665,6 +682,10 @@ def get_thresh_similarity(narps, dataset='resampled'):
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_pctagree_map_thresh.pdf' % hyp),
+            bbox_inches='tight')
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_pctagree_map_thresh.png' % hyp),
             bbox_inches='tight')
         plt.close()
 
