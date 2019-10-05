@@ -41,6 +41,7 @@ def get_similarity_summary(narps, corrtype='spearman'):
         corrvals_triu = corrvals[numpy.triu_indices_from(corrvals, 1)]
         corr_summary.append([hypnames[i],
                              'mean',
+                             corrvals.shape[0],
                              numpy.mean(corrvals_triu)])
         # plot histogram without zeros
         plt.figure(figsize=(8, 8))
@@ -64,6 +65,7 @@ def get_similarity_summary(narps, corrtype='spearman'):
                 numpy.triu_indices_from(cluster_corrvals, 1)]
             corr_summary.append([hypnames[i],
                                  'cluster%s' % cluster,
+                                 len(ci[cluster]),
                                  numpy.mean(cluster_corrvals_triu)])
             # plot histogram without zeros
             plt.figure(figsize=(8, 8))
@@ -77,17 +79,19 @@ def get_similarity_summary(narps, corrtype='spearman'):
             plt.savefig(histfile)
             plt.close()
     results_df = pandas.DataFrame(corr_summary)
-    results_df.columns = ['hyp', 'group', 'correlation']
+    results_df.columns = ['hyp', 'group', 'Cluster size', 'Correlation']
     results_df_wide = results_df.pivot(
-        index='hyp', columns='group', values='correlation')
-    results_df_wide = results_df_wide[
-        ['mean', 'cluster1', 'cluster2', 'cluster3']]
+        index='hyp', columns='group',
+        values=['Correlation', 'Cluster size'])
     results_df_wide.columns = [
-        'All teams',
-        'Cluster 1',
-        'Cluster 2',
-        'Cluster 3'
-    ]
+        '%s (%s)' % (col[0], col[1]) for col in results_df_wide.columns.values]
+    del results_df_wide['Cluster size (mean)']
+    results_df_wide = results_df_wide[
+        ['Correlation (mean)',
+         'Correlation (cluster1)', 'Cluster size (cluster1)',
+         'Correlation (cluster2)', 'Cluster size (cluster2)',
+         'Correlation (cluster3)', 'Cluster size (cluster3)']]
+
     results_df_wide.to_csv(os.path.join(
         narps.dirs.dirs['output'],
         'correlation_unthresh',
