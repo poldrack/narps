@@ -332,8 +332,7 @@ def make_plot(narps, all_results):
     plt.tight_layout()
     plt.savefig(os.path.join(
         narps.dirs.dirs['ThresholdSimulation'],
-        'decision_vs_activation.png'
-    ))
+        'decision_vs_activation.png'), bbox_inches='tight')
 
 
 if __name__ == "__main__":
