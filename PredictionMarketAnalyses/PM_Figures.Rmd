@@ -164,7 +164,7 @@ A <- ggplot() +
                                    "8"="#1",
                                    "9"="#5"), 
                           name="Hypothesis ID")+
-  scale_y_continuous(name="Final Market Price",
+  scale_y_continuous(name="Proportion of teams reporting significant effect",
                             limits=c(0,1),
                             breaks=seq(0,1,0.1)) + 
   theme(panel.border = element_rect(colour = "black", 
