@@ -73,7 +73,7 @@ Make table for Supplementary Materials
 bracket = function(s) {sprintf('[%s]', s)}
 
 supptable_df <- Data %>%
-  mutate(fv = formatC(Data$fv, digits=2,format='f'),
+  mutate(FV = formatC(Data$fv, digits=2,format='f'),
          CI_lower = formatC(Data$fv_95l, digits=2,format='f'),
          CI_upper = formatC(Data$fv_95u, digits=2,format='f'),
          nt_exceed = as.integer((Data$price.0 > Data$fv_95u) | (Data$price.0 < Data$fv_95l)),
@@ -89,7 +89,9 @@ supptable_df <- supptable_df %>%
   mutate(CI = sapply(CI,bracket)) %>%
   unite('Non-teams FV', NonTeams:NonTeamsOutside, sep=' ') %>%
   unite('Teams FV', Teams:TeamsOutside, sep=' ') %>%
-  dplyr::select(-fv_95l, -fv_95u, -price.0, -price.1, -t_exceed, -nt_exceed, -hypothesis) 
+  dplyr::select(-fv,-fv_95l, -fv_95u, -price.0, -price.1, -t_exceed, -nt_exceed, -hypothesis) 
+supptable_df <- supptable_df %>%
+  rename(`Hyp #` = hid) 
 write.table(supptable_df,
             file=paste(output_dir,
                        "Figures/SuppTable_MarketResults.tsv",sep='/'),
@@ -317,9 +319,63 @@ panelreg_df[is.na(panelreg_df)]=""
 names(panelreg_df) = c('Effect', 'Beta (full model)', 't (full model)', 'p (full model)', 'Beta (no interaction)', 't (no interaction)', 'p (no interaction)')
 write.table(panelreg_df,
             file=paste(output_dir,
-                       "Figures/SuppTable_PanelRegressions.tsv",sep='/'),
+                  "Figures/SuppTable_PanelRegressions.tsv",sep='/'),
             quote=FALSE, col.names=TRUE,sep='\t', row.names=FALSE)
 
 ```
 
+## Make market details figure
+
+ 
+```{r}
+load(paste(proc, "Transactions.RData", sep='/'))
+
+trans_summary <- Transactions %>%
+  mutate(teams = recode_factor(Transactions$teams, `0`='Non-teams', `1`='Teams')) %>%
+  group_by(hid, teams) %>%
+  summarize(`Tokens invested`=mean(abs(investment)),
+            `Volume (shares)`=mean(abs(shares)),
+            `# Transactions`=length(unique(tid)),
+            `# Traders`=length(unique(uid)))
+
+#
+# spread out team/nonteams
+# this is kludgey - sorry, sometimes that's the fastest way to 
+# do things
+
+trans_summary_tokens <- trans_summary %>%
+  dplyr::select(hid, teams,`Tokens invested` ) %>%
+  spread(teams, `Tokens invested`) 
+names(trans_summary_tokens) = c('hyp', 'Tokens invested (Non-teams)', 'Tokens invested (Teams)')
+trans_summary_volume <- trans_summary %>%
+  dplyr::select(hid, teams,`Volume (shares)` ) %>%
+  spread(teams, `Volume (shares)`)
+names(trans_summary_volume) = c('hyp', 'Volume (Non-teams)', 'Volume (Teams)')
+trans_summary_ntrans <- trans_summary %>%
+  dplyr::select(hid, teams,`# Transactions` ) %>%
+  spread(teams, `# Transactions`)
+names(trans_summary_ntrans) = c('hyp', '# Transactions (Non-teams)', '# Transactions (Teams)')
+trans_summary_ntraders <- trans_summary %>%
+  dplyr::select(hid, teams,`# Traders` ) %>%
+  spread(teams, `# Traders`)
+names(trans_summary_ntraders) = c('hyp', '# Traders (Non-teams)', '# Traders (Teams)')
+
+all_wide_df = join(join(join(trans_summary_ntraders, trans_summary_ntrans), trans_summary_volume), trans_summary_tokens) %>%
+  rename(`Hyp #` = hyp)
+all_wide_df = all_wide_df[c("Hyp #",
+                       "Tokens invested (Non-teams)",
+                       "Volume (Non-teams)",
+                       "# Traders (Non-teams)",
+                       "# Transactions (Non-teams)",
+                       "Tokens invested (Teams)",
+                       "Volume (Teams)",
+                       "# Transactions (Teams)",
+                       "# Traders (Teams)")]
+                       
+write.table(all_wide_df,
+            file=paste(output_dir,
+                  "Figures/SuppTable_MarketDetails.tsv",sep='/'),
+            quote=FALSE, col.names=TRUE,sep='\t', row.names=FALSE)
+
+```
 
