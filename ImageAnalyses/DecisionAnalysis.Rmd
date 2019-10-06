@@ -108,7 +108,8 @@ decision_summary <- decision_summary[c('varnum',
                                        'medianConfidence',
                                        'madConfidence')]
 write.table(decision_summary,
-            file=paste(basedir,"figures/Table1.txt",sep='/'))
+            file=paste(basedir,"figures/Table1.tsv",sep='/'),
+            sep='\t')
 
 decision_summary
 
@@ -216,7 +217,8 @@ cc <- confint(m_hyp_full,parm="beta_",method="Wald")
 ctab <- cbind(est=odds_ratios,exp(cc))
 kable(ctab)
 write.table(ctab,
-            file=paste(basedir,"figures/OddsRatios.txt",sep='/'))
+            file=paste(basedir,"figures/OddsRatios.tsv",sep='/'),
+            sep='\t')
 
 ```
 
@@ -383,7 +385,7 @@ summary_df <- summary_df %>%
 summary_df
 write.table(summary_df,
             file=paste(basedir,
-                       "figures/ModelingSummaryTable.txt",sep='/'),
+                       "figures/ModelingSummaryTable.tsv",sep='/'),
             quote=FALSE,sep='\t', row.names = FALSE)
 ```
 
@@ -737,32 +739,10 @@ df_SuppTable4[5,2:4] = c(anova_testing$`Chisq`[2],
 kable(df_SuppTable4)
 
 write.table(df_SuppTable4,
-            file=paste(basedir,"figures/SuppTable4.txt",sep='/'))
+            file=paste(basedir,"figures/SuppTable4.tsv",sep='/'),
+            sep='\t')
 
-tab_latex = print(xtable(df_SuppTable4, 
-             type = "latex", 
-             digits=c(0,0,2,3,2)),
-      floating=FALSE,
-      latex.environments=NULL,
-      booktabs=TRUE)
 
-latex_preamble=c('\\documentclass[11pt, oneside]{article}',
-'\\title{Supplementary Table 4}',
-'\\date{}',
-'\\usepackage{booktabs}',
-'\\begin{document}',
-'\\maketitle')
-
-if (TRUE) {
-fileConn<-file(paste(basedir,"figures/SuppTable4.tex",sep='/'))
-writeLines(c(latex_preamble,tab_latex,c('\\end{document}')), fileConn)
-#writeLines(tab_latex, fileConn)
-close(fileConn)
-
-# leave this out so that we don't have to install tex within docker
-#texi2dvi(paste(basedir,"figures/SuppTable4.tex",sep='/'),
-#         clean = TRUE)
-}
 
 ```
 

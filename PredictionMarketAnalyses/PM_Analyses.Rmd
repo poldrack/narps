@@ -91,7 +91,7 @@ supptable_df <- supptable_df %>%
 
 write.table(supptable_df,
             file=paste(output_dir,
-                       "Figures/SuppTable_MarketResults.txt",sep='/'),
+                       "Figures/SuppTable_MarketResults.tsv",sep='/'),
             quote=FALSE, col.names=TRUE,sep='\t')
 ```
 
@@ -266,7 +266,7 @@ names(wt_results_df) <- c('Hypothesis #',
                           'Average holdings if consistent',
                           'Average holdings if inconsistent')
 write.table(t(wt_results_df), file=paste(output_dir,
-                       "Figures/SuppTable_HoldingStats.txt",sep='/'),
+                       "Figures/SuppTable_HoldingStats.tsv",sep='/'),
             quote=FALSE, col.names=TRUE,sep='\t')
 wt_results_df
 ```
@@ -316,7 +316,7 @@ panelreg_df[is.na(panelreg_df)]=""
 panelreg_df
 write.table(panelreg_df,
             file=paste(output_dir,
-                       "Figures/SuppTable_PanelRegressions.txt",sep='/'),
+                       "Figures/SuppTable_PanelRegressions.tsv",sep='/'),
             quote=FALSE, col.names=TRUE,sep='\t')
 
 ```
