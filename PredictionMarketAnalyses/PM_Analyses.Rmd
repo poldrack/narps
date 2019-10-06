@@ -92,7 +92,7 @@ supptable_df <- supptable_df %>%
 write.table(supptable_df,
             file=paste(output_dir,
                        "Figures/SuppTable_MarketResults.tsv",sep='/'),
-            quote=FALSE, col.names=TRUE,sep='\t')
+            quote=FALSE, col.names=TRUE,sep='\t', row.names=FALSE)
 ```
 
 ## Spearman Correlations: Market Beliefs
@@ -265,9 +265,10 @@ names(wt_results_df) <- c('Hypothesis #',
                           'p-value (signed rank test)',
                           'Average holdings if consistent',
                           'Average holdings if inconsistent')
+
 write.table(t(wt_results_df), file=paste(output_dir,
                        "Figures/SuppTable_HoldingStats.tsv",sep='/'),
-            quote=FALSE, col.names=TRUE,sep='\t')
+            quote=FALSE, row.names=TRUE,sep='\t')
 wt_results_df
 ```
 
@@ -317,7 +318,7 @@ panelreg_df
 write.table(panelreg_df,
             file=paste(output_dir,
                        "Figures/SuppTable_PanelRegressions.tsv",sep='/'),
-            quote=FALSE, col.names=TRUE,sep='\t')
+            quote=FALSE, col.names=TRUE,sep='\t', row.names=FALSE)
 
 ```
 

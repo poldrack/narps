@@ -52,8 +52,8 @@ def get_thresh_voxel_stats(basedir):
             'n_empty'] = numpy.sum(hypdata.n_thresh_vox == 0)
 
     results_df.to_csv(os.path.join(
-        basedir, 'metadata/thresh_voxel_statistics.csv'
-    ))
+        basedir, 'metadata/thresh_voxel_statistics.csv'),
+        index=False)
     all_data.to_csv(os.path.join(
         basedir, 'metadata/thresh_voxel_data.csv'
     ))

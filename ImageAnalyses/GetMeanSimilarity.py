@@ -95,7 +95,8 @@ def get_similarity_summary(narps, corrtype='spearman'):
     results_df_wide.to_csv(os.path.join(
         narps.dirs.dirs['output'],
         'correlation_unthresh',
-        'mean_unthresh_correlation_by_cluster.csv'))
+        'mean_unthresh_correlation_by_cluster.csv'),
+        index=False)
     return(results_df_wide)
 
 
