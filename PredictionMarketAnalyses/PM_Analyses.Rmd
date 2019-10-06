@@ -281,14 +281,14 @@ load(paste(proc, "BalancedPanel.RData", sep='/'))
 m1 <- lm(ae~time+teams, data = BalancedPanel)
 s1 <- summary(m1, robust=TRUE)
 
-sink(paste(figdir,'lm1_summary.txt', sep='/'))
+sink(paste(figdir,'lm1_summary.txt', sep='/'), append = FALSE, type = "output")
 print(s1)
 sink() 
 
 m2 <- lm(ae~time+teams+time:teams, data = BalancedPanel)
 s2 <- summary(m2, robust=TRUE)
 
-sink(paste(figdir,'lm2_summary.txt', sep='/'))
+sink(paste(figdir,'lm2_summary.txt', sep='/'), append = FALSE, type = "output")
 print(s2)
 sink() 
 
