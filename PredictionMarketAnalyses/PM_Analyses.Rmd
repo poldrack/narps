@@ -92,7 +92,7 @@ supptable_df <- supptable_df %>%
 write.table(supptable_df,
             file=paste(output_dir,
                        "Figures/SuppTable_MarketResults.txt",sep='/'),
-            quote=FALSE, col.names=FALSE,sep='\t')
+            quote=FALSE, col.names=TRUE,sep='\t')
 ```
 
 ## Spearman Correlations: Market Beliefs
@@ -267,7 +267,7 @@ names(wt_results_df) <- c('Hypothesis #',
                           'Average holdings if inconsistent')
 write.table(t(wt_results_df), file=paste(output_dir,
                        "Figures/SuppTable_HoldingStats.txt",sep='/'),
-            quote=FALSE, col.names=FALSE,sep='\t')
+            quote=FALSE, col.names=TRUE,sep='\t')
 wt_results_df
 ```
 
@@ -300,18 +300,25 @@ sink()
 panelreg_df <- data.frame(effect = c('Intercept',
                                      'Time',
                                      'Teams',
-                                     'Time X Teams')) %>%
-  mutate(Beta_1=NA, 
-         t_1 = NA,
-         pValue_1=NA,
-         Beta_2=s2$coefficients[1:4,1], 
-         t_2 = s2$coefficients[1:4,3],
-         pValue_2=s2$coefficients[1:4,4])
-panelreg_df[1:3, 'Beta_1'] = s1$coefficients[1:3,1]
-panelreg_df[1:3, 't_1'] = s1$coefficients[1:3,3]
-panelreg_df[1:3, 'pValue_1'] = s1$coefficients[1:3,4]
+                                     'Time X Teams',
+                                     '--------',
+                                     'Adjusted R-squared'))
 
+panelreg_df[1:4, 'Beta_2'] = formatC(s2$coefficients[1:4,1], digits=2,format='f')
+panelreg_df[1:4, 't_2'] = formatC(s2$coefficients[1:4,3], digits=2,format='f')
+panelreg_df[1:4, 'pValue_2'] = formatC(s2$coefficients[1:4,4], digits=3,format='f')
+panelreg_df[1:3, 'Beta_1'] = formatC(s1$coefficients[1:3,1], digits=2,format='f')
+panelreg_df[1:3, 't_1'] = formatC(s1$coefficients[1:3,3], digits=2,format='f')
+panelreg_df[1:3, 'pValue_1'] = formatC(s1$coefficients[1:3,4], digits=3,format='f')
+panelreg_df[6, 'pValue_1'] = formatC(s1$adj.r.squared, digits=2,format='f')
+panelreg_df[6, 'pValue_2'] = formatC(s2$adj.r.squared, digits=2,format='f')
+panelreg_df[is.na(panelreg_df)]=""
 panelreg_df
+write.table(panelreg_df,
+            file=paste(output_dir,
+                       "Figures/SuppTable_PanelRegressions.txt",sep='/'),
+            quote=FALSE, col.names=TRUE,sep='\t')
+
 ```
 
 
