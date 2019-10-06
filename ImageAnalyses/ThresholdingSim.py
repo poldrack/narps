@@ -190,9 +190,9 @@ def get_activations(narps, hyp, logfile,
             zstat_imgs, masker, roi_mask,
             simulate_noise)
 
-    results = pandas.DataFrame({'p < %0.3f, k > %d' % (
+    results = pandas.DataFrame({'$p < %0.3f$, $k > %d$' % (
         pthresh, cluster_kthresh): numpy.zeros(len(zstat_imgs))})
-    results['FDR (per-team threshold)'] = 0.0
+    results['FDR'] = 0.0
     for i, img in enumerate(zstat_imgs):
         z = masker.fit_transform(img)[0, :]
         if simulate_noise:
@@ -290,8 +290,8 @@ def run_all_analyses(narps, simulate_noise=False):
         'IBMA (n voxels in ROI)'])
     results_df.to_csv(os.path.join(
         narps.dirs.dirs['ThresholdSimulation'],
-        'simulation_results.csv'
-    ))
+        'simulation_results.csv'),
+        index=False)
     return(results_df)
 
 
@@ -304,23 +304,23 @@ def make_plot(narps, all_results):
     plt.axis([0, 1, 0, 1])
     plt.scatter(
         all_results['proportion of teams reporting act.'],
-        all_results['proportion of teams w/  act. (p < 0.001, k > 10)'],
+        all_results['proportion of teams w/  act. ($p < 0.001$, $k > 10$)'],
         marker="D", color='black')
     for i in range(all_results.shape[0]):
         xloc = all_results.loc[i, 'proportion of teams reporting act.'] + xoff
         yloc = all_results.loc[
-            i, 'proportion of teams w/  act. (p < 0.001, k > 10)'] + yoff
+            i, 'proportion of teams w/  act. ($p < 0.001$, $k > 10$)'] + yoff
         plt.annotate(str(all_results.loc[i, 'Hypothesis']), xy=(xloc, yloc))
 
     plt.scatter(
         all_results['proportion of teams reporting act.'],
         all_results[
-            'proportion of teams w/  act. (FDR (per-team threshold))'],
+            'proportion of teams w/  act. (FDR)'],
         color='blue')
     for i in range(all_results.shape[0]):
         xloc = all_results.loc[i, 'proportion of teams reporting act.'] + xoff
         yloc = all_results.loc[
-            i, 'proportion of teams w/  act. (FDR (per-team threshold))'
+            i, 'proportion of teams w/  act. (FDR)'
             ] + yoff
         plt.annotate(str(all_results.loc[i, 'Hypothesis']), xy=(xloc, yloc))
     plt.xlabel('Proportion of teams reporting activation',
