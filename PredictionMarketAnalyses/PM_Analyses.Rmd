@@ -87,8 +87,9 @@ supptable_df <- supptable_df %>%
          TeamsOutside = recode(supptable_df$t_exceed, `0` = '', `1` = '*')) %>%
   unite('CI', CI_lower:CI_upper, sep='-') %>%
   mutate(CI = sapply(CI,bracket)) %>%
-  dplyr::select(-fv_95l, -fv_95u, -price.0, -price.1, -t_exceed, -nt_exceed)
-
+  unite('Non-teams FV', NonTeams:NonTeamsOutside, sep=' ') %>%
+  unite('Teams FV', Teams:TeamsOutside, sep=' ') %>%
+  dplyr::select(-fv_95l, -fv_95u, -price.0, -price.1, -t_exceed, -nt_exceed, -hypothesis) 
 write.table(supptable_df,
             file=paste(output_dir,
                        "Figures/SuppTable_MarketResults.tsv",sep='/'),
@@ -265,10 +266,9 @@ names(wt_results_df) <- c('Hypothesis #',
                           'p-value (signed rank test)',
                           'Average holdings if consistent',
                           'Average holdings if inconsistent')
-
 write.table(t(wt_results_df), file=paste(output_dir,
                        "Figures/SuppTable_HoldingStats.tsv",sep='/'),
-            quote=FALSE, row.names=TRUE,sep='\t')
+            quote=FALSE, row.names=TRUE,col.names=FALSE, sep='\t')
 wt_results_df
 ```
 
@@ -314,7 +314,7 @@ panelreg_df[1:3, 'pValue_1'] = formatC(s1$coefficients[1:3,4], digits=3,format='
 panelreg_df[6, 'pValue_1'] = formatC(s1$adj.r.squared, digits=2,format='f')
 panelreg_df[6, 'pValue_2'] = formatC(s2$adj.r.squared, digits=2,format='f')
 panelreg_df[is.na(panelreg_df)]=""
-panelreg_df
+names(panelreg_df) = c('Effect', 'Beta (full model)', 't (full model)', 'p (full model)', 'Beta (no interaction)', 't (no interaction)', 'p (no interaction)')
 write.table(panelreg_df,
             file=paste(output_dir,
                        "Figures/SuppTable_PanelRegressions.tsv",sep='/'),

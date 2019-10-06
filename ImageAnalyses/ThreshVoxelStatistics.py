@@ -30,26 +30,26 @@ def get_thresh_voxel_stats(basedir):
             all_data = pandas.concat([all_data, df])
     hypnums = all_data.hyp.unique()
     results_df = pandas.DataFrame({
-        'hyp': hypnums,
-        'min_nvox': None,
-        'max_nvox': None,
-        'median_nvox': None,
-        'n_empty': None})
+        'Hyp #': hypnums,
+        'Minimum sig voxels': None,
+        'Maximum sig voxels': None,
+        'Median sig voxels': None,
+        'N empty images': None})
 
     for hyp in hypnums:
         hypdata = all_data.query('hyp == %d' % hyp)
         results_df.loc[
-            results_df.hyp == hyp,
-            'min_nvox'] = hypdata.n_thresh_vox.min()
+            results_df['Hyp #'] == hyp,
+            'Minimum sig voxels'] = hypdata.n_thresh_vox.min()
         results_df.loc[
-            results_df.hyp == hyp,
-            'max_nvox'] = hypdata.n_thresh_vox.max()
+            results_df['Hyp #'] == hyp,
+            'Maximum sig voxels'] = hypdata.n_thresh_vox.max()
         results_df.loc[
-            results_df.hyp == hyp,
-            'median_nvox'] = hypdata.n_thresh_vox.median()
+            results_df['Hyp #'] == hyp,
+            'Median sig voxels'] = hypdata.n_thresh_vox.median()
         results_df.loc[
-            results_df.hyp == hyp,
-            'n_empty'] = numpy.sum(hypdata.n_thresh_vox == 0)
+            results_df['Hyp #'] == hyp,
+            'N empty images'] = numpy.sum(hypdata.n_thresh_vox == 0)
 
     results_df.to_csv(os.path.join(
         basedir, 'metadata/thresh_voxel_statistics.csv'),
