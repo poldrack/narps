@@ -32,6 +32,7 @@ if (use_checkpoint) {
   checkpoint("2019-08-13", checkpointLocation = checkpointDir)
   }
 
+library(plyr)
 library(dplyr)
 library(tidyr)
 
@@ -73,7 +74,7 @@ Make table for Supplementary Materials
 bracket = function(s) {sprintf('[%s]', s)}
 
 supptable_df <- Data %>%
-  mutate(fv = formatC(Data$fv, digits=2,format='f'),
+  mutate(FV = formatC(Data$fv, digits=2,format='f'),
          CI_lower = formatC(Data$fv_95l, digits=2,format='f'),
          CI_upper = formatC(Data$fv_95u, digits=2,format='f'),
          nt_exceed = as.integer((Data$price.0 > Data$fv_95u) | (Data$price.0 < Data$fv_95l)),
@@ -87,12 +88,15 @@ supptable_df <- supptable_df %>%
          TeamsOutside = recode(supptable_df$t_exceed, `0` = '', `1` = '*')) %>%
   unite('CI', CI_lower:CI_upper, sep='-') %>%
   mutate(CI = sapply(CI,bracket)) %>%
-  dplyr::select(-fv_95l, -fv_95u, -price.0, -price.1, -t_exceed, -nt_exceed)
-
+  unite('Non-teams FV', NonTeams:NonTeamsOutside, sep=' ') %>%
+  unite('Teams FV', Teams:TeamsOutside, sep=' ') %>%
+  dplyr::select(-fv,-fv_95l, -fv_95u, -price.0, -price.1, -t_exceed, -nt_exceed, -hypothesis) 
+supptable_df <- supptable_df %>%
+  rename(`Hyp #` = hid) 
 write.table(supptable_df,
             file=paste(output_dir,
-                       "Figures/SuppTable_MarketResults.txt",sep='/'),
-            quote=FALSE, col.names=FALSE,sep='\t')
+                       "Figures/SuppTable_MarketResults.tsv",sep='/'),
+            quote=FALSE, col.names=TRUE,sep='\t', row.names=FALSE)
 ```
 
 ## Spearman Correlations: Market Beliefs
@@ -266,8 +270,8 @@ names(wt_results_df) <- c('Hypothesis #',
                           'Average holdings if consistent',
                           'Average holdings if inconsistent')
 write.table(t(wt_results_df), file=paste(output_dir,
-                       "Figures/SuppTable_HoldingStats.txt",sep='/'),
-            quote=FALSE, col.names=FALSE,sep='\t')
+                       "Figures/SuppTable_HoldingStats.tsv",sep='/'),
+            quote=FALSE, row.names=TRUE,col.names=FALSE, sep='\t')
 wt_results_df
 ```
 
@@ -281,14 +285,14 @@ load(paste(proc, "BalancedPanel.RData", sep='/'))
 m1 <- lm(ae~time+teams, data = BalancedPanel)
 s1 <- summary(m1, robust=TRUE)
 
-sink(paste(figdir,'lm1_summary.txt', sep='/'))
+sink(paste(figdir,'lm1_summary.txt', sep='/'), append = FALSE, type = "output")
 print(s1)
 sink() 
 
 m2 <- lm(ae~time+teams+time:teams, data = BalancedPanel)
 s2 <- summary(m2, robust=TRUE)
 
-sink(paste(figdir,'lm2_summary.txt', sep='/'))
+sink(paste(figdir,'lm2_summary.txt', sep='/'), append = FALSE, type = "output")
 print(s2)
 sink() 
 
@@ -300,18 +304,79 @@ sink()
 panelreg_df <- data.frame(effect = c('Intercept',
                                      'Time',
                                      'Teams',
-                                     'Time X Teams')) %>%
-  mutate(Beta_1=NA, 
-         t_1 = NA,
-         pValue_1=NA,
-         Beta_2=s2$coefficients[1:4,1], 
-         t_2 = s2$coefficients[1:4,3],
-         pValue_2=s2$coefficients[1:4,4])
-panelreg_df[1:3, 'Beta_1'] = s1$coefficients[1:3,1]
-panelreg_df[1:3, 't_1'] = s1$coefficients[1:3,3]
-panelreg_df[1:3, 'pValue_1'] = s1$coefficients[1:3,4]
+                                     'Time X Teams',
+                                     '--------',
+                                     'Adjusted R-squared'))
 
-panelreg_df
+panelreg_df[1:4, 'Beta_2'] = formatC(s2$coefficients[1:4,1], digits=2,format='f')
+panelreg_df[1:4, 't_2'] = formatC(s2$coefficients[1:4,3], digits=2,format='f')
+panelreg_df[1:4, 'pValue_2'] = formatC(s2$coefficients[1:4,4], digits=3,format='f')
+panelreg_df[1:3, 'Beta_1'] = formatC(s1$coefficients[1:3,1], digits=2,format='f')
+panelreg_df[1:3, 't_1'] = formatC(s1$coefficients[1:3,3], digits=2,format='f')
+panelreg_df[1:3, 'pValue_1'] = formatC(s1$coefficients[1:3,4], digits=3,format='f')
+panelreg_df[6, 'pValue_1'] = formatC(s1$adj.r.squared, digits=2,format='f')
+panelreg_df[6, 'pValue_2'] = formatC(s2$adj.r.squared, digits=2,format='f')
+panelreg_df[is.na(panelreg_df)]=""
+names(panelreg_df) = c('Effect', 'Beta (full model)', 't (full model)', 'p (full model)', 'Beta (no interaction)', 't (no interaction)', 'p (no interaction)')
+write.table(panelreg_df,
+            file=paste(output_dir,
+                  "Figures/SuppTable_PanelRegressions.tsv",sep='/'),
+            quote=FALSE, col.names=TRUE,sep='\t', row.names=FALSE)
+
 ```
 
+## Make market details figure
+
+ 
+```{r}
+load(paste(proc, "Transactions.RData", sep='/'))
+
+trans_summary <- Transactions %>%
+  mutate(teams = recode_factor(Transactions$teams, `0`='Non-teams', `1`='Teams')) %>%
+  group_by(hid, teams) %>%
+  summarize(`Tokens invested`=mean(abs(investment)),
+            `Volume (shares)`=mean(abs(shares)),
+            `# Transactions`=length(unique(tid)),
+            `# Traders`=length(unique(uid)))
+
+#
+# spread out team/nonteams
+# this is kludgey - sorry, sometimes that's the fastest way to 
+# do things
+
+trans_summary_tokens <- trans_summary %>%
+  dplyr::select(hid, teams,`Tokens invested` ) %>%
+  spread(teams, `Tokens invested`) 
+names(trans_summary_tokens) = c('hyp', 'Tokens invested (Non-teams)', 'Tokens invested (Teams)')
+trans_summary_volume <- trans_summary %>%
+  dplyr::select(hid, teams,`Volume (shares)` ) %>%
+  spread(teams, `Volume (shares)`)
+names(trans_summary_volume) = c('hyp', 'Volume (Non-teams)', 'Volume (Teams)')
+trans_summary_ntrans <- trans_summary %>%
+  dplyr::select(hid, teams,`# Transactions` ) %>%
+  spread(teams, `# Transactions`)
+names(trans_summary_ntrans) = c('hyp', '# Transactions (Non-teams)', '# Transactions (Teams)')
+trans_summary_ntraders <- trans_summary %>%
+  dplyr::select(hid, teams,`# Traders` ) %>%
+  spread(teams, `# Traders`)
+names(trans_summary_ntraders) = c('hyp', '# Traders (Non-teams)', '# Traders (Teams)')
+
+all_wide_df = join(join(join(trans_summary_ntraders, trans_summary_ntrans), trans_summary_volume), trans_summary_tokens) %>%
+  rename(`Hyp #` = hyp)
+all_wide_df = all_wide_df[c("Hyp #",
+                       "Tokens invested (Non-teams)",
+                       "Volume (Non-teams)",
+                       "# Traders (Non-teams)",
+                       "# Transactions (Non-teams)",
+                       "Tokens invested (Teams)",
+                       "Volume (Teams)",
+                       "# Transactions (Teams)",
+                       "# Traders (Teams)")]
+                       
+write.table(all_wide_df,
+            file=paste(output_dir,
+                  "Figures/SuppTable_MarketDetails.tsv",sep='/'),
+            quote=FALSE, col.names=TRUE,sep='\t', row.names=FALSE)
+
+```
 

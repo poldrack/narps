@@ -100,6 +100,9 @@ def mk_overlap_maps(narps, verbose=True):
     # clear axis for last space
     ax[3, 1].set_axis_off()
     plt.savefig(
+        os.path.join(narps.dirs.dirs['figures'], 'overlap_map.pdf'),
+        bbox_inches='tight')
+    plt.savefig(
         os.path.join(narps.dirs.dirs['figures'], 'overlap_map.png'),
         bbox_inches='tight')
     plt.close()
@@ -126,6 +129,9 @@ def mk_range_maps(narps, dataset='zstat'):
             cut_coords=cut_coords,
             axes=ax[i])
     plt.savefig(os.path.join(
+        narps.dirs.dirs['figures'], 'range_map.pdf'),
+        bbox_inches='tight')
+    plt.savefig(os.path.join(
         narps.dirs.dirs['figures'], 'range_map.png'),
         bbox_inches='tight')
     plt.close(fig)
@@ -151,6 +157,9 @@ def mk_std_maps(narps, dataset='zstat'):
             vmax=4,
             cut_coords=cut_coords,
             axes=ax[i])
+    plt.savefig(os.path.join(
+        narps.dirs.dirs['figures'], 'std_map.pdf'),
+        bbox_inches='tight')
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'], 'std_map.png'),
         bbox_inches='tight')
@@ -245,7 +254,7 @@ def plot_individual_maps(
                 axes=ax[ctr])
             ctr += 1
         plt.savefig(os.path.join(
-            outdir, '%s.png' % teamID),
+            outdir, '%s.pdf' % teamID),
             bbox_inches='tight')
         plt.close(fig)
 
@@ -353,6 +362,10 @@ def mk_correlation_maps_unthresh(
             vmax=1)
         plt.title('H%d:' % hyp+hypotheses_full[hyp])
         cc_unthresh[hyp] = (cc, labels)
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_%s_map_unthresh.pdf' % (hyp, corr_type)),
+            bbox_inches='tight')
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_%s_map_unthresh.png' % (hyp, corr_type)),
@@ -514,6 +527,10 @@ def analyze_clusters(
         log_to_file(logfile, '')
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
+            'hyp%d_cluster_means.pdf' % hyp),
+            bbox_inches='tight')
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
             'hyp%d_cluster_means.png' % hyp),
             bbox_inches='tight')
         plt.close(fig)
@@ -589,7 +606,7 @@ def plot_distance_from_mean(narps):
             median_corr_df.median_corr)
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
-        'median_corr_sorted.png'),
+        'median_corr_sorted.pdf'),
         bbox_inches='tight')
     plt.close()
 
@@ -662,6 +679,10 @@ def get_thresh_similarity(narps, dataset='resampled'):
             figsize=(16, 16),
             method='ward')
         plt.title(hypotheses_full[hyp])
+        plt.savefig(os.path.join(
+            narps.dirs.dirs['figures'],
+            'hyp%d_pctagree_map_thresh.pdf' % hyp),
+            bbox_inches='tight')
         plt.savefig(os.path.join(
             narps.dirs.dirs['figures'],
             'hyp%d_pctagree_map_thresh.png' % hyp),

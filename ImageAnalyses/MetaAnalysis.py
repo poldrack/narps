@@ -205,7 +205,7 @@ def make_figures(narps, hyp, images, fdr_thresh=0.05):
             narps.dirs.dirs['figures'],
             'hyp%d_ALE_%s.png' % (hyp, i)
         )
-        plt.savefig(outfile)
+        plt.savefig(outfile, bbox_inches='tight')
         plt.close()
 
     nilearn.plotting.plot_stat_map(
@@ -222,7 +222,7 @@ def make_figures(narps, hyp, images, fdr_thresh=0.05):
         narps.dirs.dirs['figures'],
         'hyp%d_ALE_fdr_thresh_%0.2f.png' % (hyp, fdr_thresh)
     )
-    plt.savefig(outfile)
+    plt.savefig(outfile, bbox_inches='tight')
     plt.close()
     return(None)
 
@@ -258,7 +258,7 @@ def make_combined_figure(narps, thresh=0.95):
 
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
-        'ALE_map.png'))
+        'ALE_map.png'), bbox_inches='tight')
     plt.close(fig)
 
 

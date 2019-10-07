@@ -116,7 +116,7 @@ def mk_figures(narps, logfile, thresh=0.95):
 
     plt.savefig(os.path.join(
         narps.dirs.dirs['figures'],
-        'consensus_map.pdf'))
+        'consensus_map.pdf'), bbox_inches='tight')
     plt.close(fig)
 
 
