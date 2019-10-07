@@ -69,7 +69,7 @@ def mk_overlap_maps(narps, verbose=True, annotate=True):
     masker = nilearn.input_data.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
     max_overlap = {}
-    fig, ax = plt.subplots(4, 2, figsize=(15, 10))
+    fig, ax = plt.subplots(4, 2, figsize=(25, 16))
     axis_y = [0, 0, 0, 0, 1, 1, 1, 1]
     axis_x = [0, 1, 2, 3, 0, 1, 2, 3]
     for i, hyp in enumerate(hypnums):
@@ -89,7 +89,7 @@ def mk_overlap_maps(narps, verbose=True, annotate=True):
             annotate=False,
             figure=fig)
         if annotate:
-            display.annotate(size=7)
+            display.annotate(size=9)
         # compute max and median overlap
         thresh_concat_file = os.path.join(
             narps.dirs.dirs['output'],
