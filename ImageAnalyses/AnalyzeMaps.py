@@ -54,7 +54,7 @@ hypotheses_full = {
     9: '+loss: ER > EI'}
 
 
-def mk_overlap_maps(narps, verbose=True):
+def mk_overlap_maps(narps, verbose=True, annotate=True):
     """ create overlap maps for thresholded maps"""
     func_name = sys._getframe().f_code.co_name
     logfile = os.path.join(
@@ -76,7 +76,7 @@ def mk_overlap_maps(narps, verbose=True):
         imgfile = os.path.join(
             narps.dirs.dirs['output'],
             'overlap_binarized_thresh/hypo%d.nii.gz' % hyp)
-        nilearn.plotting.plot_stat_map(
+        display = nilearn.plotting.plot_stat_map(
             imgfile,
             threshold=0.1,
             display_mode="z",
@@ -88,7 +88,8 @@ def mk_overlap_maps(narps, verbose=True):
             axes=ax[axis_x[i], axis_y[i]],
             annotate=False,
             figure=fig)
-
+        if annotate:
+            display.annotate(size=7)
         # compute max and median overlap
         thresh_concat_file = os.path.join(
             narps.dirs.dirs['output'],
@@ -112,7 +113,7 @@ def mk_overlap_maps(narps, verbose=True):
 def mk_range_maps(narps, dataset='zstat'):
     """ create maps of range of unthresholded values"""
 
-    fig, ax = plt.subplots(7, 1, figsize=(12, 24))
+    fig, ax = plt.subplots(7, 1, figsize=(18, 32))
     for i, hyp in enumerate(hypnums):
         range_img = nibabel.load(
             os.path.join(
