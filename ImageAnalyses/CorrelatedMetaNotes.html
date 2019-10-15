@@ -255,9 +255,7 @@ h6 {
 </style>
 
 
-</head>
 
-<body>
 
 <style type="text/css">
 .main-container {
@@ -288,8 +286,6 @@ summary {
 </style>
 
 
-
-<div class="container-fluid main-container">
 
 <!-- tabsets -->
 
@@ -364,14 +360,23 @@ $(document).ready(function () {
 
 
 
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
 
 <div class="fluid-row" id="header">
 
 
 
 <h1 class="title toc-ignore">CorrelatedMetaNotes</h1>
-<h4 class="author"><em>T Nichols</em></h4>
-<h4 class="date"><em>28/06/2019</em></h4>
+<h4 class="author">T Nichols</h4>
+<h4 class="date">28/06/2019</h4>
 
 </div>
 
@@ -390,6 +395,25 @@ Alternately, to the extent that there <em>is</em> independent information in the
 <div id="correlated-meta-analysis-heterogeneous-case" class="section level2">
 <h2>Correlated Meta Analysis: Heterogeneous Case</h2>
 <p>Above we assumed that it is reasonable that all <span class="math inline">\(N\)</span> studies have a common mean <span class="math inline">\(\mu\)</span> and standard deviation <span class="math inline">\(\sigma\)</span> (over the map). If this is really an untennable assumption, then we basically have to conduct a standardised analysis where we define <span class="math display">\[\tilde{\mu} = \frac{1}{N}\sum_{k=1}^N \mu_k\]</span> and <span class="math display">\[\tilde{\sigma}^{2} = \frac{1}{N}\sum_{k=1}^N \sigma^2_k\]</span> where <span class="math inline">\(\mu_k\)</span> and <span class="math inline">\(\sigma^2_k\)</span> are the mean and variance for study <span class="math inline">\(k=1,...,N\)</span>, and then we create standardised data <span class="math display">\[Z_{ik} = \frac{Y_{ik}-\mu_k}{\sigma_k}\]</span> for voxel <span class="math inline">\(i\)</span> study <span class="math inline">\(k\)</span>. The mean of these standardized values is <span class="math display">\[\bar{Z}_i = \mathbf{1}^\top Z_{i}/N,\]</span> for <span class="math inline">\(N\)</span>-vector <span class="math inline">\(Z_i=\{Z_{ik}\}_k\)</span>, and then we can make a normalised consensus statistic <span class="math display">\[T_{C,i} = \frac{\bar{Z}_i}{\sqrt{\mathbf{1}^\top Q \mathbf{1} / N^2}}\tilde\sigma+\tilde\mu,\]</span> where we have again rescaled and shifted the statistic so it has the mean and variance (average) of the <span class="math inline">\(N\)</span> results.</p>
+</div>
+<div id="random-effects-variance" class="section level2">
+<h2>Random Effects Variance</h2>
+<p>The meta-analysis variable <span class="math inline">\(\tau^2\)</span> is the between-study random effects variance, typically denoted <span class="math inline">\(T^2\)</span> when estimated (instead of <span class="math inline">\(\hat\tau^2\)</span>).</p>
+<p>First, note that while each “data point”, <span class="math inline">\(Y_{ik}\)</span>, is actually a T statistic and not a standardised effect size, and could be thought to have (intrastudy) variance 1, I don’t think this is relevant. The fixed effects variance of a T staitstic is from its <em>sampling distribution</em>, the behavior of the statistic over repeated samples of <span class="math inline">\(N\)</span> subjects from the population. Here we have <em>one</em> sample of subjects. (As a thought experiment, consider sending 70 teams a list of 54 values to compute a one-sample t-test; the returned 70 values might not be identical, but they will have a variance far less than 1.0, demonstrating that the fixed effects variance isn’t relavant in the ‘same data meta-analysis’ setting).</p>
+<p>Hence this means that the “interstudy random effect” variance is So, while a traditional (different data) meta-analysis would find that the variance of T statistics is <span class="math inline">\(\mathrm{Var}(Y_{ik}) = 1 + \tau^2,\)</span> in our “same data meta-analysis” setting, <em>any</em> variance observed over teams is the random effects variance, i.e. <span class="math display">\[\mathrm{Var}(Y_{ik}) = \tau^2.\]</span></p>
+<p>Now if we could somehow knew the true inter-team mean response, we can show that the sample variance <span class="math inline">\(S^2\)</span> of is unbiased for the average team variance <span class="math display">\[
+\mathrm{E}(S_{\mu,i}^2) = \mathrm{E}\left(\frac{1}{N}\sum_{k=1}^N (Y_i - \mu_i)^2 \right)\\
+= \mathrm{E}\left(\frac{1}{N}(Y_i-\mu)^\top(Y_i-\mu_i) \right)\\
+= \mathrm{tr}(Q)/N.
+\]</span></p>
+<p>This is amazing, eh? There could be nearly perfect correlation among the teams (i.e. <span class="math inline">\(Q\)</span> with huge off-diagonals), but it doesn’t matter… the sample variance would be unbiased for the average variance <span class="math inline">\(\mathrm{tr}(Q)/N\)</span>… <em>if</em> we knew the sample mean.</p>
+<p>Now, in practice, we don’t know the inter-team mean response, so in that case we have expected value of the naive variance estimator <span class="math inline">\(S^2\)</span>: <span class="math display">\[\begin{eqnarray}
+\mathrm{E}(S_i^2) &amp;=&amp; \mathrm{E}\left(\frac{1}{N-1}\sum_{k=1}^N (Y_{ik} - \bar{Y}_i)^2 \right)\\
+&amp;=&amp; \mathrm{E}\left(\frac{1}{N-1}Y_i^\top(\mathbf{I}-\mathbf{J}/N)Y_i \right)\\
+&amp;=&amp; \mathrm{tr}((\mathbf{I}-\mathbf{J}/N)Q)\\
+&amp;=&amp;  \mathrm{tr}(Q)/N - \frac{1}{N(N-1)}\sum_{k\neq k'}((Q))_{kk'},
+\end{eqnarray}\]</span> where <span class="math inline">\(\mathbf{J}\)</span> is a square matrix of 1’s.</p>
+<p>So, this is important: The sampe variance is unbiased for the team-average variance <em>except</em> for a term attributable to imperfect estimation of the sample mean. But crucially, this is a negative bias if the inter-team correlation is mostly positive, and so at worst we’re underestimating the between-team variance.</p>
 </div>
 
 
