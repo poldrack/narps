@@ -150,7 +150,7 @@ def mk_figures(narps, logfile, thresh=0.95):
         log_to_file(
             logfile, 'hyp %d: median tau %0.3f, max tau %0.3f' %
             (hyp, numpy.median(taudata), numpy.max(taudata)))
- 
+
         tauhist[i] = numpy.histogram(
             taudata, bins=numpy.arange(0, 5, 0.01))
         nilearn.plotting.plot_stat_map(
