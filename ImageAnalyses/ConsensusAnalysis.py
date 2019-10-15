@@ -79,6 +79,23 @@ def run_ttests(narps, logfile,
             results_dir,
             'hypo%d_1-fdr.nii.gz' % hyp))
 
+        # compute tau^2 per Tom's notes in CorrelatedMetaNotes.html
+        def tau(data, Q):
+            n = data.shape[0]
+            R = numpy.eye(n) - numpy.ones((n, 1)).dot(numpy.ones((1, n)))/n
+            sampvar_est = numpy.trace(R.dot(Q))
+            tau2 = numpy.zeros(data.shape[1])
+            for i in range(data.shape[1]):
+                Y = data[:, i]
+                tau2[i] = (1/sampvar_est)*Y.T.dot(R).dot(Y)
+            return(numpy.sqrt(tau2))
+
+        tau_est = tau(data, cc)
+        tauimg = masker.inverse_transform(tau_est)
+        tauimg.to_filename(os.path.join(
+            results_dir,
+            'hypo%d_tau.nii.gz' % hyp))
+
 
 def mk_figures(narps, logfile, thresh=0.95):
 
@@ -86,6 +103,8 @@ def mk_figures(narps, logfile, thresh=0.95):
     log_to_file(
         logfile, '%s' %
         func_name)
+    masker = nilearn.input_data.NiftiMasker(
+        mask_img=narps.dirs.MNI_mask)
 
     fig, ax = plt.subplots(7, 1, figsize=(12, 24))
     cut_coords = [-24, -10, 4, 18, 32, 52, 64]
@@ -119,6 +138,45 @@ def mk_figures(narps, logfile, thresh=0.95):
         'consensus_map.pdf'), bbox_inches='tight')
     plt.close(fig)
 
+    # create tau figures
+    fig, ax = plt.subplots(7, 1, figsize=(12, 24))
+    tauhist = {}
+    for i, hyp in enumerate(hypnums):
+        taumap = os.path.join(
+            narps.dirs.dirs['consensus'],
+            'hypo%d_tau.nii.gz' % hyp)
+        tauimg = nibabel.load(taumap)
+        taudata = masker.fit_transform(tauimg)
+        tauhist[i] = numpy.histogram(
+            taudata, bins=numpy.arange(0, 5, 0.01))
+        nilearn.plotting.plot_stat_map(
+            tauimg,
+            threshold=0.0,
+            display_mode="z",
+            colorbar=True,
+            title='hyp %d:' % hyp+hypotheses[hyp],
+            vmax=4.,
+            cmap='jet',
+            cut_coords=cut_coords,
+            axes=ax[i])
+    plt.savefig(os.path.join(
+        narps.dirs.dirs['figures'],
+        'tau_maps.pdf'), bbox_inches='tight')
+    plt.close(fig)
+
+    # create tau histograms
+    fig, ax = plt.subplots(7, 1, figsize=(12, 24))
+    for i, hyp in enumerate(hypnums):
+        ax[i].plot(tauhist[i][1][1:], tauhist[i][0])
+        ax[i].set_xlabel('tau')
+        ax[i].set_ylabel('# of voxels')
+        ax[i].set_title('hyp %d:' % hyp+hypotheses[hyp])
+        plt.tight_layout()
+    plt.savefig(os.path.join(
+        narps.dirs.dirs['figures'],
+        'tau_histograms.pdf'), bbox_inches='tight')
+    plt.close(fig)
+
 
 if __name__ == "__main__":
     # parse arguments
@@ -129,6 +187,9 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--detailed',
                         action='store_true',
                         help='generate detailed team-level figures')
+    parser.add_argument('-t', '--test',
+                        action='store_true',
+                        help='use testing mode (no processing)')
     args = parser.parse_args()
 
     # set up base directory
@@ -154,9 +215,10 @@ if __name__ == "__main__":
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
         'ConsensusAnalysis.txt')
-    log_to_file(
-        logfile, 'running ConsensusAnalysis',
-        flush=True)
+    if not args.test:
+        log_to_file(
+            logfile, 'running ConsensusAnalysis',
+            flush=True)
 
-    run_ttests(narps, logfile)
-    mk_figures(narps, logfile)
+        run_ttests(narps, logfile)
+        mk_figures(narps, logfile)
