@@ -61,8 +61,11 @@ First, note that each, $Y_{ik}$, is a standardized effect size, a T statistic, a
 So, while a traditional (different data) meta-analysis would find that the variance of T statistics is
 $\mathrm{Var}(Y_{ik}) = 1 + \tau_i^2,$
 in our same data meta-analysis setting, _any_ variance observed over teams is the random effects variance, i.e. 
-$$\mathrm{Var}(Y_{ik}) = \tau_i^2.$$
+$\mathrm{Var}(Y_{ik}) = \tau_i^2,$ where we consider computing a variance for each voxel $i$.
 
+We take care to differentiate two types of variation: Image-wise variation, $\mu$ and $\sigma$ (or $\mu_k$ and $\sigma_k$), used above to make consensus maps, versus inter-study variation, $\tau_i$, computed for each voxel over studies.  The $\tau_i$ capture information ignored by the consensus approach, and are useful for quantifying the degree of agreement.  Ideally, the $\tau_i$'s should be near zero, reflecting perfect agreement.  They have units of the $Y_{ik}$, i.e. T scores, so a $\tau_i$ of 1 indicates that the inter-study variation is just as great as the expected population sampling variability (if we could repeatly sample new cohorots of 108 subjects) of the T scores.
+
+<!--
 Now if we could somehow knew the true inter-team mean response, we can show that the sample variance $S^2$ of is unbiased for the average team variance
 $$
 \mathrm{E}(S_{\mu,i}^2) = \mathrm{E}\left(\frac{1}{N}\sum_{k=1}^N (Y_i - \mu_i)^2 \right)\\
@@ -71,24 +74,23 @@ $$
 $$
 
 There could be nearly perfect correlation among the teams (i.e. $Q$ with huge off-diagonals), but it doesn't matter... the sample variance would be unbiased for the average variance $\mathrm{tr}(Q)/N$... _if_ we knew the sample mean.
+-->
 
-Now, in practice, we don't know the inter-team mean response, so in that case we have expected value of the naive variance estimator $S^2$:
+Unfortunately, the usual estimate of the inter-study sample variance $S_i^2$ is biased due to the correlation $\mathbb{Q}$ between the studies:
 \begin{eqnarray}
 \mathrm{E}(S_i^2) &=& \mathrm{E}\left(\frac{1}{N-1}\sum_{k=1}^N (Y_{ik} - \bar{Y}_i)^2 \right)\\
-&=& \mathrm{E}\left(\frac{1}{N-1}Y_i^\top(\mathbf{I}-\mathbf{J}/N)Y_i \right)\\
-&=& \mathrm{tr}((\mathbf{I}-\mathbf{J}/N)Q)\\
-&=&  \mathrm{tr}(Q)/N - \frac{1}{N(N-1)}\sum_{k\neq k'}((Q))_{kk'},
+&=& \frac{1}{N-1}\mathrm{E}\left(Y_i^\top\mathbf{R}Y_i \right)\\
+&=& \tau^2_i\mathrm{tr}(\mathbf{R}\mathbf{Q})\\
+&=& \tau^2_i\left(1 - \frac{1}{N(N-1)}\sum_{k\neq k'}((\mathbf{Q}))_{kk'}\right)\\
+&\neq& \tau_i^2
 \end{eqnarray}
-where $\mathbf{J}$ is a square matrix of 1's.
+where $\mathbf{R} = \mathbf{I}-\mathbf{1}\mathbf{1}^\top/N$ is the centering matrix, and this calcuation reflects an assumption that the correlation $\mathbf{Q}$ is the same for all voxels.  The next-to-last expression shows that the bias is a function of the average of all $N\times(N-1)$ possible inter-study correlations; if the the average correlation is positive, a negative bias will result (naive sample variance is too small); and if the correlation is high, approaching 0.9, this will be a considerable bias (that does not diminish with $N$).
 
-So, this is important: The sample variance is unbiased for the team-average variance _except_ for a term attributable to imperfect estimation of the sample mean.  But crucially, this is a negative bias if the inter-team correlation is mostly positive, and so at worst we're underestimating the between-team variance.
+Instead, we use this estimator to account for the interstudy correlation and provides unbiased estimates of the inter-study variance
+$$\hat\tau^2_i= \frac{1}{ \mbox{tr}(\mathbf{R}\mathbf{Q})}Y_i^\top \mathbf{R} Y_i,$$
+where, relative to the usual sample variance,  $N-1$ is replaced by $\mathrm{tr}(\mathbf{R}\mathbf{Q})$.
 
-
-## Voxel-level Meta-Analysis
-
-While not considered in the NAPRS paper, for reference, if we were to estimate variance over submissions/teams you could do it at each voxel as accounting for enter-study correlation as
-$$\hat\sigma^2_i= Y_i^\top \mathbf{R} Y_i / \mbox{tr}(\mathbf{R}\mathbf{Q})$$
-where $\mathbf{R} = \mathbf{I}-\mathbf{J}/N$ is the centering matrix, though note this reflects an assumption that the correlation $\mathbf{Q}$ is the same for all voxels.  The effective degrees-of-freedom for this variance estimate is
+For reference, the effective degrees-of-freedom for this variance estimate is
 $$\nu = \mbox{tr}(\mathbf{R}\mathbf{Q})^2 / \mbox{tr}(\mathbf{R}\mathbf{Q}\mathbf{R}\mathbf{Q}).$$
-The behavior under compound symmetry of $\mathbf{Q}$ is noteable: While $\mbox{tr}(\mathbf{R}\mathbf{Q})$ falls from nominal $N-1$ as $\rho$ grows from 0, $\nu=N-1$ for any $\rho$.
+The behavior under compound symmetry of $\mathbf{Q}$ is noteable: While $\mbox{tr}(\mathbf{R}\mathbf{Q})$ -- the source of the bias in $S_i^2$ -- shrinks from $N-1$ as $\rho$ grows from 0, the degrees of freedom is constant, $\nu=N-1$ for any $\rho$.
 
