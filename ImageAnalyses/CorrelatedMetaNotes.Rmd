@@ -56,3 +56,35 @@ $$\bar{Z}_i = \mathbf{1}^\top Z_{i}/N,$$
 for $N$-vector $Z_i=\{Z_{ik}\}_k$, and then we can make a normalised consensus statistic
 $$T_{C,i} = \frac{\bar{Z}_i}{\sqrt{\mathbf{1}^\top Q \mathbf{1} / N^2}}\tilde\sigma+\tilde\mu,$$
 where we have again rescaled and shifted the statistic so it has the mean and variance (average) of the $N$ results.
+
+## Random Effects Variance
+
+The meta-analysis variable $\tau^2$ is the between-study random effects variance, typically denoted $T^2$ when estimated (instead of $\hat\tau^2$).
+
+First, note that while each "data point", $Y_{ik}$, is actually a T statistic and not a standardised effect size, and could be thought to have (intrastudy) variance 1, I don't think this is relevant.  The fixed effects variance of a T staitstic is from its _sampling distribution_, the behavior of the statistic over repeated samples of $N$ subjects from the population.  Here we have _one_ sample of subjects.  (As a thought experiment, consider sending 70 teams a list of 54 values to compute a one-sample t-test; the returned 70 values might not be identical, but they will have a variance far less than 1.0, demonstrating that the fixed effects variance isn't relavant in the 'same data meta-analysis' setting).
+
+Hence this means that the "interstudy random effect" variance is
+So, while a traditional (different data) meta-analysis would find that the variance of T statistics is
+$\mathrm{Var}(Y_{ik}) = 1 + \tau^2,$
+in our "same data meta-analysis" setting, _any_ variance observed over teams is the random effects variance, i.e. 
+$$\mathrm{Var}(Y_{ik}) = \tau^2.$$
+
+Now if we could somehow knew the true inter-team mean response, we can show that the sample variance $S^2$ of is unbiased for the average team variance
+$$
+\mathrm{E}(S_{\mu,i}^2) = \mathrm{E}\left(\frac{1}{N}\sum_{k=1}^N (Y_i - \mu_i)^2 \right)\\
+= \mathrm{E}\left(\frac{1}{N}(Y_i-\mu)^\top(Y_i-\mu_i) \right)\\
+= \mathrm{tr}(Q)/N.
+$$
+
+This is amazing, eh?  There could be nearly perfect correlation among the teams (i.e. $Q$ with huge off-diagonals), but it doesn't matter... the sample variance would be unbiased for the average variance $\mathrm{tr}(Q)/N$... _if_ we knew the sample mean.
+
+Now, in practice, we don't know the inter-team mean response, so in that case we have expected value of the naive variance estimator $S^2$:
+\begin{eqnarray}
+\mathrm{E}(S_i^2) &=& \mathrm{E}\left(\frac{1}{N-1}\sum_{k=1}^N (Y_{ik} - \bar{Y}_i)^2 \right)\\
+&=& \mathrm{E}\left(\frac{1}{N-1}Y_i^\top(\mathbf{I}-\mathbf{J}/N)Y_i \right)\\
+&=& \mathrm{tr}((\mathbf{I}-\mathbf{J}/N)Q)\\
+&=&  \mathrm{tr}(Q)/N - \frac{1}{N(N-1)}\sum_{k\neq k'}((Q))_{kk'},
+\end{eqnarray}
+where $\mathbf{J}$ is a square matrix of 1's.
+
+So, this is important: The sampe variance is unbiased for the team-average variance _except_ for a term attributable to imperfect estimation of the sample mean.  But crucially, this is a negative bias if the inter-team correlation is mostly positive, and so at worst we're underestimating the between-team variance.
