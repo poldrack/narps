@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 These notes record the details of how the NARPS data is analysed, specifically the consensus statistic.
 
-## Correlated Meta Analysis: Homogeneous Case
+## Correlated Meta Analysis: Homogeneous, Equally Weighted Analysis
 
 Let $Y_i$ be a $N$ vector or T (or Z) scores at voxel $i$, $i=1,...,I$, where $N$ is the number of results (teams) on a given hypothesis. For this set-up, we do _not_ consider voxel-specific mean or variance, but just the image-wide mean,
 
@@ -37,39 +37,31 @@ To the extent that there is independent information in the different studies (i.
 Rather, we propose a "consensus analysis" that preserves the average image-wise mean and variance of the different studies results.  To do this, we need to standardize $\bar{Y_i}$ and re-scale and shift it to have the mean and variance of the original results.  Call this $T_{C,i}$ for consensus T-score at voxel $i$, which we compute as:
 \begin{eqnarray}
 T_{C,i} &=& \frac{\bar{Y}_i-\hat\mu}{\sqrt{ \hat\sigma^2   \mathbf{1}^\top \mathbf{Q} \mathbf{1} / N^2}}\hat\sigma+\hat\mu\\
- &=& \frac{\bar{Y}_i}{\sqrt{\mathbf{1}^\top \mathbf{Q}\mathbf{1} / N^2}}+\left(1-\frac{1}{\sqrt{\mathbf{1}^\top \mathbf{Q} \mathbf{1} / N^2}}\right)\mu.
+ &=& \frac{\bar{Y}_i}{\sqrt{\mathbf{1}^\top \mathbf{Q}\mathbf{1} / N^2}}+\left(1-\frac{1}{\sqrt{\mathbf{1}^\top \mathbf{Q} \mathbf{1} / N^2}}\right)\hat\mu.
 \end{eqnarray}
 where 
 $\hat\mu  = \frac{1}{N}\sum_k \hat\mu_k$ and $\hat\sigma= \frac{1}{N}\sum_k \hat\sigma^2_k$, with $\hat\mu_k=\frac{1}{I}\sum_i Y_{ik}$ and $\hat\sigma^2_k = \frac{1}{I-1} \sum_i(Y_{ik}-\bar{Y}_{ik})^2$.
 
-## Voxel-level Meta-Analysis
+## Correlated Meta Analysis: Heterogeneous, Weighted Analysis
 
-While not considered in the NAPRS paper, for reference, if we were to estimate variance over submissions/teams you could do it at each voxel as accounting for enter-study correlation as
-$$\hat\sigma^2_i Y_i^\top \mathbf{R} Y_i / \mbox{tr}(\mathbf{R}\mathbf{Q})$$
-where $\mathbf{R} = \mathbf{I}-\mathbf{J}/N$ is the centering matrix, though note this reflects an assumption that the correlation $\mathbf{Q}$ is the same for all voxels.  The effective degrees-of-freedom for this variance estimate is
-$$\nu = \mbox{tr}(\mathbf{R}\mathbf{Q})^2 / \mbox{tr}(\mathbf{R}\mathbf{Q}\mathbf{R}\mathbf{Q}).$$
-The behavior under compound symmetry of $\mathbf{Q}$ is noteable: While $\mbox{tr}(\mathbf{R}\mathbf{Q})$ falls from nominal $N-1$ as $\rho$ grows from 0, $\nu=N-1$ for any $\rho$.
-
-## Correlated Meta Analysis: Heterogeneous Case
-
-Above (and in the NARPS analysis) we assumed that it is reasonable that all $N$ studies have a common mean $\mu$ and standard deviation $\sigma$ (over the map).  If this is really an untenable assumption, then we can conduct a standardized analysis where we create standardized data
+Above (and in the NARPS analysis) we assumed that it is reasonable that all $N$ studies have a common mean $\mu$ and standard deviation $\sigma$ (over the map). For reference, we provide an alternate weighted analysis, if this homogeneity assumption is untenable.  To account for heterogeneity, we can conduct a standardized analysis where we create standardized data
 $$Z_{ik} = \frac{Y_{ik}-\hat\mu_k}{\hat\sigma_k}$$
 for voxel $i$  study $k$. The mean of these standardized values is
 $$\bar{Z}_i = \mathbf{1}^\top Z_{i}/N,$$
 for $N$-vector $Z_i=\{Z_{ik}\}_k$, and then we can make a normalized consensus statistic
 $$T_{C,i} = \frac{\bar{Z}_i}{\sqrt{\mathbf{1}^\top Q \mathbf{1} / N^2}}\hat\sigma+\hat\mu,$$
-where we have again rescaled and shifted the statistic so it has the mean and variance (average) of the $N$ results.
+where we have again rescaled and shifted the statistic so it has the mean and variance (average) of the $N$ results, but now have ensured that each and every study contributes equally to the consensus map.
 
-## Random Effects Variance
+## Random Effects Variance of Homogeneous Analysis
 
-The meta-analysis variable $\tau^2$ is the between-study random effects variance, typically denoted $T^2$ when estimated (instead of $\hat\tau^2$).
+A random effects meta-analysis considers the contribution of inter-study variation in the standard error of the computed effects.  The  between-study random effects variance is typically denoted $\tau^2$.  In this section we argue that in the NARPS "same data meta-analysis" setting, the between-study variance is purely about inter-team variation in processing, and cannot be attributable to different populations of sampled individuals.  Thus, while a usual (different data) meta-analysis has a floor on the variance, that due to sampling variablity of each study, in this setting there is no floor and all observed variance is due to inter-study/team variance.
 
-First, note that each, $Y_{ik}$, is a standardized effect size, a T statistic, and is regarded as having sampling variance of 1.0.  However, this "sampling variance" is with respect to repeated samples of subjects from the population, where as we only have a single sample of subjects from the population.  Hence, we argue that the (population) sampling variance for this "same data meta-analysis" is _zero_.  (As a thought experiment, consider sampling 54 values from a normal distribution with mean 0 and variance 1 and sending them to 70 research teams, asking them each to compute a 1-sample t-test; the 70 values that came back wouldn't necessarily be identical -- due to different operating systems and numerical libraries -- but they would have a variance *far* less than 1, yet we know the sampling distribution of the 1-sample t-test has variance at least 1 (slightly over 1 since it's a student's T).
+First, note that each, $Y_{ik}$, is a standardized effect size, a T statistic, and is regarded as having sampling variance of 1.0.  However, this "sampling variance" is with respect to repeated samples of subjects from the population, where as we only have a single sample of subjects from the population.  Hence, the (population) sampling variance for this same data meta-analysis is _zero_.  (As a thought experiment, consider sampling 54 values from a normal distribution with mean 0 and variance 1 and sending them to 70 research teams, asking them each to compute a 1-sample t-test.  The 70 values that came back wouldn't necessarily be identical -- due to different operating systems and numerical libraries -- but they would have a variance *far* less than 1, yet we know the sampling distribution of the 1-sample t-test has variance at least 1.)
 
 So, while a traditional (different data) meta-analysis would find that the variance of T statistics is
-$\mathrm{Var}(Y_{ik}) = 1 + \tau^2,$
-in our "same data meta-analysis" setting, _any_ variance observed over teams is the random effects variance, i.e. 
-$$\mathrm{Var}(Y_{ik}) = \tau^2.$$
+$\mathrm{Var}(Y_{ik}) = 1 + \tau_i^2,$
+in our same data meta-analysis setting, _any_ variance observed over teams is the random effects variance, i.e. 
+$$\mathrm{Var}(Y_{ik}) = \tau_i^2.$$
 
 Now if we could somehow knew the true inter-team mean response, we can show that the sample variance $S^2$ of is unbiased for the average team variance
 $$
@@ -90,3 +82,13 @@ Now, in practice, we don't know the inter-team mean response, so in that case we
 where $\mathbf{J}$ is a square matrix of 1's.
 
 So, this is important: The sample variance is unbiased for the team-average variance _except_ for a term attributable to imperfect estimation of the sample mean.  But crucially, this is a negative bias if the inter-team correlation is mostly positive, and so at worst we're underestimating the between-team variance.
+
+
+## Voxel-level Meta-Analysis
+
+While not considered in the NAPRS paper, for reference, if we were to estimate variance over submissions/teams you could do it at each voxel as accounting for enter-study correlation as
+$$\hat\sigma^2_i= Y_i^\top \mathbf{R} Y_i / \mbox{tr}(\mathbf{R}\mathbf{Q})$$
+where $\mathbf{R} = \mathbf{I}-\mathbf{J}/N$ is the centering matrix, though note this reflects an assumption that the correlation $\mathbf{Q}$ is the same for all voxels.  The effective degrees-of-freedom for this variance estimate is
+$$\nu = \mbox{tr}(\mathbf{R}\mathbf{Q})^2 / \mbox{tr}(\mathbf{R}\mathbf{Q}\mathbf{R}\mathbf{Q}).$$
+The behavior under compound symmetry of $\mathbf{Q}$ is noteable: While $\mbox{tr}(\mathbf{R}\mathbf{Q})$ falls from nominal $N-1$ as $\rho$ grows from 0, $\nu=N-1$ for any $\rho$.
+
