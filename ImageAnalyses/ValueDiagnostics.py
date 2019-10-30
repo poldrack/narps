@@ -172,9 +172,6 @@ def compare_thresh_unthresh_values(
             reverse_contrast = mdstring.split()[0] == 'Negative'
             if verbose:
                 print('manual rectify:', teamID, hyp)
-        elif hyp == 9 and teamID in ['R7D1']:
-            # manual fix for one team with reversed maps
-            reverse_contrast = True
         diagnostic_data.loc[
             diagnostic_data.hyp == hyp,
             'reverse_contrast'] = reverse_contrast

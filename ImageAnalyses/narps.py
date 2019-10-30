@@ -265,7 +265,7 @@ class NarpsTeam(object):
                     i, 'hyp']] = self.image_diagnostics.loc[
                         i, 'reverse_contrast']
         # manual fixes to rectify status per spreadsheet answers for hyp 9
-        if self.teamID in ['R7D1', '46CD']:
+        if self.teamID in ['46CD']:
             self.rectify[9] = True
 
     def get_orig_images(self):

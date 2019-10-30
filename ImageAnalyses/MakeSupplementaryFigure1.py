@@ -38,9 +38,13 @@ def mk_supp_figure1(narps, metadata):
 
     # sort by mean acceptance
     decision_wide['mean'] = decision_wide.mean(axis=1)
+    confidence_wide['mean'] = decision_wide.mean(axis=1)
     decision_wide = decision_wide.sort_values(
         'mean', ascending=False)
     del decision_wide['mean']
+    confidence_wide = confidence_wide.sort_values(
+        'mean', ascending=False)
+    del confidence_wide['mean']
 
     # merge with analysis metadata
     metadata_selected = metadata.query('varnum==1')[
