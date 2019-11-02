@@ -86,8 +86,9 @@ def get_similarity_summary(narps, corrtype='spearman'):
     results_df_wide.columns = [
         '%s (%s)' % (col[0], col[1]) for col in results_df_wide.columns.values]
     del results_df_wide['Cluster size (mean)']
+    results_df_wide['Hypothesis'] = results_df_wide.index
     results_df_wide = results_df_wide[
-        ['Correlation (mean)',
+        ['Hypothesis', 'Correlation (mean)',
          'Correlation (cluster1)', 'Cluster size (cluster1)',
          'Correlation (cluster2)', 'Cluster size (cluster2)',
          'Correlation (cluster3)', 'Cluster size (cluster3)']]
