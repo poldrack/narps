@@ -17,6 +17,7 @@ preamble = '''\\documentclass[10pt]{article}
 \\usepackage{amssymb}
 \\usepackage{epstopdf}
 \\usepackage{caption}
+\\usepackage{hyperref}
 \\title{Supplementary Figures}
 \\author{Botvinick-Nezer et al.}
 \\begin{document}
