@@ -19,6 +19,7 @@ preamble = '''\\documentclass[10pt]{article}
 \\usepackage{epstopdf}
 \\usepackage{booktabs}
 \\usepackage{caption}
+\\usepackage{array}
 \\title{Supplementary Tables}
 \\author{Botvinick-Nezer et al.}
 \\begin{document}
@@ -87,7 +88,7 @@ def make_supp_table_file(narps, default_cwidth=2):
                     cwidth = [info.loc[
                             i, 'Width'] for i in range(tbl.shape[1])]
             cformat = '|'.join([
-                'p{%f cm}' % i for i in cwidth])
+                '>{\\raggedright\\arraybackslash}p{%f cm}' % i for i in cwidth])
             print(cformat)
             latex += '\\begin{table}\n'
             latex += '\\caption*{Supplementary Table %d: %s}\n' % (
