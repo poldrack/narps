@@ -136,6 +136,12 @@ fundamental_long <- fundamental %>%
 
 ```
 
+Compare active to all traders
+```{r allVsActiveStats}
+print(min(abs(fundamental$fv - fundamental$fv_active)))
+print(max(abs(fundamental$fv - fundamental$fv_active)))
+
+```
 
 ## Plot Active traders vs. All
 
@@ -172,6 +178,7 @@ A <- ggplot() +
 
 ggsave(paste(figdir,'Active_vs_All_traders.pdf',sep='/'),
        width=7,height = 5)
+
 ```
 
 ### Time series
