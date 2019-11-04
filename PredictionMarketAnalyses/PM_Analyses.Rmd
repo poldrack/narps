@@ -35,6 +35,7 @@ if (use_checkpoint) {
 library(plyr)
 library(dplyr)
 library(tidyr)
+library(readr)
 
 output_dir <- paste(basedir,'PredictionMarkets',sep='/')
 proc <- paste(output_dir, 'Processed',sep='/')
@@ -379,4 +380,80 @@ write.table(all_wide_df,
             quote=FALSE, col.names=TRUE,sep='\t', row.names=FALSE)
 
 ```
+ 
+ ### Expertise analyses
+ 
+```{r expertiseSummary}
+expertise <- read_csv(paste(basedir, "orig/PredictionMarkets/Demographics.csv", sep='/'))
 
+expertise_summary <- expertise %>%
+  group_by(teams) %>%
+  summarise(mean_neuroimaging = mean(neuroimaging),
+            sd_neuroimaging = sd(neuroimaging),
+            mean_decision = mean(decisionsciences),
+            sd_decision = sd(decisionsciences))
+print(expertise_summary)
+```
+ 
+```{r expertiseTTest}
+t.test.neuro <- t.test(neuroimaging ~ teams, data=expertise)
+print(t.test.neuro)
+
+t.test.decision <- t.test(decisionsciences ~ teams, data=expertise)
+print(t.test.decision)
+
+```
+
+#### Payment anlaysis
+
+```{r payoffExpertiseCorrs}
+
+payoff.neuro <- cor.test(x=expertise$neuroimaging, 
+                     y=expertise$payment, 
+                     method='spearman', 
+                     exact=FALSE)
+print(payoff.neuro)
+
+payoff.decision <- cor.test(x=expertise$decisionsciences, 
+                     y=expertise$payment, 
+                     method='spearman', 
+                     exact=FALSE)
+print(payoff.decision)
+
+```
+
+Separately for teams and non-teams
+
+```{r payoffCorrTeams}
+expertise_teams <- expertise %>% filter(teams==1)
+
+payoff.neuro <- cor.test(x=expertise_teams$neuroimaging, 
+                     y=expertise_teams$payment, 
+                     method='spearman', 
+                     exact=FALSE)
+print(payoff.neuro)
+
+payoff.decision <- cor.test(x=expertise_teams$decisionsciences, 
+                     y=expertise_teams$payment, 
+                     method='spearman', 
+                     exact=FALSE)
+print(payoff.decision)
+
+```
+
+```{r payoffCorrNonTeams}
+expertise_nonteams <- expertise %>% filter(teams==0)
+
+payoff.neuro <- cor.test(x=expertise_nonteams$neuroimaging, 
+                     y=expertise_nonteams$payment, 
+                     method='spearman', 
+                     exact=FALSE)
+print(payoff.neuro)
+
+payoff.decision <- cor.test(x=expertise_nonteams$decisionsciences, 
+                     y=expertise_nonteams$payment, 
+                     method='spearman', 
+                     exact=FALSE)
+print(payoff.decision)
+
+```
