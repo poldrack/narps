@@ -31,8 +31,8 @@ To run the full analysis pipeline using Docker, you will need at least about 12 
 
     -   ```NARPS_BASEDIR```: location for the data and results - e.g. if you would like the data to be stored to /Users/poldrack/NARPS then you would use the command:
         - ```export NARPS_BASEDIR=/Users/poldrack/NARPS```
-    -   ```DATA_URL```: URL for the data, which you must obtain from Russ Poldrack - e.g. if the url was http://narps.data/12345.tgz then you would use the following command:
-        - ```export DATA_URL=http://narps.data/12345.tgz```
+    -   ```DATA_URL```: URL for the data:
+        - ```export DATA_URL=https://zenodo.org/record/3528329/files/narps_origdata_1.0.tgz```
 
 -   clone the present repository using the following command in the shell:
 
