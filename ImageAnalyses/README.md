@@ -4,8 +4,6 @@
 
 #### Setup
 
-In order to run this code, you must obtain the URL for the original data from Russ Poldrack - these data will be made publicly available upon publication of the paper.
-
 The required data (all contained in the unzipped ```orig``` directory) are:
 
 -   thresholded and unthresholded images for each team/hypothesis (teams excluded from the main analysis are included in the ```rejected``` directory)
@@ -31,8 +29,8 @@ To run the full analysis pipeline using Docker, you will need at least about 12 
 
     -   ```NARPS_BASEDIR```: location for the data and results - e.g. if you would like the data to be stored to /Users/poldrack/NARPS then you would use the command:
         - ```export NARPS_BASEDIR=/Users/poldrack/NARPS```
-    -   ```DATA_URL```: URL for the data, which you must obtain from Russ Poldrack - e.g. if the url was http://narps.data/12345.tgz then you would use the following command:
-        - ```export DATA_URL=http://narps.data/12345.tgz```
+    -   ```DATA_URL```: 
+        - ```export DATA_URL=https://zenodo.org/record/3528329/files/narps_origdata_1.0.tgz```
 
 -   clone the present repository using the following command in the shell:
 
