@@ -4,8 +4,6 @@
 
 #### Setup
 
-In order to run this code, you must obtain the URL for the original data from Russ Poldrack - these data will be made publicly available upon publication of the paper.
-
 The required data (all contained in the unzipped ```orig``` directory) are:
 
 -   thresholded and unthresholded images for each team/hypothesis (teams excluded from the main analysis are included in the ```rejected``` directory)
