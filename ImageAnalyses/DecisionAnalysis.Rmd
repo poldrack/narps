@@ -37,6 +37,9 @@ library(optimx)
 library(xtable)
 library(psych)
 #library(knitr)
+library(sessioninfo)
+
+
 
 basedir = Sys.getenv('NARPS_BASEDIR')
 if (basedir == ""){
@@ -44,6 +47,12 @@ if (basedir == ""){
    basedir = "/data"
 }
 
+# get details about installed packages
+package_info <- devtools::package_info()
+write.table(package_info, 
+            file=paste(basedir,                     
+                       'metadata/R_package_info.txt',
+                       sep='/'))
 ```
 
 ## Data setup 
@@ -387,6 +396,26 @@ write.table(summary_df,
             file=paste(basedir,
                        "figures/ModelingSummaryTable.tsv",sep='/'),
             quote=FALSE,sep='\t', row.names = FALSE)
+```
+
+#### Modeling excluding Hypotheses 7-9
+
+Due to the low amount of variability in outcomes for Hypotheses 7-9, we assessed whether excluding those hypotheses would affect modeling outcomes.
+
+```{r fullModel}
+
+hyp_df_exc <- hyp_df %>%
+  filter(varnum %in% c(1,2,3,4,5,6))
+
+m_hyp_full_exc = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + testing + movement_modeling + (1|teamID),
+            data = hyp_df_exc,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+
+summary_full_model <- summary(m_hyp_full_exc)
+print(summary_full_model)
+
+
 ```
 
 
