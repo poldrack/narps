@@ -152,7 +152,7 @@ hyp_df <- hyp_df %>%  mutate(
     used_fmriprep_data = factor(used_fmriprep_data)) %>%
   mutate(testing = recode_factor(hyp_df$testing, ARI = 'Other', randomise = 'nonparametric', permutations = 'nonparametric'))
 
-
+write.table(hyp_df,file=paste(basedir,'output/hyp_df.csv', sep='/'))
 ```
 
 ### FWHM
