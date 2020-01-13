@@ -152,7 +152,7 @@ hyp_df <- hyp_df %>%  mutate(
     used_fmriprep_data = factor(used_fmriprep_data)) %>%
   mutate(testing = recode_factor(hyp_df$testing, ARI = 'Other', randomise = 'nonparametric', permutations = 'nonparametric'))
 
-write.table(hyp_df,file=paste(basedir,'output/hyp_df.csv', sep='/'))
+save(hyp_df,file=paste(basedir,'output/hyp_df.RData', sep='/'))
 ```
 
 ### FWHM
@@ -211,6 +211,7 @@ summary_full_model <- summary(m_hyp_full)
 sink(paste(basedir,'figures/decision_model_summary.txt', sep='/'))
 print(summary_full_model)
 sink() 
+save(m_hyp_full, summary_full_model,file=paste(basedir,'output/full_model_summary.RData', sep='/'))
 
 r.squaredGLMM(m_hyp_full)
 
@@ -402,7 +403,7 @@ write.table(summary_df,
 
 Due to the low amount of variability in outcomes for Hypotheses 7-9, we assessed whether excluding those hypotheses would affect modeling outcomes.
 
-```{r fullModel}
+```{r excludeModel}
 
 hyp_df_exc <- hyp_df %>%
   filter(varnum %in% c(1,2,3,4,5,6))
