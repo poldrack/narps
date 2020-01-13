@@ -226,7 +226,7 @@ mySumm <- function(.) {
     c(beta=fixef(.))
 }
 
-boo01 <- bootMer(m_hyp_full, mySumm, nsim = 1000) 
+boo01 <- bootMer(m_hyp_full, mySumm, nsim = 1000, seed=12345678) 
 
 ```
 
