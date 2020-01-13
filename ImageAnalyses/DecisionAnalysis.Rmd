@@ -208,12 +208,46 @@ m_hyp_full = glmer(Decision ~ varnum + fwhm + used_fmriprep_data + package + tes
                                    optCtrl=list(method='nlminb')))
 
 summary_full_model <- summary(m_hyp_full)
+print(summary_full_model)
 sink(paste(basedir,'figures/decision_model_summary.txt', sep='/'))
 print(summary_full_model)
 sink() 
 save(m_hyp_full, summary_full_model,file=paste(basedir,'output/full_model_summary.RData', sep='/'))
 
 r.squaredGLMM(m_hyp_full)
+
+```
+
+Run bootstrap to get confidence intervals
+
+```{r}
+
+mySumm <- function(.) {
+    c(beta=fixef(.))
+}
+
+boo01 <- bootMer(m_hyp_full, mySumm, nsim = 500) 
+
+```
+
+```{r}
+model.coefs <- coef(summary_full_model)
+percentile_bs_ci <- data.frame(lower=array(NA, 17),
+                               mean=array(NA, 17),
+                               upper=array(NA,17),
+                               row.names=row.names(model.coefs))
+boot_means = apply(boo01$t,2,mean)
+
+for (i in 1:17){
+  ci_raw <- boot::boot.ci(boot.out = boo01, type = c("perc"), index = i)
+  
+  percentile_bs_ci[i,] <- c(ci_raw$percent[4],boot_means[i],ci_raw$percent[5])
+}
+
+kable(percentile_bs_ci)
+write.table(percentile_bs_ci,
+            file=paste(basedir,"figures/full_model_bootstrap_CI.tsv",sep='/'),
+            sep='\t')
 
 ```
 
