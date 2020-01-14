@@ -859,3 +859,17 @@ simdata %>% group_by(fmriprep) %>% summarise(m = z2r(mean(similarity)))
 
 
 Performing inference on the differnces between these groups would require implementing a permutation test approach.  Given how small the numeric differences are between groups, I decided to forego this analysis for now.
+
+### Decision vs confidence/similarity
+
+How do confidence and similarity ratings relate to hypothesis decisions?
+
+```{r}
+hyp_df$Confidence_num <- as.numeric(hyp_df$Confidence)
+m_hyp_conf_sim = glmer(Decision ~ Similar + Confidence_num + (1|teamID),
+            data = hyp_df,family=binomial,
+            control = glmerControl(optimizer ='optimx', 
+                                   optCtrl=list(method='nlminb')))
+summary(m_hyp_conf_sim)
+```
+
