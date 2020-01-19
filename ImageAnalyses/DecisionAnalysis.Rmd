@@ -897,3 +897,18 @@ group_means <- narps_df_allteams %>% group_by(Decision) %>% summarize(mean_confi
 kable(group_means)
 ```
 
+Compute the Spearman correlation of the distance of the outcome (the proportion of teams that reported a significant result for each hypothesis) from 0.5 (i.e., how consistent the results were across teams) and the mean confidence rating across hypotheses.
+
+```{r}
+hyp_summary_df <- narps_df_allteams %>%
+  group_by(Hypothesis) %>%
+  summarize(mean_distance = abs(0.5 - mean(Decision)),
+            mean_confidence = mean(Confidence),
+            mean_similarity = mean(Similar))
+
+cor.test(hyp_summary_df$mean_confidence,hyp_summary_df$mean_distance,method='spearman')
+
+cor.test(hyp_summary_df$mean_similarity,hyp_summary_df$mean_distance,method='spearman')
+
+```
+
