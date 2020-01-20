@@ -39,6 +39,10 @@ def prepare_metadata(narps, verbose=True):
     alldata_df['software'] = [
         package_recoder(x) for x in alldata_df['analysis_SW']]
 
+    # save a copy for decision analyses with all teams
+    alldata_df.to_csv(os.path.join(
+        narps.dirs.dirs['metadata'], 'narps_metadata_all_teams.csv'))
+
     # load smoothness data
     smoothness_df = pandas.read_csv(
         os.path.join(
