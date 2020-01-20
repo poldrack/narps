@@ -226,12 +226,9 @@ mySumm <- function(.) {
     c(beta=fixef(.))
 }
 
-boo01 <- bootMer(m_hyp_full, mySumm, 
-                 nsim = 1000, seed=12345678,
-                 type='parametric',use.u=TRUE) 
+boo01 <- bootMer(m_hyp_full, mySumm, nsim = 1000, seed=12345678) 
 
 ```
-
 
 ```{r}
 model.coefs <- coef(summary_full_model)
