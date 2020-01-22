@@ -218,38 +218,158 @@ r.squaredGLMM(m_hyp_full)
 
 ```
 
-Run bootstrap to get confidence intervals
+### Nonparametric bootstrap
+The bootMer package performs resampling for lmer models, but it uses a parametric bootstrap which we did not feel adequately addressed concerns about non-normality.  Thus, we implemented a nonparametric bootstrap, in which we resample over teams.
+
+First we generate wide data, for resampling.
 
 ```{r}
+decisions_wide <- hyp_df %>%
+  mutate(Hypothesis = str_c("Hyp", varnum, sep="")) %>%
+  dplyr::select(teamID, Decision, Hypothesis) %>%
+  spread(Hypothesis,Decision)
 
-mySumm <- function(.) {
-    c(beta=fixef(.))
+team_info <- hyp_df %>% 
+  filter(varnum==1) %>%
+  dplyr::select(fwhm, used_fmriprep_data,package,
+                testing, movement_modeling,teamID)
+
+decisions_wide <- join(decisions_wide,
+                       team_info,
+                       by='teamID')
+```
+
+Function to run analysis within bootstrap.  For the regressors that are parametric or binary, we can simply compute a bootstrap confidence interval on their parameter estimate.  For the two variables that are factorial, we can't do this because some bootstrap samples will not contain all of the same values for the factors, and thus the models are not equivalent.  Instead, for those variables we perform a model comparison and save the model comparison statistics so that we can compute a bootstrap estimate on those (ala https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5482523/).  
+
+```{r message=FALSE,warning=FALSE}
+bs_fun <- function(df, indices){
+  df <- df[indices,]
+  control = glmerControl(
+              optimizer ='optimx', 
+              optCtrl=list(method='nlminb'))
+  # we take in a wide data frame, but must
+  # convert it back to long form for lmer
+  df_long <- df %>% gather(key='Hypothesis',
+              value='Decision',
+              -movement_modeling,-teamID,-fwhm,
+              -used_fmriprep_data,-package,-testing)
+  
+  model_full <- glmer(Decision ~ Hypothesis + fwhm + 
+                        used_fmriprep_data + 
+                        movement_modeling + package + 
+                        testing  + (1|teamID),
+            data = df_long,family=binomial,
+            control = control)
+  
+  # get coefs for all but factorial effects
+  fixed_effect_coefs = fixef(model_full)[1:12]
+  
+  # do model comparison for package effect
+  model_nopackage <- glmer(Decision ~ Hypothesis + 
+                             fwhm + 
+                             used_fmriprep_data + 
+                             movement_modeling + 
+                             testing  + (1|teamID),
+            data = df_long,family=binomial,
+            control = control)
+
+  # perform model comparison and save statistics
+  anova_nopackage <- anova(model_nopackage,model_full)
+  fixed_effect_coefs['package_p'] = anova_nopackage$`Pr(>Chisq)`[2]
+  fixed_effect_coefs['package_lr_x2'] = anova_nopackage$Chisq[2]
+  fixed_effect_coefs['package_AICdiff'] = 
+    diff(anova_nopackage$AIC)
+  fixed_effect_coefs['package_BICdiff'] = 
+    diff(anova_nopackage$BIC)
+  
+  # do model comparison for testing effect
+   model_notesting <- glmer(Decision ~ Hypothesis + 
+                              fwhm + 
+                              used_fmriprep_data + 
+                              movement_modeling + 
+                              package +  (1|teamID),
+            data = df_long,family=binomial,
+            control = control)
+    
+  # perform model comparison and save statistics
+  anova_notesting <- anova(model_notesting,model_full)
+  fixed_effect_coefs['testing_p'] = anova_notesting$`Pr(>Chisq)`[2]
+  fixed_effect_coefs['testing_lr_x2'] = anova_notesting$Chisq[2]
+  fixed_effect_coefs['testing_AICdiff'] = 
+    diff(anova_notesting$AIC)
+  fixed_effect_coefs['testing_BICdiff'] = 
+    diff(anova_notesting$BIC)
+
+fixed_effect_coefs
 }
 
-boo01 <- bootMer(m_hyp_full, mySumm, nsim = 1000, seed=12345678) 
+# perform bootstrap sampling with 1000 replications
+Out <- boot(data=decisions_wide, statistic=bs_fun, R=1000)
+
+# save bootstrap samples
+save(Out,file=paste(basedir,                     
+                    'outputs/npboot_output.RData',
+                    sep='/'))
+```
+
+
+Get confidence intervals, first for betas for parametric regressors.
+
+```{r}
+# set up data frame to save results
+rownames = c('Intercept',
+            paste('Hyp',seq(2,9),sep=''),
+            'fwhm','used_fmriprep_data',
+            'movement_modeling', 
+            'package (deltaBIC)',
+            'testing  (deltaBIC)') 
+
+percentile_np_ci <- data.frame(lower=array(NA, 
+                                    length(rownames)),
+                               mean=array(NA, 
+                                    length(rownames)),
+                               upper=array(NA,
+                                    length(rownames)),
+                               boot_pval=array(NA,
+                                    length(rownames)),
+                               row.names=rownames)
+
+# get means for parameters across amples
+npboot_means = apply(Out$t,2,mean)
+
+# compute two-tailed p-values
+lower_p <- apply(Out$t<0,2,mean)
+upper_p <- apply(Out$t>0,2,mean)
+pvals <- rbind(upper_p,lower_p)
+boot_pval <- apply(pvals,2,min)*2
+
+# loop over parametric regressors and get percentile CI
+for (i in 1:12){
+  ci_raw <- boot::boot.ci(boot.out = Out, type = c("perc"), index = i)
+  percentile_np_ci[i,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],boot_pval[i])
+}
 
 ```
 
-```{r}
-model.coefs <- coef(summary_full_model)
-percentile_bs_ci <- data.frame(lower=array(NA, 17),
-                               mean=array(NA, 17),
-                               upper=array(NA,17),
-                               row.names=row.names(model.coefs))
-boot_means = apply(boo01$t,2,mean)
+Get CI for model comparisons for factorial regressors (package and testing).
 
-for (i in 1:17){
-  ci_raw <- boot::boot.ci(boot.out = boo01, type = c("perc"), index = i)
+```{r}
+# get ci for BIC diff
+idx=13
+for (i in c(16,20)){
+  ci_raw <- boot::boot.ci(boot.out = Out, type = c("perc"), index = i)
   
-  percentile_bs_ci[i,] <- c(ci_raw$percent[4],boot_means[i],ci_raw$percent[5])
+  percentile_np_ci[idx,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],boot_pval[i])
+  idx = idx + 1
 }
 
-kable(percentile_bs_ci)
-write.table(percentile_bs_ci,
-            file=paste(basedir,"figures/full_model_bootstrap_CI.tsv",sep='/'),
+kable(percentile_np_ci)
+write.table(percentile_np_ci,
+            file=paste(basedir,"output/nonparametric_bootstrap_CI.tsv",sep='/'),
             sep='\t')
 
 ```
+
 
 Get odds ratios for factorial variables.
 
