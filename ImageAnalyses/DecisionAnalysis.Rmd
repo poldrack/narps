@@ -316,7 +316,7 @@ Out <- boot(data=decisions_wide, statistic=bs_fun, R=1000)
 
 # save bootstrap samples
 save(Out,file=paste(basedir,                     
-                    'outputs/npboot_output.RData',
+                    'output/npboot_output.RData',
                     sep='/'))
 ```
 
