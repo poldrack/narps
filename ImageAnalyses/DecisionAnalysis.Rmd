@@ -366,9 +366,9 @@ Get CI for model comparisons for factorial regressors (package and testing).
 
 for (i in 4:6){
   ci_raw <- boot::boot.ci(boot.out = Out, type = c("perc"), index = i)
-  # use upper p because we want to know how often full model
+  # use lower p because we want to know how often full model
   # is better than reduced model
-  percentile_np_ci[i,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],upper_p[i])
+  percentile_np_ci[i,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],lower_p[i])
 }
 
 kable(percentile_np_ci)
