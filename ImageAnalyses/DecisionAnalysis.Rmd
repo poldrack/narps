@@ -330,7 +330,7 @@ rownames = c('fwhm',
             'movement_modeling', 
             'Hypothesis (deltaBIC)',
             'package (deltaBIC)',
-            'testing  (deltaBIC)') 
+            'testing (deltaBIC)') 
 
 percentile_np_ci <- data.frame(lower=array(NA, 
                                     length(rownames)),
@@ -366,9 +366,9 @@ Get CI for model comparisons for factorial regressors (package and testing).
 
 for (i in 4:6){
   ci_raw <- boot::boot.ci(boot.out = Out, type = c("perc"), index = i)
-  # use one-sided p here because we only care about whether full model
+  # use upper p because we want to know how often full model
   # is better than reduced model
-  percentile_np_ci[i,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],lower_p[i])
+  percentile_np_ci[i,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],upper_p[i])
 }
 
 kable(percentile_np_ci)
@@ -534,12 +534,18 @@ summary_df['Chi-squared'] = c(anova_hyp$Chisq[2],
                               anova_package$Chisq[2],
                               anova_testing$Chisq[2],
                               anova_movement$Chisq[2])
-summary_df['P value'] = c(anova_hyp$"Pr(>Chisq)"[2],
-                              anova_smoothing$"Pr(>Chisq)"[2],
-                              anova_fmriprep$"Pr(>Chisq)"[2],
-                              anova_package$"Pr(>Chisq)"[2],
-                              anova_testing$"Pr(>Chisq)"[2],
-                              anova_movement$"Pr(>Chisq)"[2])
+summary_df['Bootstrap P-value'] = c(NA,
+                              percentile_np_ci['fwhm','boot_pval'],
+                              percentile_np_ci['used_fmriprep_data','boot_pval'],
+                              NA,
+                              NA,
+                              percentile_np_ci['movement_modeling', 'boot_pval'])
+summary_df['Model selection probability (using BIC)'] = c(percentile_np_ci['Hypothesis (deltaBIC)','boot_pval'],
+                              NA,
+                              NA,
+                              percentile_np_ci['package (deltaBIC)','boot_pval'],
+                              percentile_np_ci['testing (deltaBIC)','boot_pval'],
+                              NA)
 summary_df['Delta R^2'] = c(delta_r2_hyp[2,1],
                             delta_r2_smoothing[2,1],
                             delta_r2_fmriprep[2,1],
@@ -549,8 +555,6 @@ summary_df['Delta R^2'] = c(delta_r2_hyp[2,1],
 summary_df <- summary_df %>%
   mutate(`Chi-squared` = formatC(summary_df$'Chi-squared',
                                  digits=2,format='f'),
-    `P value` = formatC(summary_df$'P value',
-                        digits=3,format='f'),
     `Delta R^2` = formatC(summary_df$'Delta R^2',
                         digits=2,format='f')
     )
