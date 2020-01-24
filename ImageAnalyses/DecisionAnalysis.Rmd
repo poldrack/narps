@@ -317,15 +317,19 @@ bs_fun <- function(df, indices){
 fixed_effect_coefs
 }
 
+```
+
+
+```{r}
 # perform bootstrap sampling with 1000 replications
 Out <- boot(data=decisions_wide, statistic=bs_fun, R=1000)
 
 # save bootstrap samples
 save(Out,file=paste(basedir,                     
-                    'output/npboot_output.RData',
-                    sep='/'))
-```
+                     'output/npboot_output.RData',
+                     sep='/'))
 
+```
 
 Get confidence intervals, first for betas for parametric regressors.
 
@@ -335,10 +339,10 @@ rownames = c('fwhm',
             'used_fmriprep_data',
             'movement_modeling', 
             'Hypothesis (deltaBIC)',
-            'package (deltaBIC)',
-            'testing (deltaBIC)',
             'Hypothesis (deltaAIC)',
+            'package (deltaBIC)',
             'package (deltaAIC)',
+            'testing (deltaBIC)',
             'testing (deltaAIC)') 
 
 
@@ -348,23 +352,17 @@ percentile_np_ci <- data.frame(lower=array(NA,
                                     length(rownames)),
                                upper=array(NA,
                                     length(rownames)),
-                               boot_pval=array(NA,
+                               exceedence=array(NA,
                                     length(rownames)),
                                row.names=rownames)
 
 # get means for parameters across amples
 npboot_means = apply(Out$t,2,mean)
 
-# compute two-tailed p-values
-lower_p <- apply(Out$t<0,2,mean)
-upper_p <- apply(Out$t>0,2,mean)
-pvals <- rbind(upper_p,lower_p)
-boot_pval <- apply(pvals,2,min)*2
-
 # loop over parametric regressors and get percentile CI
 for (i in 1:3){
   ci_raw <- boot::boot.ci(boot.out = Out, type = c("perc"), index = i)
-  percentile_np_ci[i,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],boot_pval[i])
+  percentile_np_ci[i,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],NA)
 }
 
 ```
@@ -378,7 +376,7 @@ for (i in 4:9){
   ci_raw <- boot::boot.ci(boot.out = Out, type = c("perc"), index = i)
   # use lower p because we want to know how often full model
   # is better than reduced model
-  percentile_np_ci[i,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],lower_p[i])
+  percentile_np_ci[i,] <- c(ci_raw$percent[4],npboot_means[i],ci_raw$percent[5],mean(Out$t[,i]<0))
 }
 
 kable(percentile_np_ci)
@@ -544,23 +542,35 @@ summary_df['Chi-squared'] = c(anova_hyp$Chisq[2],
                               anova_package$Chisq[2],
                               anova_testing$Chisq[2],
                               anova_movement$Chisq[2])
-summary_df['Bootstrap P-value'] = c(NA,
-                              percentile_np_ci['fwhm','boot_pval'],
-                              percentile_np_ci['used_fmriprep_data','boot_pval'],
+summary_df['P value (parametric)'] = c(anova_hyp$"Pr(>Chisq)"[2],
+                              anova_smoothing$"Pr(>Chisq)"[2],
+                              anova_fmriprep$"Pr(>Chisq)"[2],
+                             anova_package$"Pr(>Chisq)"[2],
+                              anova_testing$"Pr(>Chisq)"[2],
+                              anova_movement$"Pr(>Chisq)"[2])
+summary_df['Bootstrap CI'] = c(NA,
+                              sprintf('(%0.2f - %0.2f)',
+                                      percentile_np_ci['fwhm','lower'],
+                                      percentile_np_ci['fwhm','upper']),
+                              sprintf('(%0.2f - %0.2f)',
+                                      percentile_np_ci['used_fmriprep_data','lower'],
+                                      percentile_np_ci['used_fmriprep_data','upper']),
                               NA,
                               NA,
-                              percentile_np_ci['movement_modeling', 'boot_pval'])
-summary_df['Model selection probability (BIC)'] = c(percentile_np_ci['Hypothesis (deltaBIC)','boot_pval'],
+                              sprintf('(%0.2f - %0.2f)',
+                                      percentile_np_ci['movement_modeling','lower'],
+                                      percentile_np_ci['movement_modeling','upper']))
+summary_df['Model selection probability (BIC)'] = c(percentile_np_ci['Hypothesis (deltaBIC)','exceedence'],
                               NA,
                               NA,
-                              percentile_np_ci['package (deltaBIC)','boot_pval'],
-                              percentile_np_ci['testing (deltaBIC)','boot_pval'],
+                              percentile_np_ci['package (deltaBIC)','exceedence'],
+                              percentile_np_ci['testing (deltaBIC)','exceedence'],
                               NA)
-summary_df['Model selection probability (AIC)'] = c(percentile_np_ci['Hypothesis (deltaAIC)','boot_pval'],
+summary_df['Model selection probability (AIC)'] = c(percentile_np_ci['Hypothesis (deltaAIC)','exceedence'],
                               NA,
                               NA,
-                              percentile_np_ci['package (deltaAIC)','boot_pval'],
-                              percentile_np_ci['testing (deltaAIC)','boot_pval'],
+                              percentile_np_ci['package (deltaAIC)','exceedence'],
+                              percentile_np_ci['testing (deltaAIC)','exceedence'],
                               NA)
 summary_df['Delta R^2'] = c(delta_r2_hyp[2,1],
                             delta_r2_smoothing[2,1],
