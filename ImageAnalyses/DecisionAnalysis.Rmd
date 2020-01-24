@@ -279,6 +279,8 @@ bs_fun <- function(df, indices){
   anova_nohyp <- anova(model_nohyp,model_full)
   fixed_effect_coefs['hyp_BICdiff'] = 
     diff(anova_nohyp$BIC)
+  fixed_effect_coefs['hyp_AICdiff'] = 
+    diff(anova_nohyp$AIC)
 
   # do model comparison for package effect
   model_nopackage <- glmer(Decision ~ Hypothesis + 
@@ -293,7 +295,9 @@ bs_fun <- function(df, indices){
   anova_nopackage <- anova(model_nopackage,model_full)
   fixed_effect_coefs['package_BICdiff'] = 
     diff(anova_nopackage$BIC)
-  
+   fixed_effect_coefs['package_AICdiff'] = 
+    diff(anova_nopackage$AIC)
+ 
   # do model comparison for testing effect
    model_notesting <- glmer(Decision ~ Hypothesis + 
                               fwhm + 
@@ -307,6 +311,8 @@ bs_fun <- function(df, indices){
   anova_notesting <- anova(model_notesting,model_full)
   fixed_effect_coefs['testing_BICdiff'] = 
     diff(anova_notesting$BIC)
+  fixed_effect_coefs['testing_AICdiff'] = 
+    diff(anova_notesting$AIC)
 
 fixed_effect_coefs
 }
@@ -330,7 +336,11 @@ rownames = c('fwhm',
             'movement_modeling', 
             'Hypothesis (deltaBIC)',
             'package (deltaBIC)',
-            'testing (deltaBIC)') 
+            'testing (deltaBIC)',
+            'Hypothesis (deltaAIC)',
+            'package (deltaAIC)',
+            'testing (deltaAIC)') 
+
 
 percentile_np_ci <- data.frame(lower=array(NA, 
                                     length(rownames)),
@@ -364,7 +374,7 @@ Get CI for model comparisons for factorial regressors (package and testing).
 ```{r}
 # get ci for BIC diff
 
-for (i in 4:6){
+for (i in 4:9){
   ci_raw <- boot::boot.ci(boot.out = Out, type = c("perc"), index = i)
   # use lower p because we want to know how often full model
   # is better than reduced model
@@ -540,11 +550,17 @@ summary_df['Bootstrap P-value'] = c(NA,
                               NA,
                               NA,
                               percentile_np_ci['movement_modeling', 'boot_pval'])
-summary_df['Model selection probability (using BIC)'] = c(percentile_np_ci['Hypothesis (deltaBIC)','boot_pval'],
+summary_df['Model selection probability (BIC)'] = c(percentile_np_ci['Hypothesis (deltaBIC)','boot_pval'],
                               NA,
                               NA,
                               percentile_np_ci['package (deltaBIC)','boot_pval'],
                               percentile_np_ci['testing (deltaBIC)','boot_pval'],
+                              NA)
+summary_df['Model selection probability (AIC)'] = c(percentile_np_ci['Hypothesis (deltaAIC)','boot_pval'],
+                              NA,
+                              NA,
+                              percentile_np_ci['package (deltaAIC)','boot_pval'],
+                              percentile_np_ci['testing (deltaAIC)','boot_pval'],
                               NA)
 summary_df['Delta R^2'] = c(delta_r2_hyp[2,1],
                             delta_r2_smoothing[2,1],
