@@ -114,6 +114,18 @@ def mk_supp_figure1(narps, metadata):
         narps.dirs.dirs['figures'],
         'SuppFigure1.png'))
 
+    # save data to file
+    metadata_merged.to_csv(
+        os.path.join(
+            narps.dirs.dirs['figures'],
+            'MethodsTableMetadataMerged.csv')
+    )
+    decision_wide.to_csv(
+        os.path.join(
+            narps.dirs.dirs['figures'],
+            'DecisionDataWide.csv')
+    )
+
 
 if __name__ == "__main__":
     # set an environment variable called NARPS_BASEDIR
@@ -121,10 +133,10 @@ if __name__ == "__main__":
     if 'NARPS_BASEDIR' in os.environ:
         basedir = os.environ['NARPS_BASEDIR']
     else:
-        basedir = '/data'
+        basedir = '/tmp/data'
 
     # setup main class
-    narps = Narps(basedir)
+    narps = Narps(basedir, dataurl=os.environ['DATA_URL'])
     narps.load_data()
 
     logfile = os.path.join(
