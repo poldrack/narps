@@ -51,7 +51,7 @@ jobs:
           command: |
              cat /root/project/ImageAnalyses/*.Rmd | grep library >| /root/project/ImageAnalyses/R_libraries.R
              export NARPS_BASEDIR="/tmp/data"; Rscript -e 'library(knitr);library(rmarkdown);rmarkdown::render("/root/project/ImageAnalyses/DecisionAnalysis.Rmd","html_document", output_dir = "/tmp/data/figures")'
-          no_output_timeout: 10000
+          no_output_timeout: 90000
       - run:
           name: run PM analyses
           command: |
@@ -62,6 +62,6 @@ jobs:
       - run:
           name: create results tarball
           command: |
-             cd /tmp/data; tar zcvf results.tgz ./cached ./figures ./logs ./metadata ./image_diagnostics* ./output/unthresh_concat_zstat/hypo*_voxelmap.nii.gz ./output/overlap_binarized_thresh/hypo*.nii.gz ./output/consensus_analysis/hypo*_1-fdr.nii.gz ./output/ALE/hypo*_fdr_oneminusp.nii.gz ./output/cluster_maps ./output/correlation_unthresh ./PredictionMarkets
+             cd /tmp/data; tar zcvf results.tgz ./output/npboot_output.RData ./cached ./figures ./logs ./metadata ./image_diagnostics* ./output/unthresh_concat_zstat/hypo*_voxelmap.nii.gz ./output/overlap_binarized_thresh/hypo*.nii.gz ./output/consensus_analysis/hypo*_1-fdr.nii.gz ./output/ALE/hypo*_fdr_oneminusp.nii.gz ./output/cluster_maps ./output/correlation_unthresh ./PredictionMarkets
       - store_artifacts:
              path: /tmp/data/results.tgz
