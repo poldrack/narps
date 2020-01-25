@@ -125,6 +125,11 @@ def mk_supp_figure1(narps, metadata):
             narps.dirs.dirs['figures'],
             'DecisionDataWide.csv')
     )
+    confidence_wide.to_csv(
+        os.path.join(
+            narps.dirs.dirs['figures'],
+            'ConfidenceDataWide.csv')
+    )
 
 
 if __name__ == "__main__":
