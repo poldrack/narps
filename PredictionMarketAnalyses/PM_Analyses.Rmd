@@ -89,8 +89,8 @@ supptable_df <- supptable_df %>%
          TeamsOutside = recode(supptable_df$t_exceed, `0` = '', `1` = '*')) %>%
   unite('CI', CI_lower:CI_upper, sep='-') %>%
   mutate(CI = sapply(CI,bracket)) %>%
-  unite('Non-teams FV', NonTeams:NonTeamsOutside, sep=' ') %>%
-  unite('Teams FV', Teams:TeamsOutside, sep=' ') %>%
+  unite('Non-teams market prediction', NonTeams:NonTeamsOutside, sep=' ') %>%
+  unite('Teams market prediction', Teams:TeamsOutside, sep=' ') %>%
   dplyr::select(-fv,-fv_95l, -fv_95u, -price.0, -price.1, -t_exceed, -nt_exceed, -hypothesis) 
 supptable_df <- supptable_df %>%
   rename(`Hyp #` = hid) 
