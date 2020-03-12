@@ -382,8 +382,9 @@ def mk_correlation_maps_unthresh(
             membership[str(hyp)][str(cl)].append(labels[j])
 
         # save reordered correlation map
-        reordered_df = df.loc[cm.dendrogram_row.reordered_ind, :]
-        reordered_df = reordered_df.loc[:, cm.dendrogram_row.reordered_ind]
+        reord_idx = [j for j in cm.dendrogram_row.reordered_ind]
+        reordered_df = df.loc[reord_idx, :]
+        reordered_df = reordered_df.loc[:, reord_idx]
         reordered_df.to_csv(os.path.join(
             output_dir,
             '%s_unthresh_hyp%d_reordered.csv' % (corr_type, hyp)))
