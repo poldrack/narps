@@ -70,6 +70,9 @@ plotDataWide <- reshape(plotDataWide,
 plotDataWide <- plotDataWide[order(plotDataWide$fv),]
 plotDataWide$id <- 1:9
 
+write.csv(plotDataWide,
+          file=paste(figdir,'Figure1_data.csv',sep='/'))
+
 ```
 
 ```{r mainPanel}
@@ -112,7 +115,7 @@ A <- ggplot() +
   theme(panel.border = element_rect(colour = "black", 
                                     fill=NA, size=1)) + scale_fill_discrete(name = NULL, labels = c("Fundamental value", "Non-team Members", "Team members"))
 
-ggsave(paste(figdir,'PMbeliefs_Figure3.pdf',sep='/'),
+ggsave(paste(figdir,'Figure1_PMbeliefs.pdf',sep='/'),
        width=7,height = 5)
 
 ```
