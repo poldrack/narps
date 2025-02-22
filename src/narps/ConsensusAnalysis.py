@@ -16,9 +16,11 @@ import nilearn.plotting
 import nilearn.maskers
 import matplotlib.pyplot as plt
 from statsmodels.stats.multitest import multipletests
-from narps import Narps, hypnums, hypotheses
-from narps import NarpsDirs # noqa, flake8 issue
-from utils import log_to_file, t_corr
+from narps.narps import Narps, hypnums, hypotheses
+from narps.narps import NarpsDirs # noqa, flake8 issue
+from narps.utils import log_to_file, t_corr
+import dotenv
+dotenv.load_dotenv()
 
 
 def run_ttests(narps, logfile,
@@ -182,7 +184,7 @@ def mk_figures(narps, logfile, thresh=0.95):
     plt.close(fig)
 
 
-if __name__ == "__main__":
+def main():
     # parse arguments
     parser = argparse.ArgumentParser(
         description='Analyze NARPS data')
@@ -226,3 +228,6 @@ if __name__ == "__main__":
 
         run_ttests(narps, logfile)
         mk_figures(narps, logfile)
+
+if __name__ == "__main__":
+    main()
