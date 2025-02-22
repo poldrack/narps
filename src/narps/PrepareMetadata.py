@@ -10,6 +10,8 @@ import argparse
 import pandas
 from narps.narps import Narps
 from narps.utils import get_merged_metadata_decisions
+import dotenv
+dotenv.load_dotenv()
 
 
 def package_recoder(p):
@@ -83,8 +85,7 @@ def prepare_metadata(narps, verbose=True):
     alldata_df.to_csv(os.path.join(
         narps.dirs.dirs['metadata'], 'all_metadata.csv'))
 
-
-if __name__ == "__main__":
+def main():
 
     # parse arguments
     parser = argparse.ArgumentParser(
@@ -109,3 +110,7 @@ if __name__ == "__main__":
     narps = Narps(basedir, overwrite=overwrite)
 
     prepare_metadata(narps)
+
+
+if __name__ == "__main__":
+    main()
