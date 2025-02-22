@@ -363,3 +363,59 @@ def matrix_pct_agreement(d):
             score[i, j] = numpy.mean(d[i, :] == d[j, :])
             score[j, i] = score[i, j]
     return(score)
+
+
+# use binarized/thresholded maps and z maps to create
+# thresholded z maps
+def get_thresholded_Z_maps(narps, verbose=False, overwrite=False):
+    for teamID in narps.complete_image_sets['thresh']:
+        if 'zstat' not in narps.teams[teamID].images['thresh']:
+            narps.teams[teamID].images['thresh']['zstat'] = {}
+
+        for hyp in range(1, 10):
+            if hyp not in narps.teams[teamID].images['unthresh']['zstat']:
+                # fill missing data with nan
+                if verbose:
+                    print('no unthresh zstat present for', teamID, hyp)
+                continue
+            if hyp not in narps.teams[teamID].images['thresh']['resampled']:
+                # fill missing data with nan
+                if verbose:
+                    print('no thresh resampled present for', teamID, hyp)
+                continue
+            zfile = narps.teams[teamID].images['unthresh']['zstat'][hyp]
+            if not os.path.exists(zfile):
+                if verbose:
+                    print('no image present:', zfile)
+                continue
+            threshfile = narps.teams[teamID].images['thresh']['resampled'][hyp]
+            if not os.path.exists(threshfile):
+                if verbose:
+                    print('no image present:', threshfile)
+                continue
+
+            outfile = zfile.replace('unthresh', 'thresh')
+            assert outfile != zfile
+            narps.teams[teamID].images['thresh']['zstat'][hyp] = outfile
+
+            if not os.path.exists(outfile) or overwrite:
+                if verbose:
+                    print('creating thresholded Z for', teamID, hyp)
+                unthresh_img = nibabel.load(zfile)
+                unthresh_data = unthresh_img.get_fdata()
+
+                thresh_img = nibabel.load(threshfile)
+                thresh_data = thresh_img.get_fdata()
+
+                thresh_z_data = thresh_data * unthresh_data
+
+                thresh_z_img = nibabel.Nifti1Image(
+                    thresh_z_data,
+                    affine=thresh_img.affine)
+                thresh_z_img.to_filename(outfile)
+            else:
+                if verbose:
+                    print('using existing thresholded Z for', teamID, hyp)
+
+    return(narps)
+
