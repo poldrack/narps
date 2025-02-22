@@ -37,6 +37,8 @@ import inspect
 from narps.utils import get_metadata, TtoZ, get_map_metadata,\
     log_to_file, stringify_dict
 from narps.ValueDiagnostics import compare_thresh_unthresh_values
+from icecream import ic
+
 
 # # set up data url - COMMENTING NOW, WILL REMOVE
 # # this is necessary for now because the data are still private
@@ -575,6 +577,8 @@ class Narps(object):
         create_voxel_map: will create a map showing
         proportion of nonzero teams at each voxel
         """
+
+
         log_to_file(
             self.dirs.logfile,
             sys._getframe().f_code.co_name,
@@ -587,6 +591,9 @@ class Narps(object):
 
         if imgtypes is None:
             imgtypes = ['thresh', 'unthresh']
+        elif not isinstance(imgtypes, list):
+            raise TypeError(f"Expected imgtypes to be a list, but got {type(imgtypes)}")
+
         if overwrite is None:
             overwrite = self.overwrite
         for imgtype in imgtypes:
@@ -602,6 +609,7 @@ class Narps(object):
                     if self.verbose:
                         print('%s - hypo %d: creating concat file' % (
                             imgtype, hyp))
+                    ic(teamID, imgtype, datatype, hyp)
                     concat_teams = [
                         teamID for teamID in self.complete_image_sets[imgtype]
                         if os.path.exists(
