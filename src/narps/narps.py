@@ -609,7 +609,6 @@ class Narps(object):
                     if self.verbose:
                         print('%s - hypo %d: creating concat file' % (
                             imgtype, hyp))
-                    ic(teamID, imgtype, datatype, hyp)
                     concat_teams = [
                         teamID for teamID in self.complete_image_sets[imgtype]
                         if os.path.exists(
