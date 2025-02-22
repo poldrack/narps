@@ -18,9 +18,11 @@ import nilearn.masking
 import matplotlib.pyplot as plt
 from statsmodels.stats.multitest import multipletests
 
-from narps import Narps, hypnums, hypotheses
-from narps import NarpsDirs # noqa, flake8 issue
-from ALEextract import get_activations, get_sub_dict
+from narps.narps import Narps, hypnums, hypotheses
+from narps.narps import NarpsDirs # noqa, flake8 issue
+from narps.ALEextract import get_activations, get_sub_dict
+import dotenv
+dotenv.load_dotenv()
 
 
 # use binarized/thresholded maps and z maps to create
@@ -262,8 +264,7 @@ def make_combined_figure(narps, thresh=0.95):
     plt.close(fig)
 
 
-if __name__ == "__main__":
-
+def main():
     # parse arguments
     parser = argparse.ArgumentParser(
         description='Run ALE meta-analysis')
@@ -324,3 +325,6 @@ if __name__ == "__main__":
 
         # make a figure with all hypotheses
         make_combined_figure(narps)
+
+if __name__ == "__main__":
+    main()
