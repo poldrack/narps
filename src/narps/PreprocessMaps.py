@@ -6,12 +6,13 @@ functions defined in narps.py
 import argparse
 import os
 from narps.narps import Narps
-from SimulateData import setup_simulated_data,\
+from narps.SimulateData import setup_simulated_data,\
     make_orig_image_sets
 import pandas
+import dotenv
+dotenv.load_dotenv()
 
-
-if __name__ == "__main__":
+def main():
     # team data (from neurovault) should be in
     # # <basedir>/orig
     # some data need to be renamed before using -
@@ -134,3 +135,6 @@ if __name__ == "__main__":
 
         # save directory structure
         narps.write_data()
+
+if __name__ == "__main__":
+    main()
