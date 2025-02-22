@@ -16,10 +16,10 @@ from sklearn.metrics import cohen_kappa_score
 
 def stringify_dict(d):
     """create a pretty version of arguments for printing"""
-    if 'self' in d:
-        del d['self']
     s = 'Arguments:\n'
     for k in d:
+        if k == 'self':
+            continue
         if not isinstance(d[k], str):
             d[k] = str(d[k])
         s = s + '%s: %s\n' % (k, d[k])
