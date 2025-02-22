@@ -47,12 +47,12 @@ def cluster_image_correlation(basedir,
     target_files = glob.glob(os.path.join(
         basedir, 'orig/%s/zstat*' % targetdir))
     target_files.sort()
-    target_data = masker.fit_transform(target_files)
-    target_corr = numpy.zeros((data.shape[0], target_data.shape[0]))
+    target_fdata = masker.fit_transform(target_files)
+    target_corr = numpy.zeros((data.shape[0], target_fdata.shape[0]))
     for i in range(data.shape[0]):
-        for j in range(target_data.shape[0]):
+        for j in range(target_fdata.shape[0]):
             target_corr[i, j] = numpy.corrcoef(
-                data[i, :], target_data[j, :])[0, 1]
+                data[i, :], target_fdata[j, :])[0, 1]
 
     target_corr_df = pandas.DataFrame(target_corr,
                                       columns=zstat_desc,

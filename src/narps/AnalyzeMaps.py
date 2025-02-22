@@ -215,7 +215,7 @@ def plot_individual_maps(
             if hyp not in hypnums:
                 continue
             img = nibabel.load(m)
-            dims = img.header.get_data_shape()
+            dims = img.header.get_fdata_shape()
             dim_values.append(dims)
             print(i, m)
             md = narps.metadata.query(
@@ -231,7 +231,7 @@ def plot_individual_maps(
                     continue
 
             # check for thresholding
-            imgdata = img.get_data()
+            imgdata = img.get_fdata()
             nonzero_vox = numpy.nonzero(imgdata)
             n_nonzero_vox = len(nonzero_vox[0])
             nnz.append(n_nonzero_vox)

@@ -119,7 +119,7 @@ def make_orig_images(basedir,
 
         # load template data
         baseimg = nibabel.load(baseimgfile)
-        baseimgdata = baseimg.get_data()
+        baseimgdata = baseimg.get_fdata()
         newimgdata = baseimgdata.copy()
 
         if noise_team:

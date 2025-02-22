@@ -68,7 +68,7 @@ def compare_thresh_unthresh_values(
         if not os.path.exists(threshfile):
             print('no thresh hyp %d for %s' % (hyp, collectionID))
             continue
-        threshdata = nibabel.load(threshfile).get_data().flatten()
+        threshdata = nibabel.load(threshfile).get_fdata().flatten()
         threshdata = numpy.nan_to_num(threshdata)
         n_thresh_vox = numpy.sum(threshdata > 0)
         diagnostic_data.loc[
@@ -87,7 +87,7 @@ def compare_thresh_unthresh_values(
         if not os.path.exists(unthreshfile):
             print('no unthresh hyp %d for %s' % (hyp, collectionID))
             continue
-        unthreshdata = nibabel.load(unthreshfile).get_data().flatten()
+        unthreshdata = nibabel.load(unthreshfile).get_fdata().flatten()
         unthreshdata = numpy.nan_to_num(unthreshdata)
         if not unthreshdata.shape == threshdata.shape:
             log_to_file(
@@ -142,7 +142,7 @@ def compare_thresh_unthresh_values(
                     dirs.dirs['orig'],
                     collectionID,
                     'hypo%d_thresh.nii.gz' % hyp)
-                threshdata = nibabel.load(orig_threshfile).get_data()
+                threshdata = nibabel.load(orig_threshfile).get_fdata()
                 threshdata = threshdata[numpy.abs(threshdata) > 1e-6]
                 plt.hist(threshdata, bins=50)
                 plt.savefig(

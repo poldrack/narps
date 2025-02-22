@@ -60,10 +60,10 @@ def get_thresholded_Z_maps(narps, verbose=False, overwrite=False):
                 if verbose:
                     print('creating thresholded Z for', teamID, hyp)
                 unthresh_img = nibabel.load(zfile)
-                unthresh_data = unthresh_img.get_data()
+                unthresh_data = unthresh_img.get_fdata()
 
                 thresh_img = nibabel.load(threshfile)
-                thresh_data = thresh_img.get_data()
+                thresh_data = thresh_img.get_fdata()
 
                 thresh_z_data = thresh_data * unthresh_data
 

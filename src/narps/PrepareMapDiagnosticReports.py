@@ -126,7 +126,7 @@ def create_team_report(narps, collectionID, logfile,
         for hyp in hypnums:
             threshfile = os.path.join(
                 teamdir_thresh, 'hypo%d_thresh.nii.gz' % hyp)
-            threshdata = nibabel.load(threshfile).get_data()
+            threshdata = nibabel.load(threshfile).get_fdata()
             diagnostic_data.loc[
                 diagnostic_data.hyp == hyp,
                 'n_over_thresh'] = numpy.sum(threshdata > 1e-6)
@@ -167,14 +167,14 @@ def create_team_report(narps, collectionID, logfile,
                 'unthresh_concat_%s/hypo%d_voxelmap.nii.gz' %
                 (unthresh_dataset, hyp))
         )
-        voxelmap_good = voxelmap.get_data() > voxelmap_thresh
+        voxelmap_good = voxelmap.get_fdata() > voxelmap_thresh
         unthreshimg = nibabel.load(unthreshfile)
-        unthreshdata = numpy.abs(unthreshimg.get_data())
+        unthreshdata = numpy.abs(unthreshimg.get_fdata())
         maskimg = nibabel.Nifti1Image((unthreshdata > 1e-6).astype('int'),
                                       affine=unthreshimg.affine)
         diagnostic_data.loc[
             diagnostic_data.hyp == hyp,
-            'p_map_voxels'] = numpy.mean(maskimg.get_data()[voxelmap_good])
+            'p_map_voxels'] = numpy.mean(maskimg.get_fdata()[voxelmap_good])
 
         nilearn.plotting.plot_stat_map(
             maskimg,

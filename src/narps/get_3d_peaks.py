@@ -38,11 +38,11 @@ def get_3d_peaks(image, mask=None, threshold=0., nn=18, order_th=0,
     # Masking
     shape = image.shape
     if mask is not None:
-        data = image.get_data() * mask.get_data()
+        data = image.get_fdata() * mask.get_fdata()
         xyz = np.array(np.where(data > threshold)).T
         data = data[data > threshold]
     else:
-        data = image.get_data().ravel()
+        data = image.get_fdata().ravel()
         xyz = np.reshape(np.indices(shape), (3, np.prod(shape))).T
     affine = get_affine(image)
 

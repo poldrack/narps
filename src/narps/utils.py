@@ -252,7 +252,7 @@ def TtoZ(tmapfile, outfile, df):
     """
 
     mr = nibabel.load(tmapfile)
-    data = mr.get_data()
+    data = mr.get_fdata()
 
     # Select just the nonzero voxels
     nonzero = data[data != 0]
@@ -281,7 +281,7 @@ def TtoZ(tmapfile, outfile, df):
 
     # Write new image to file
     empty_nii = numpy.zeros(mr.shape)
-    empty_nii[mr.get_data() != 0] = Z
+    empty_nii[mr.get_fdata() != 0] = Z
     Z_nii_fixed = nibabel.nifti1.Nifti1Image(
         empty_nii,
         affine=mr.get_affine(),
