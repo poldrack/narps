@@ -4,9 +4,9 @@
 import pytest
 import os
 import pandas
-from narps import Narps
+from narps.narps import Narps
 
-from ThresholdingSim import run_all_analyses, make_plot
+from narps.ThresholdingSim import run_all_analyses, make_plot
 
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact

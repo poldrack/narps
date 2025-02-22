@@ -4,8 +4,8 @@
 import pytest
 import os
 import pandas
-from narps import Narps
-from MetaAnalysis import extract_peak_coordinates,\
+from narps.narps import Narps
+from narps.MetaAnalysis import extract_peak_coordinates,\
     run_ALE, save_results,\
     make_figures, make_combined_figure,\
     get_thresholded_Z_maps

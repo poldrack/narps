@@ -4,15 +4,15 @@
 import pytest
 import os
 import pandas
-from narps import Narps
-from AnalyzeMaps import mk_overlap_maps,\
+from narps.narps import Narps
+from narps.AnalyzeMaps import mk_overlap_maps,\
     mk_range_maps, mk_std_maps,\
     mk_correlation_maps_unthresh, analyze_clusters,\
     plot_distance_from_mean, get_thresh_similarity
-from MetaAnalysis import get_thresholded_Z_maps
-from ThreshVoxelStatistics import get_thresh_voxel_stats,\
+from narps.utils import get_thresholded_Z_maps
+from narps.ThreshVoxelStatistics import get_thresh_voxel_stats,\
     get_zstat_diagnostics
-from GetMeanSimilarity import get_similarity_summary
+from narps.GetMeanSimilarity import get_similarity_summary
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
 

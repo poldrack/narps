@@ -4,8 +4,8 @@
 import pytest
 import os
 import pandas
-from narps import Narps
-from SimulateData import setup_simulated_data,\
+from narps.narps import Narps
+from narps.SimulateData import setup_simulated_data,\
     make_orig_image_sets
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact

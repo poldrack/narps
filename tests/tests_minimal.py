@@ -2,7 +2,7 @@
 # - minimal set for configuration, not for production use
 
 import pytest
-from narps import Narps
+from narps.narps import Narps
 
 # use a session-scoped fixture to
 # save data for entire session

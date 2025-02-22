@@ -4,15 +4,15 @@
 import pytest
 import os
 import pandas
-from narps import Narps
+from narps.narps import Narps
 
-from ConsensusAnalysis import run_ttests, mk_figures
-from MakeSupplementaryFigure1 import mk_supp_figure1,\
+from narps.ConsensusAnalysis import run_ttests, mk_figures
+from narps.MakeSupplementaryFigure1 import mk_supp_figure1,\
     get_all_metadata
-from ClusterImageCorrelation import\
+from narps.ClusterImageCorrelation import\
     cluster_image_correlation
-from ThreshVoxelStatistics import get_thresh_voxel_stats
-from MakeCombinedClusterFigures import\
+from narps.ThreshVoxelStatistics import get_thresh_voxel_stats
+from narps.MakeCombinedClusterFigures import\
     make_combined_cluster_figures
 
 # Use a fixed base dir so that we can
