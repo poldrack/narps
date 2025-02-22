@@ -34,9 +34,9 @@ import tarfile
 from urllib.error import HTTPError
 import hashlib
 import inspect
-from utils import get_metadata, TtoZ, get_map_metadata,\
+from narps.utils import get_metadata, TtoZ, get_map_metadata,\
     log_to_file, stringify_dict
-from ValueDiagnostics import compare_thresh_unthresh_values
+from narps.ValueDiagnostics import compare_thresh_unthresh_values
 
 # # set up data url - COMMENTING NOW, WILL REMOVE
 # # this is necessary for now because the data are still private
@@ -309,7 +309,7 @@ class NarpsTeam(object):
             if overwrite or not os.path.exists(maskimg):
                 # load the image and threshold/binarize it
                 threshimg = nibabel.load(img)
-                threshdata = threshimg.get_data()
+                threshdata = threshimg.get_fdata()
                 # some images use nan instead of zero for the non-excursion
                 # voxels, so we need to replace with zeros
                 if replace_na:
@@ -619,7 +619,7 @@ class Narps(object):
                     concat_img = masker.inverse_transform(concat_data)
                     concat_img.to_filename(outfile)
                     if create_voxel_map:
-                        concat_data = nibabel.load(outfile).get_data()
+                        concat_data = nibabel.load(outfile).get_fdata()
                         voxel_map = numpy.mean(
                             numpy.abs(concat_data) > 1e-6, 3)
                         voxel_img = nibabel.Nifti1Image(
@@ -678,7 +678,7 @@ class Narps(object):
                     concat_dir,
                     'hypo%d.nii.gz' % hyp)
                 concat_img = nibabel.load(concat_file)
-                concat_data = concat_img.get_data()
+                concat_data = concat_img.get_fdata()
                 concat_data = (concat_data > thresh).astype('float')
                 concat_mean = numpy.mean(concat_data, 3)
                 concat_mean_img = nibabel.Nifti1Image(concat_mean,
@@ -811,7 +811,7 @@ class Narps(object):
                     or not os.path.exists(std_outfile) \
                     or overwrite:
                 unthresh_img = nibabel.load(unthresh_file)
-                unthresh_data = unthresh_img.get_data()
+                unthresh_data = unthresh_img.get_fdata()
                 concat_data = numpy.nan_to_num(unthresh_data)
 
                 # compute range
