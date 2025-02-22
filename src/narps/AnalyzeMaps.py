@@ -25,10 +25,13 @@ import scipy.stats
 from collections import Counter
 from scipy.spatial.distance import pdist, squareform
 
-from utils import get_concat_data, log_to_file, stringify_dict,\
+from narps.utils import get_concat_data, log_to_file, stringify_dict,\
     matrix_pct_agreement
-from narps import Narps, hypnums
-from narps import NarpsDirs # noqa, flake8 issue
+from narps.narps import Narps, hypnums
+from narps.narps import NarpsDirs # noqa, flake8 issue
+import dotenv
+dotenv.load_dotenv()
+
 
 # create some variables used throughout
 
@@ -430,8 +433,9 @@ def analyze_clusters(
     #             'unthresh_dendrograms_%s.pkl' % corr_type), 'rb') as f:
     #         dendrograms, membership = pickle.load(f)
 
-    func_args = inspect.getargvalues(
+    func_args_orig = inspect.getargvalues(
         inspect.currentframe()).locals
+    func_args = func_args_orig.copy()
     # remove these to keep logs more tractable
     del func_args['membership']
     del func_args['dendrograms']
@@ -708,8 +712,7 @@ def get_thresh_similarity(narps, dataset='resampled'):
                 (hyp, median_jacsim_nonzero))
 
 
-if __name__ == "__main__":
-
+def main():
     # parse arguments
     parser = argparse.ArgumentParser(
         description='Analyze NARPS data')
@@ -773,3 +776,6 @@ if __name__ == "__main__":
         plot_distance_from_mean(narps)
 
         get_thresh_similarity(narps)
+
+if __name__ == "__main__":
+    main()
