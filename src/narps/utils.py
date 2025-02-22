@@ -183,8 +183,7 @@ def get_decisions(decisions_file, tidy=False):
                      'Confidence%d' % hyp,
                      'Similar%d' % hyp]
     colnames += ['collection']
-    decisions = pandas.read_excel(decisions_file, skiprows=1,
-                                  encoding='utf-8')
+    decisions = pandas.read_excel(decisions_file, skiprows=1)
     decisions.columns = colnames
 
     # make a tidy version
@@ -285,8 +284,8 @@ def TtoZ(tmapfile, outfile, df):
     empty_nii[mr.get_fdata() != 0] = Z
     Z_nii_fixed = nibabel.nifti1.Nifti1Image(
         empty_nii,
-        affine=mr.get_affine(),
-        header=mr.get_header())
+        affine=mr.affine,
+        header=mr.header)
     nibabel.save(Z_nii_fixed, outfile)
 
 
