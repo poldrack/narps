@@ -11,7 +11,7 @@ import numpy
 import pandas
 import json
 import matplotlib.pyplot as plt
-from narps import Narps, hypnums
+from narps.narps import Narps, hypnums
 
 hypnames = ['%d' % i for i in hypnums]
 hypnames[:2] = ['1/3', '2/4']

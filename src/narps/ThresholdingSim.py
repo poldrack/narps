@@ -19,11 +19,11 @@ import nibabel
 from statsmodels.stats.multitest import multipletests
 import scipy.stats
 from nipy.labs.statistical_mapping import cluster_stats
-from MakeSupplementaryFigure1 import get_all_metadata
+from narps.MakeSupplementaryFigure1 import get_all_metadata
 import matplotlib.pyplot as plt
 
-from utils import log_to_file
-from narps import Narps
+from narps.utils import log_to_file
+from narps.narps import Narps
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
 bins = numpy.linspace(-5, 5)

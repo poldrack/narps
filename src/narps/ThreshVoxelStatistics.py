@@ -7,8 +7,8 @@ import glob
 import numpy
 import pandas
 import argparse
-from narps import Narps
-from ValueDiagnostics import compare_thresh_unthresh_values
+from narps.narps import Narps
+from narps.ValueDiagnostics import compare_thresh_unthresh_values
 
 
 def get_thresh_voxel_stats(basedir):

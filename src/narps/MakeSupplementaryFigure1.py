@@ -13,9 +13,9 @@ import seaborn
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
-from narps import Narps
-from narps import NarpsDirs # noqa, flake8 issue
-from utils import log_to_file
+from narps.narps import Narps
+from narps.narps import NarpsDirs # noqa, flake8 issue
+from narps.utils import log_to_file
 
 
 def get_all_metadata(narps):
