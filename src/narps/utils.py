@@ -17,12 +17,13 @@ from sklearn.metrics import cohen_kappa_score
 def stringify_dict(d):
     """create a pretty version of arguments for printing"""
     s = 'Arguments:\n'
-    for k in d:
+    d_copy = d.copy()
+    for k in d_copy:
         if k == 'self':
             continue
-        if not isinstance(d[k], str):
-            d[k] = str(d[k])
-        s = s + '%s: %s\n' % (k, d[k])
+        if not isinstance(d_copy[k], str):
+            d_copy[k] = str(d[k])
+        s = s + '%s: %s\n' % (k, d_copy[k])
     return(s)
 
 
