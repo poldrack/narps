@@ -10,7 +10,7 @@ import glob
 
 import numpy
 import nibabel
-from utils import log_to_file, randn_from_shape
+from narps.utils import log_to_file, randn_from_shape
 
 
 # functions for simulated data
