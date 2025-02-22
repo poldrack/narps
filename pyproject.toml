@@ -6,10 +6,11 @@ readme = "README.md"
 authors = [
     { name = "Russell Poldrack", email = "poldrack@gmail.com" }
 ]
-requires-python = ">=3.13"
+requires-python = "==3.12.*"
 dependencies = [
     "colorama>=0.4.6",
     "extract>=1.0",
+    "icecream>=2.1.4",
     "ipython>=8.32.0",
     "jupyter>=1.1.1",
     "matplotlib>=3.10.0",
@@ -34,6 +35,11 @@ dependencies = [
 
 [project.scripts]
 PreprocessMaps = "narps.PreprocessMaps:main"
+PrepareMetadata = "narps.PrepareMetadata:main"
+AnalyzeMaps = "narps.AnalyzeMaps:main"
+ConsensusAnalysis = "narps.ConsensusAnalysis:main"
+MetaAnalysis = "narps.MetaAnalysis:main"
+
 
 [build-system]
 requires = ["hatchling"]
