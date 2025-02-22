@@ -4,11 +4,12 @@
 import pytest
 import pandas
 import os
-from narps import Narps
-from PrepareMetadata import prepare_metadata
+from narps.narps import Narps
+from narps.PrepareMetadata import prepare_metadata
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
-
+import dotenv
+dotenv.load_dotenv()
 
 @pytest.fixture(scope="session")
 def narps():
