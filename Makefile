@@ -4,6 +4,7 @@
 # use NARPS docker image from poldrack dockerhub
 # set to your username if you wish to push custom version to a different dockerhub acct
 DOCKER_USERNAME = poldrack
+NARPS_BASEDIR = /Users/poldrack/data_unsynced/narps
 
 # need this for simulations
 NARPS_BASEDIR_SIMULATED = ${NARPS_BASEDIR}_simulated
@@ -42,3 +43,19 @@ docker-build: guard-DOCKER_USERNAME
 shell: guard-DOCKER_USERNAME guard-NARPS_BASEDIR guard-DATA_URL
 	docker run -e "DATA_URL=$(DATA_URL)" -it --entrypoint=bash -v $(current_dir):/analysis -v $(NARPS_BASEDIR):/data $(DOCKER_USERNAME)/narps-analysis 
 
+
+# couldn't run ALE due to problems with nimare package
+# couldn't run AnalyzeDecisions.Rmd due to missing MuMin package 
+run-all-local: run-local-PrepareMaps run-local-PrepareMetadata run-local-AnalyzeMaps run-local-ConsensusAnalysis #run-local-ALE
+
+run-local-PrepareMaps: 
+	uv run PreprocessMaps
+
+run-local-PrepareMetadata:
+	uv run PrepareMetadata
+
+run-local-AnalyzeMaps:
+	uv run AnalyzeMaps
+
+run-local-ConsensusAnalysis:
+	uv run ConsensusAnalysis
