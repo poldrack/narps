@@ -5,7 +5,7 @@ functions defined in narps.py
 
 import argparse
 import os
-from narps import Narps
+from narps.narps import Narps
 from SimulateData import setup_simulated_data,\
     make_orig_image_sets
 import pandas

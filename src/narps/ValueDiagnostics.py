@@ -10,7 +10,7 @@ import numpy
 import pandas
 import nibabel
 
-from utils import log_to_file, get_map_metadata
+from narps.utils import log_to_file, get_map_metadata
 
 
 def compare_thresh_unthresh_values(

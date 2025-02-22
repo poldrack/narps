@@ -8,8 +8,8 @@ It requires that narps.py has already been run.
 import os
 import argparse
 import pandas
-from narps import Narps
-from utils import get_merged_metadata_decisions
+from narps.narps import Narps
+from narps.utils import get_merged_metadata_decisions
 
 
 def package_recoder(p):
