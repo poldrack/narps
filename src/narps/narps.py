@@ -23,7 +23,7 @@ import time
 import glob
 import datetime
 import nilearn.image
-import nilearn.input_data
+import nilearn.maskers
 import nilearn.plotting
 import shutil
 import warnings
@@ -549,7 +549,7 @@ class Narps(object):
             return(image_metadata_df)
         # otherwise load from scractch
         image_metadata = []
-        masker = nilearn.input_data.NiftiMasker(mask_img=self.dirs.MNI_mask)
+        masker = nilearn.maskers.NiftiMasker(mask_img=self.dirs.MNI_mask)
         for teamID in self.complete_image_sets['thresh']:
             for hyp in self.teams[teamID].images['thresh']['resampled']:
                 threshfile = self.teams[teamID].images[
@@ -612,7 +612,7 @@ class Narps(object):
 
                     # use nilearn NiftiMasker to load data
                     # and save to a new file
-                    masker = nilearn.input_data.NiftiMasker(
+                    masker = nilearn.maskers.NiftiMasker(
                         mask_img=self.dirs.MNI_mask)
                     concat_data = masker.fit_transform(
                         self.all_maps[imgtype][datatype])

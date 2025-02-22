@@ -8,7 +8,7 @@ import os
 import glob
 import numpy
 import pandas
-import nilearn.input_data
+import nilearn.maskers
 import seaborn
 import matplotlib.pyplot as plt
 
@@ -30,7 +30,7 @@ def cluster_image_correlation(basedir,
         os.environ['FSLDIR'],
         'data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
     )
-    masker = nilearn.input_data.NiftiMasker(mask_img=mask_img)
+    masker = nilearn.maskers.NiftiMasker(mask_img=mask_img)
     data = masker.fit_transform(images)
 
     # compute correlation between all maps

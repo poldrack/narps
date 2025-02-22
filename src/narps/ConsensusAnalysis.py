@@ -13,7 +13,7 @@ import glob
 import numpy
 import nibabel
 import nilearn.plotting
-import nilearn.input_data
+import nilearn.maskers
 import matplotlib.pyplot as plt
 from statsmodels.stats.multitest import multipletests
 from narps import Narps, hypnums, hypotheses
@@ -23,7 +23,7 @@ from utils import log_to_file, t_corr
 
 def run_ttests(narps, logfile,
                overwrite=True):
-    masker = nilearn.input_data.NiftiMasker(
+    masker = nilearn.maskers.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
     results_dir = narps.dirs.dirs['consensus']
 
@@ -103,7 +103,7 @@ def mk_figures(narps, logfile, thresh=0.95):
     log_to_file(
         logfile, '%s' %
         func_name)
-    masker = nilearn.input_data.NiftiMasker(
+    masker = nilearn.maskers.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
 
     fig, ax = plt.subplots(7, 1, figsize=(12, 24))

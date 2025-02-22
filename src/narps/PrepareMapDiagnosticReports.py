@@ -10,7 +10,7 @@ import glob
 import warnings
 import matplotlib.pyplot as plt
 import numpy
-import nilearn.input_data
+import nilearn.maskers
 import pandas
 import nibabel
 
@@ -89,7 +89,7 @@ def create_team_report(narps, collectionID, logfile,
     # load data and check them for deviations from Z distribution
     check_values = True
     if check_values:
-        masker = nilearn.input_data.NiftiMasker(
+        masker = nilearn.maskers.NiftiMasker(
             mask_img=narps.dirs.MNI_mask)
 
         unthresh_data = masker.fit_transform(
@@ -266,7 +266,7 @@ def create_map_overlays(narps, overwrite=True):
                         alpha=0.7, levels=[0.5],
                         colors='b')
 
-                masker = nilearn.input_data.NiftiMasker(mask_img=thresh_img)
+                masker = nilearn.maskers.NiftiMasker(mask_img=thresh_img)
                 maskdata = masker.fit_transform(unthresh_img)
                 if numpy.sum(maskdata) > 0:  # check for empty mask
                     _ = ax[ctr, 1].hist(maskdata, bins=bins)

@@ -14,7 +14,7 @@ import argparse
 import numpy
 import glob
 import pandas
-import nilearn.input_data
+import nilearn.maskers
 import nibabel
 from statsmodels.stats.multitest import multipletests
 import scipy.stats
@@ -86,7 +86,7 @@ def create_mask_img(narps, region):
     else:
         neurosynth_img = None
 
-    masker = nilearn.input_data.NiftiMasker(MNI_img)
+    masker = nilearn.maskers.NiftiMasker(MNI_img)
     HO_data = masker.fit_transform(HO_img)[0, :]
 
     # find voxels in any of the HO regions overlapping with VMPFC
@@ -181,7 +181,7 @@ def get_activations(narps, hyp, logfile,
         os.environ['FSLDIR'],
         'data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
     )
-    masker = nilearn.input_data.NiftiMasker(MNI_img)
+    masker = nilearn.maskers.NiftiMasker(MNI_img)
 
     # get roi mask
     roi_mask = masker.fit_transform(maskimg)[0, :]

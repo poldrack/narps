@@ -13,7 +13,7 @@ import os
 import json
 import glob
 import nilearn.image
-import nilearn.input_data
+import nilearn.maskers
 import nilearn.plotting
 import sklearn
 import sys
@@ -66,7 +66,7 @@ def mk_overlap_maps(narps, verbose=True, annotate=True):
         flush=True)
     log_to_file(logfile, 'Maximum voxel overlap:')
 
-    masker = nilearn.input_data.NiftiMasker(
+    masker = nilearn.maskers.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
     max_overlap = {}
     fig, ax = plt.subplots(4, 2, figsize=(25, 16))
@@ -454,7 +454,7 @@ def analyze_clusters(
         columns=['hyp%d' % i for i in hypnums],
         index=narps.metadata.teamID)
 
-    masker = nilearn.input_data.NiftiMasker(
+    masker = nilearn.maskers.NiftiMasker(
         mask_img=narps.dirs.MNI_mask)
 
     for i, hyp in enumerate(hypnums):

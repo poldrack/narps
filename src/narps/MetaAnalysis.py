@@ -12,7 +12,7 @@ import nibabel
 import nimare
 import os
 import nilearn.image
-import nilearn.input_data
+import nilearn.maskers
 import nilearn.plotting
 import nilearn.masking
 import matplotlib.pyplot as plt
@@ -179,7 +179,7 @@ def save_results(hyp, res, narps, fdr_thresh=0.05):
         nibabel.save(images[i], save_file_img)
 
     # -------------------------- threshold with fdr --------------- #
-    masker = nilearn.input_data.NiftiMasker(
+    masker = nilearn.maskers.NiftiMasker(
         mask_img=narps.dirs.MNI_mask
     )
     pvals = masker.fit_transform(images['p'])

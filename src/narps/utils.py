@@ -4,7 +4,7 @@ utility functions for narps analysis
 
 import os
 import glob
-import nilearn.input_data
+import nilearn.maskers
 import numpy
 import pandas
 import nibabel
@@ -63,7 +63,7 @@ def get_masked_data(hyp, mask_img, output_dir,
     else:
         raise Exception('bad imgtype argument')
     hmaps.sort()
-    masker = nilearn.input_data.NiftiMasker(mask_img=mask_img)
+    masker = nilearn.maskers.NiftiMasker(mask_img=mask_img)
     maskdata = masker.fit_transform(hmaps)  # combined_data
     maskdata = numpy.nan_to_num(maskdata)
     if imgtype == 'thresh':
@@ -99,7 +99,7 @@ def get_concat_data(hyp, mask_img, output_dir,
         for l in f.readlines():
             l_s = l.strip().split()
             labels.append(l_s[0])
-    masker = nilearn.input_data.NiftiMasker(mask_img=mask_img)
+    masker = nilearn.maskers.NiftiMasker(mask_img=mask_img)
     maskdata = masker.fit_transform(concat_file)  # combined_data
     maskdata = numpy.nan_to_num(maskdata)
     if imgtype == 'thresh':

@@ -5,7 +5,7 @@ to actual consensus results
 
 import os
 import numpy
-import nilearn.input_data
+import nilearn.maskers
 from narps import Narps, NarpsDirs, hypnums # noqa, flake8 error
 from utils import log_to_file
 
@@ -17,7 +17,7 @@ assert os.path.exists(simdir)
 
 narps = Narps(basedir)
 
-masker = nilearn.input_data.NiftiMasker(mask_img=narps.dirs.MNI_mask)
+masker = nilearn.maskers.NiftiMasker(mask_img=narps.dirs.MNI_mask)
 cc = {}
 for hyp in hypnums:
     consensus_imgfile = os.path.join(
