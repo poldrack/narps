@@ -22,6 +22,16 @@ from narps.utils import log_to_file, t_corr
 import dotenv
 dotenv.load_dotenv()
 
+# compute tau^2 per Tom's notes in CorrelatedMetaNotes.html
+def tau(data, Q):
+    n = data.shape[0]
+    R = numpy.eye(n) - numpy.ones((n, 1)).dot(numpy.ones((1, n)))/n
+    sampvar_est = numpy.trace(R.dot(Q))
+    tau2 = numpy.zeros(data.shape[1])
+    for i in range(data.shape[1]):
+        Y = data[:, i]
+        tau2[i] = (1/sampvar_est)*Y.T.dot(R).dot(Y)
+    return(numpy.sqrt(tau2))
 
 def run_ttests(narps, logfile,
                overwrite=True):
@@ -81,16 +91,6 @@ def run_ttests(narps, logfile,
             results_dir,
             'hypo%d_1-fdr.nii.gz' % hyp))
 
-        # compute tau^2 per Tom's notes in CorrelatedMetaNotes.html
-        def tau(data, Q):
-            n = data.shape[0]
-            R = numpy.eye(n) - numpy.ones((n, 1)).dot(numpy.ones((1, n)))/n
-            sampvar_est = numpy.trace(R.dot(Q))
-            tau2 = numpy.zeros(data.shape[1])
-            for i in range(data.shape[1]):
-                Y = data[:, i]
-                tau2[i] = (1/sampvar_est)*Y.T.dot(R).dot(Y)
-            return(numpy.sqrt(tau2))
 
         tau_est = tau(data, cc)
         tauimg = masker.inverse_transform(tau_est)
