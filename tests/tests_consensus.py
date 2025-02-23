@@ -32,6 +32,7 @@ def narps():
 
 # tests
 # ConsensusAnalysis
+@pytest.mark.order(1)
 def test_consensus_analysis(narps):
     logfile = os.path.join(
         narps.dirs.dirs['logs'],
@@ -48,13 +49,10 @@ def test_consensus_analysis(narps):
     mk_figures(narps, logfile)
 
 
-# MakeSupplementaryFigure1
-def test_mk_suppfigure1(narps):
-    metadata = get_all_metadata(narps)
-    mk_supp_figure1(narps, metadata)
 
 
 # compute cluster similarity
+@pytest.mark.order(2)
 def test_cluster_image_correlations(narps):
     cluster_image_correlation(
         narps.basedir,
@@ -67,10 +65,19 @@ def test_cluster_image_correlations(narps):
 
 
 # compute thresh statisics
+@pytest.mark.order(3)
 def test_get_thresh_voxel_stats(narps):
     get_thresh_voxel_stats(narps.basedir)
 
 
 # make combined figures
+@pytest.mark.order(4)
 def test_make_combined_cluster_figures(narps):
     make_combined_cluster_figures(narps.basedir)
+
+
+# MakeSupplementaryFigure1
+@pytest.mark.order(5)
+def test_mk_suppfigure1(narps):
+    metadata = get_all_metadata(narps)
+    mk_supp_figure1(narps, metadata)
