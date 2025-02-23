@@ -16,7 +16,7 @@ from matplotlib import colors
 from narps.narps import Narps
 from narps.narps import NarpsDirs # noqa, flake8 issue
 from narps.utils import log_to_file
-
+from icecream import ic
 
 def get_all_metadata(narps):
     metadata = pandas.read_csv(
@@ -97,9 +97,9 @@ def mk_supp_figure1(narps, metadata):
     # now plot modeling info for teams
     plt.subplot(1, 2, 2)
     hmap_data = metadata_merged.copy()
-    hmap_data.iloc[:, :] = 1
+    hmap_data.iloc[:, :] = 1.
     seaborn.heatmap(
-        hmap_data,
+        hmap_data.astype(float),
         annot=metadata_merged,
         fmt='',
         annot_kws={'size': 12},
@@ -130,7 +130,7 @@ def mk_supp_figure1(narps, metadata):
             narps.dirs.dirs['figures'],
             'ConfidenceDataWide.csv')
     )
-
+    return hmap_data, metadata_merged
 
 if __name__ == "__main__":
     # set an environment variable called NARPS_BASEDIR
@@ -154,4 +154,5 @@ if __name__ == "__main__":
         flush=True)
 
     metadata = get_all_metadata(narps)
-    mk_supp_figure1(narps, metadata)
+    hmap_data, metadata_merged = mk_supp_figure1(narps, metadata)
+    ic(hmap_data)
