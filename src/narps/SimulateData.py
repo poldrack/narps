@@ -22,6 +22,9 @@ def setup_simulated_data(
     """create directories for simulated data"""
 
     # consensus analysis must exist
+    narps.dirs.dirs['consensus'] = os.path.join(
+        narps.dirs.dirs['output'],
+        'consensus_analysis')
     assert os.path.exists(narps.dirs.dirs['consensus'])
 
     basedir = narps.basedir + '_simulated'
