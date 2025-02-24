@@ -1,6 +1,6 @@
 import numpy as np
 import nilearn
-from get_3d_peaks import get_3d_peaks
+from narps.get_3d_peaks import get_3d_peaks
 
 
 def get_sub_dict(X, Y, Z, sample_size=108):
