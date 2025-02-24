@@ -3,16 +3,7 @@
 
 import pytest
 from narps.narps import Narps
-import dotenv
-
-dotenv.load_dotenv()
-
-# use a session-scoped fixture to
-# save data for entire session
-@pytest.fixture(scope="session")
-def basedir(tmpdir_factory):
-    fn = tmpdir_factory.mktemp("data")
-    return fn
+from conftest import basedir
 
 
 @pytest.fixture(scope="session")
@@ -25,4 +16,4 @@ def narps(basedir):
 
 
 def test_narps(narps):
-    pass
+    assert narps is not None

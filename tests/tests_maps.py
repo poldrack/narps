@@ -13,14 +13,11 @@ from narps.utils import get_thresholded_Z_maps
 from narps.ThreshVoxelStatistics import get_thresh_voxel_stats,\
     get_zstat_diagnostics
 from narps.GetMeanSimilarity import get_similarity_summary
-# Use a fixed base dir so that we can
-# access the results as a circleci artifact
+from conftest import basedir
 
 
 @pytest.fixture(scope="session")
-def narps():
-    basedir = '/tmp/data'
-    assert os.path.exists(basedir)
+def narps(basedir):
     narps = Narps(basedir)
     narps.load_data()
     narps.metadata = pandas.read_csv(
