@@ -38,7 +38,9 @@ from narps.utils import get_metadata, TtoZ, get_map_metadata,\
     log_to_file, stringify_dict
 from narps.ValueDiagnostics import compare_thresh_unthresh_values
 from icecream import ic
+import dotenv
 
+dotenv.load_dotenv()
 
 # # set up data url - COMMENTING NOW, WILL REMOVE
 # # this is necessary for now because the data are still private
@@ -84,7 +86,7 @@ class NarpsDirs(object):
     """
     class defining directories for project
     """
-    def __init__(self, basedir, dataurl=None,
+    def __init__(self, basedir=None, dataurl=None,
                  force_download=False, testing=False):
 
         # set up a dictionary to contain all of the
@@ -92,13 +94,22 @@ class NarpsDirs(object):
         self.dirs = {}
         self.testing = testing
 
+        if basedir is None:
+            basedir = os.getenv('NARPS_BASEDIR')
+        assert basedir is not None, 'NARPS_BASEDIR is not set'
+
         # check to make sure home of basedir exists
         assert os.path.exists(os.path.dirname(basedir))
         self.dirs['base'] = basedir
         if not os.path.exists(basedir):
             os.mkdir(basedir)
         self.force_download = force_download
-        self.data_url = dataurl
+        if dataurl is None:
+            self.data_url = os.getenv('DATA_URL')
+            if self.data_url is None:
+                raise ValueError('DATA_URL is not set')
+        else:
+            self.data_url = dataurl
 
         dirs_to_add = ['output', 'metadata', 'templates',
                        'cached', 'figures', 'logs', 'orig',
@@ -107,6 +118,7 @@ class NarpsDirs(object):
         for d in dirs_to_add:
             self.dirs[d] = os.path.join(self.dirs['base'], d)
 
+        assert 'FSLDIR' in os.environ, 'FSLDIR is not set'
         self.dirs['fsl_templates'] = os.path.join(
             os.environ['FSLDIR'],
             'data/standard')
@@ -407,9 +419,14 @@ class Narps(object):
     """
     main class for NARPS analysis
     """
-    def __init__(self, basedir, metadata_file=None,
+    def __init__(self, basedir=None, metadata_file=None,
                  verbose=False, overwrite=False,
                  dataurl=None, testing=False):
+        
+        if basedir is None:
+            basedir = os.getenv('NARPS_BASEDIR')
+        assert basedir is not None, 'NARPS_BASEDIR is not set'
+
         self.basedir = basedir
         self.dirs = NarpsDirs(basedir, dataurl=dataurl,
                               testing=testing)
