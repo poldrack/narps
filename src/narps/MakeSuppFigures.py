@@ -8,7 +8,7 @@ Make latex file for supplementary figures
 import os
 import argparse
 import pandas
-from narps import Narps
+from narps.narps import Narps
 
 preamble = '''\\documentclass[10pt]{article}
 \\usepackage[margin=1in]{geometry}

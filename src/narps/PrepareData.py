@@ -12,7 +12,7 @@ import pandas
 import json
 
 from neurovault_collection_downloader import cli
-from utils import log_to_file
+from narps.utils import log_to_file
 
 # these are teams that are excluded
 # from map analyses:

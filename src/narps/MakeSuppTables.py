@@ -9,7 +9,7 @@ import os
 import argparse
 import pandas
 import numpy
-from narps import Narps
+from narps.narps import Narps
 
 preamble = '''\\documentclass[10pt]{article}
 \\usepackage[margin=0.5in]{geometry}

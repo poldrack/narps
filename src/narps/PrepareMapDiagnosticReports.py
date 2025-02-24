@@ -14,8 +14,8 @@ import nilearn.maskers
 import pandas
 import nibabel
 
-from narps import Narps
-from utils import get_masked_data, log_to_file
+from narps.narps import Narps
+from narps.utils import get_masked_data, log_to_file
 
 cut_coords = [-24, -10, 4, 18, 32, 52, 64]
 bins = numpy.linspace(-5, 5)
