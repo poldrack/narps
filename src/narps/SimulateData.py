@@ -10,6 +10,7 @@ import glob
 
 import numpy
 import nibabel
+from narps.narps import Narps
 from narps.utils import log_to_file, randn_from_shape
 
 
@@ -154,9 +155,9 @@ def make_orig_images(basedir,
         # for rectified images, make sure the thresh map
         # will match the re-rectified unthresh map
         if rectify_status[hyp]:
-            threshdata = (newimgdata < -1*thresh).astype('int')
+            threshdata = (newimgdata < -1*thresh).astype('int32')
         else:
-            threshdata = (newimgdata > thresh).astype('int')
+            threshdata = (newimgdata > thresh).astype('int32')
         newimg = nibabel.Nifti1Image(
             threshdata,
             affine=baseimg.affine)
@@ -236,3 +237,11 @@ def make_orig_image_sets(narps, basedir, verbose=False,
             noise_sd=0.5 + 2*(teamID in highvar_teams),
             rectify_status=rectify_status,
             verbose=verbose)
+
+if __name__ == "__main__":
+    narps = Narps()
+    narps.dirs.dirs['consensus'] = os.path.join(
+        narps.dirs.dirs['output'],
+        'consensus_analysis')
+    basedir = setup_simulated_data(narps)
+    make_orig_image_sets(narps, basedir)
