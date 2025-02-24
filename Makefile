@@ -59,3 +59,6 @@ run-local-AnalyzeMaps:
 
 run-local-ConsensusAnalysis:
 	uv run ConsensusAnalysis
+
+run-local-ALE:
+	uv run MetaAnalysis
