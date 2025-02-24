@@ -107,8 +107,9 @@ def run_ALE(ds_dict, hyp, narps, overwrite=False):
         with open(outfile, 'rb') as f:
             res = pickle.load(f)
         return(res)
+    kernel = nimare.meta.kernel.ALEKernel(sample_size=72)
     ds = nimare.dataset.Dataset(ds_dict)
-    ALE = nimare.meta.cbma.ale.ALE()
+    ALE = nimare.meta.cbma.ale.ALE(kernel_transformer=kernel, null_model="approximate")
     res = ALE.fit(ds)
     with open(outfile, 'wb') as f:
         pickle.dump(res, f)
