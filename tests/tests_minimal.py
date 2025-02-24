@@ -3,6 +3,9 @@
 
 import pytest
 from narps.narps import Narps
+import dotenv
+
+dotenv.load_dotenv()
 
 # use a session-scoped fixture to
 # save data for entire session
