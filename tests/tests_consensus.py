@@ -4,7 +4,6 @@
 import pytest
 import os
 import pandas
-from narps.narps import Narps
 
 from narps.ConsensusAnalysis import run_ttests, mk_figures
 from narps.MakeSupplementaryFigure1 import mk_supp_figure1,\
@@ -14,21 +13,9 @@ from narps.ClusterImageCorrelation import\
 from narps.ThreshVoxelStatistics import get_thresh_voxel_stats
 from narps.MakeCombinedClusterFigures import\
     make_combined_cluster_figures
-
+from tests import narps
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
-
-
-@pytest.fixture(scope="session")
-def narps():
-    basedir = '/tmp/data'
-    assert os.path.exists(basedir)
-    narps = Narps(basedir)
-    narps.load_data()
-    narps.metadata = pandas.read_csv(
-        os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
-    return(narps)
-
 
 # tests
 # ConsensusAnalysis
