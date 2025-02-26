@@ -38,6 +38,7 @@ dependencies = [
 ]
 
 [project.scripts]
+PrepareData = "narps.PrepareData:main"
 PreprocessMaps = "narps.PreprocessMaps:main"
 PrepareMetadata = "narps.PrepareMetadata:main"
 AnalyzeMaps = "narps.AnalyzeMaps:main"
