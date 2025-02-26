@@ -4,26 +4,15 @@
 import pytest
 import os
 import pandas
-from narps.narps import Narps
 from narps.MetaAnalysis import extract_peak_coordinates,\
     run_ALE, save_results,\
     make_figures, make_combined_figure,\
     get_thresholded_Z_maps
 # Use a fixed base dir so that we can
 # access the results as a circleci artifact
+from tests import narps
 
-
-@pytest.fixture(scope="session")
-def narps():
-    basedir = '/tmp/data'
-    assert os.path.exists(basedir)
-    narps = Narps(basedir)
-    narps.load_data()
-    narps.metadata = pandas.read_csv(
-        os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
-    _ = narps.dirs.get_output_dir('ALE')
-    return(narps)
-
+narps.load_data()
 
 # tests
 # run ALE meta-analysis
