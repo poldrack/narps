@@ -12,7 +12,11 @@ import pandas
 import json
 
 from neurovault_collection_downloader import cli
+import narps
 from narps.utils import log_to_file
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # these are teams that are excluded
 # from map analyses:
@@ -211,7 +215,7 @@ def copy_renamed_files(collectionIDs, download_dir, logfile):
     return(orig_dir)
 
 
-if __name__ == "__main__":
+def main():
     # parse arguments
     parser = argparse.ArgumentParser(
         description='Process NARPS data')
@@ -313,3 +317,6 @@ if __name__ == "__main__":
 
     if not args.leave_downloads:
         shutil.rmtree(download_dir)
+
+if __name__ == "__main__":
+    main()
