@@ -13,17 +13,7 @@ from narps.utils import get_thresholded_Z_maps
 from narps.ThreshVoxelStatistics import get_thresh_voxel_stats,\
     get_zstat_diagnostics
 from narps.GetMeanSimilarity import get_similarity_summary
-from conftest import basedir
-
-
-@pytest.fixture(scope="session")
-def narps(basedir):
-    narps = Narps(basedir)
-    narps.load_data()
-    narps.metadata = pandas.read_csv(
-        os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
-    return(narps)
-
+from tests import narps
 
 # tests
 # AnalyzeMaps
