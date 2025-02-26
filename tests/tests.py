@@ -19,6 +19,10 @@ def narps():
         os.mkdir(basedir)
     narps = Narps(basedir, dataurl=dataurl)
     narps.write_data()
+    prepare_metadata(narps)
+    # Load full metadata and put into narps structure
+    narps.metadata = pandas.read_csv(
+        os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
     return(narps)
 
 # tests
@@ -65,15 +69,6 @@ def test_narps_compute_image_stats(narps):
 
 def test_narps_estimate_smoothness(narps):
     _ = narps.estimate_smoothness()
-
-
-# PrepareMetadata
-def test_prepare_metadata(narps):
-    prepare_metadata(narps)
-    # Load full metadata and put into narps structure
-    narps.metadata = pandas.read_csv(
-        os.path.join(narps.dirs.dirs['metadata'], 'all_metadata.csv'))
-
 
 # save the structure for use by later tests
 def test_wrapup(narps):
